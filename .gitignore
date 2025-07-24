@@ -19,3 +19,38 @@ target
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# 環境変数
+.env*
+!.env.example
+
+# エディタ設定
+.vscode/
+.idea/
+
+# OS 固有ファイル
+.DS_Store
+Thumbs.db
+
+# ログファイル
+*.log
+logs/
+
+# 一時ファイル
+*.tmp
+*.temp
+tmp/
+temp/
+
+# データベース
+*.sqlite
+*.sqlite3
+*.db
+postgres_data/
+pgadmin_data/
+
+# 開発ツール
+.secrets.baseline
+
+# Docker ボリューム
+volumes/

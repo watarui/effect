@@ -1,0 +1,85 @@
+[workspace]
+members = ["services/api-gateway", "services/command-service", "services/query-service", "services/saga-executor", "shared/cqrs", "shared/domain", "shared/infrastructure"]
+resolver = "2"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.46", features = ["full"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# HTTP/GraphQL
+axum = "0.8"
+async-graphql = "7.0"
+async-graphql-axum = "7.0"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"] }
+
+# UUID
+uuid = { version = "1.17", features = ["v4", "serde"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# gRPC
+tonic = "0.13"
+prost = "0.14"
+
+# Testing
+mockall = "0.13"
+
+# Environment variables
+dotenvy = "0.15"
+
+[workspace.lints.clippy]
+# エラーレベルのリント
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unimplemented = "deny"
+todo = "deny"
+mem_forget = "deny"
+large_stack_arrays = "deny"
+large_types_passed_by_value = "deny"
+
+# 警告レベルのリント（優先度を設定）
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+clone_on_ref_ptr = "warn"
+use_self = "warn"
+missing_const_for_fn = "warn"
+inefficient_to_string = "warn"
+unnecessary_wraps = "warn"
+
+# 開発初期段階では警告として扱う
+too_many_arguments = "warn"
+type_complexity = "warn"
+module_name_repetitions = "warn"
+must_use_candidate = "warn"
+missing_errors_doc = "warn"
+missing_panics_doc = "warn"
+# パッケージメタデータは後で追加
+cargo_common_metadata = "allow"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "warn"
+private_intra_doc_links = "warn"
+missing_crate_level_docs = "warn"

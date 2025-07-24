@@ -1,0 +1,197 @@
+
+services:
+  # PostgreSQL データベース
+  postgres:
+    image: postgres:18beta2-alpine
+    container_name: effect-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: ${POSTGRES_DB:-effect_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=ja_JP.UTF-8"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-databases.sql:/docker-entrypoint-initdb.d/init-multiple-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # Google Cloud Pub/Sub エミュレータ
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
+    container_name: effect-pubsub-emulator
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085 --project=${GCP_PROJECT_ID:-effect-local}
+    ports:
+      - "${PUBSUB_EMULATOR_PORT:-8085}:8085"
+    environment:
+      PUBSUB_EMULATOR_HOST: "pubsub-emulator:8085"
+      PUBSUB_PROJECT_ID: ${GCP_PROJECT_ID:-effect-local}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # pgAdmin (オプション - データベース管理ツール)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: effect-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@effect.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}  # pragma: allowlist secret
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'  # pragma: allowlist secret
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - effect-network
+    profiles:
+      - tools
+
+  # API Gateway サービス
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+      target: development
+    container_name: effect-api-gateway
+    environment:
+      RUST_LOG: ${RUST_LOG:-debug}
+      # API Gateway は各サービスに gRPC で接続するため、直接データベースに接続しない
+      COMMAND_SERVICE_URL: command-service:50051
+      QUERY_SERVICE_URL: query-service:50052
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      SERVICE_PORT: 8080
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    volumes:
+      - ./services/api-gateway:/app/services/api-gateway
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo
+      - target_cache:/app/target
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_healthy
+    networks:
+      - effect-network
+    profiles:
+      - services
+
+  # Command Service
+  command-service:
+    build:
+      context: .
+      dockerfile: services/command-service/Dockerfile
+      target: development
+    container_name: effect-command-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-debug}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/command_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/event_store_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      SERVICE_PORT: 8081
+      GRPC_PORT: 50051
+    ports:
+      - "${COMMAND_SERVICE_PORT:-8081}:8081"
+      - "${COMMAND_SERVICE_GRPC_PORT:-50051}:50051"
+    volumes:
+      - ./services/command-service:/app/services/command-service
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo
+      - target_cache:/app/target
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_healthy
+    networks:
+      - effect-network
+    profiles:
+      - services
+
+  # Query Service
+  query-service:
+    build:
+      context: .
+      dockerfile: services/query-service/Dockerfile
+      target: development
+    container_name: effect-query-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-debug}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/query_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/event_store_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      SERVICE_PORT: 8082
+      GRPC_PORT: 50052
+    ports:
+      - "${QUERY_SERVICE_PORT:-8082}:8082"
+      - "${QUERY_SERVICE_GRPC_PORT:-50052}:50052"
+    volumes:
+      - ./services/query-service:/app/services/query-service
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo
+      - target_cache:/app/target
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_healthy
+    networks:
+      - effect-network
+    profiles:
+      - services
+
+  # Saga Executor
+  saga-executor:
+    build:
+      context: .
+      dockerfile: services/saga-executor/Dockerfile
+      target: development
+    container_name: effect-saga-executor
+    environment:
+      RUST_LOG: ${RUST_LOG:-debug}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/saga_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/event_store_db
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      SERVICE_PORT: 8083
+    ports:
+      - "${SAGA_EXECUTOR_PORT:-8083}:8083"
+    volumes:
+      - ./services/saga-executor:/app/services/saga-executor
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo
+      - target_cache:/app/target
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_healthy
+    networks:
+      - effect-network
+    profiles:
+      - services
+
+networks:
+  effect-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  cargo_cache:
+  target_cache:
