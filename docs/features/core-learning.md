@@ -2,35 +2,12 @@
 
 ## 概要
 
-effect のコア学習機能は、科学的根拠に基づいた効率的な英単語学習を実現します。
+Effect のコア学習機能は、科学的根拠に基づいた効率的な英単語学習を実現します。
 SM-2 アルゴリズムを採用し、個人の学習進度に最適化された復習スケジュールを提供します。
 
 ## 機能一覧
 
-### 1. 単語管理
-
-#### 単語登録
-
-- **入力項目**:
-  - text: 英単語（必須、最大100文字）
-  - meaning: 意味（必須、最大500文字）
-  - pronunciation: 発音記号（任意）
-  - example_sentences: 例文（任意、最大3つ）
-  - difficulty: 難易度（1-5）
-  - category: カテゴリ（IELTS、Business、Academic等）
-  - tags: タグ（任意、複数可）
-
-#### 単語編集
-
-- すべての項目を編集可能
-- 変更履歴をイベントとして記録
-
-#### 単語削除
-
-- 論理削除（is_deleted フラグ）
-- 学習履歴は保持
-
-### 2. 学習セッション
+### 1. 学習セッション
 
 #### セッション開始
 
@@ -39,7 +16,7 @@ pub struct StartSessionInput {
     pub user_id: Uuid,
     pub mode: LearningMode,
     pub word_count: u32,
-    pub categories: Option<Vec<String>>,
+    pub categories: Option<Vec<TestCategory>>,
     pub difficulty_range: Option<(u8, u8)>,
 }
 
@@ -71,10 +48,10 @@ pub enum LearningMode {
 
 ##### リスニング問題
 
-- 音声再生（Text-to-Speech）
+- 音声再生（Google Text-to-Speech）
 - 聞き取った単語を選択/入力
 
-### 3. SM-2 アルゴリズム
+### 2. SM-2 アルゴリズム
 
 #### 基本パラメータ
 
@@ -117,7 +94,7 @@ pub fn calculate_next_interval(
 }
 ```
 
-### 4. 進捗管理
+### 3. 進捗管理
 
 #### 学習統計
 
@@ -133,24 +110,6 @@ pub fn calculate_next_interval(
 - マイルストーン報酬
 
 ## データモデル
-
-### Word エンティティ
-
-```rust
-pub struct Word {
-    pub id: Uuid,
-    pub text: String,
-    pub meaning: String,
-    pub pronunciation: Option<String>,
-    pub example_sentences: Vec<String>,
-    pub difficulty: u8,
-    pub category: String,
-    pub tags: Vec<String>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-    pub is_deleted: bool,
-}
-```
 
 ### LearningSession エンティティ
 
@@ -173,13 +132,14 @@ pub struct QuestionResult {
 }
 ```
 
-### UserProgress エンティティ
+### UserWordProgress エンティティ
 
 ```rust
-pub struct UserProgress {
+pub struct UserWordProgress {
     pub user_id: Uuid,
     pub word_id: Uuid,
     pub sm2_params: SM2Parameters,
+    pub mastery_level: f32,  // 0.0-1.0
     pub total_reviews: u32,
     pub correct_count: u32,
     pub last_reviewed_at: DateTime<Utc>,
@@ -188,12 +148,6 @@ pub struct UserProgress {
 ```
 
 ## ユーザーインターフェース要件
-
-### 単語一覧画面
-
-- フィルタリング（カテゴリ、難易度、タグ）
-- ソート（アルファベット順、難易度順、復習期限順）
-- 一括操作（削除、カテゴリ変更）
 
 ### 学習画面
 

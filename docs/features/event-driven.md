@@ -2,18 +2,26 @@
 
 ## 概要
 
-effect では、すべての学習行動をイベントとして記録し、そのデータを活用して個人に最適化された学習体験を提供します。
+Effect では、すべての状態変更をイベントとして記録し、そのデータを活用して個人に最適化された学習体験を提供します。Event Sourcing パターンにより、完全な監査証跡と柔軟な分析が可能です。
 
 ## イベント設計
 
-### 学習イベント階層
+### イベント階層
 
 ```
 DomainEvent
 ├── WordEvents
 │   ├── WordCreated
 │   ├── WordUpdated
-│   └── WordDeleted
+│   ├── WordMeaningAdded
+│   ├── ExampleAdded
+│   └── WordRelationCreated
+├── UserEvents
+│   ├── UserRegistered
+│   ├── UserProfileUpdated
+│   ├── UserSettingsChanged
+│   ├── WordFavorited
+│   └── WordUnfavorited
 ├── SessionEvents
 │   ├── SessionStarted
 │   ├── QuestionPresented
@@ -37,22 +45,82 @@ DomainEvent
 pub struct WordCreated {
     pub word_id: Uuid,
     pub text: String,
-    pub meaning: String,
+    pub phonetic_ipa: String,
+    pub cefr_level: CefrLevel,
     pub difficulty: u8,
-    pub category: String,
+    pub categories: Vec<TestCategory>,
     pub tags: Vec<String>,
     pub created_by: Uuid,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WordUpdated {
     pub word_id: Uuid,
-    pub changes: HashMap<String, serde_json::Value>,
+    pub version: u32,
+    pub changes: HashMap<String, Value>,
     pub updated_by: Uuid,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WordMeaningAdded {
+    pub meaning_id: Uuid,
+    pub word_id: Uuid,
+    pub meaning: String,
+    pub part_of_speech: PartOfSpeech,
+    pub created_by: Uuid,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExampleAdded {
+    pub example_id: Uuid,
+    pub meaning_id: Uuid,
+    pub sentence: String,
+    pub translation: String,
+    pub created_by: Uuid,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WordRelationCreated {
+    pub relation_id: Uuid,
+    pub word_id: Uuid,
+    pub related_word_id: Uuid,
+    pub relation_type: RelationType,
+    pub created_by: Uuid,
+    pub created_at: DateTime<Utc>,
 }
 ```
 
-### 2. セッション関連イベント
+### 2. ユーザー関連イベント
+
+```rust
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserRegistered {
+    pub user_id: Uuid,
+    pub email: String,
+    pub display_name: String,
+    pub registered_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WordFavorited {
+    pub user_id: Uuid,
+    pub word_id: Uuid,
+    pub favorited_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WordUnfavorited {
+    pub user_id: Uuid,
+    pub word_id: Uuid,
+    pub unfavorited_at: DateTime<Utc>,
+}
+```
+
+### 3. セッション関連イベント
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,6 +130,7 @@ pub struct SessionStarted {
     pub mode: LearningMode,
     pub word_ids: Vec<Uuid>,
     pub config: SessionConfig,
+    pub started_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,6 +142,7 @@ pub struct QuestionAnswered {
     pub response_time_ms: u32,
     pub attempt_number: u8,
     pub hint_used: bool,
+    pub answered_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,10 +152,11 @@ pub struct SessionCompleted {
     pub total_questions: u32,
     pub correct_answers: u32,
     pub performance_metrics: PerformanceMetrics,
+    pub completed_at: DateTime<Utc>,
 }
 ```
 
-### 3. 進捗関連イベント
+### 4. 進捗関連イベント
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,7 +165,9 @@ pub struct ProgressUpdated {
     pub word_id: Uuid,
     pub old_sm2_params: SM2Parameters,
     pub new_sm2_params: SM2Parameters,
+    pub mastery_level: f32,
     pub quality_score: u8,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,6 +176,7 @@ pub struct StreakUpdated {
     pub old_streak: u32,
     pub new_streak: u32,
     pub milestone_reached: Option<u32>,
+    pub updated_at: DateTime<Utc>,
 }
 ```
 
@@ -120,98 +194,85 @@ User Action → Command Handler → Domain Event → Event Store
 Event Store → Pub/Sub → Event Handlers
                     ├── Projection Handler
                     ├── Analytics Handler
-                    └── Notification Handler
+                    ├── Notification Handler
+                    └── Audit Logger
+```
+
+### 3. イベントハンドラー
+
+```rust
+#[async_trait]
+pub trait EventHandler {
+    async fn handle(&self, event: DomainEvent) -> Result<()>;
+}
+
+pub struct ProjectionHandler {
+    read_db: ReadModelDb,
+}
+
+#[async_trait]
+impl EventHandler for ProjectionHandler {
+    async fn handle(&self, event: DomainEvent) -> Result<()> {
+        match event {
+            DomainEvent::WordCreated(e) => {
+                self.read_db.insert_word(e).await?;
+            }
+            DomainEvent::WordUpdated(e) => {
+                self.read_db.update_word(e).await?;
+            }
+            // ... 他のイベント処理
+        }
+        Ok(())
+    }
+}
 ```
 
 ## イベントベース分析機能
 
 ### 1. 学習パターン分析
 
-#### 時間帯別分析
-
 ```rust
-pub struct TimeBasedAnalysis {
-    pub best_performance_hours: Vec<u8>,      // 最も成績の良い時間帯
-    pub average_session_duration: HashMap<u8, u32>, // 時間帯別平均セッション時間
-    pub accuracy_by_hour: HashMap<u8, f32>,   // 時間帯別正答率
-}
-```
-
-#### 単語タイプ別分析
-
-```rust
-pub struct WordTypeAnalysis {
-    pub difficulty_performance: HashMap<u8, f32>,  // 難易度別成績
-    pub category_mastery: HashMap<String, f32>,    // カテゴリ別習熟度
-    pub problematic_patterns: Vec<String>,         // 苦手なパターン
-}
-```
-
-### 2. 忘却曲線予測
-
-```rust
-pub struct ForgettingCurvePredictor {
-    pub fn predict_retention(
+pub struct LearningPatternAnalyzer {
+    pub async fn analyze_user_patterns(
         &self,
-        word_id: Uuid,
-        days_ahead: u32,
-    ) -> f32 {
-        // 過去の学習イベントから個人の忘却パターンを学習
-        // 機械学習モデルによる予測
-    }
-
-    pub fn suggest_review_timing(
-        &self,
-        word_id: Uuid,
-        target_retention: f32,
-    ) -> DateTime<Utc> {
-        // 目標定着率を維持するための最適な復習タイミング
-    }
-}
-```
-
-### 3. 学習効率最適化
-
-```rust
-pub struct EfficiencyOptimizer {
-    pub fn analyze_session_efficiency(
-        &self,
-        events: Vec<SessionEvent>,
-    ) -> EfficiencyReport {
-        EfficiencyReport {
-            optimal_session_length: self.calculate_optimal_length(&events),
-            concentration_curve: self.analyze_concentration(&events),
-            break_recommendations: self.suggest_breaks(&events),
+        user_id: Uuid,
+        time_range: TimeRange,
+    ) -> PatternAnalysis {
+        let events = self.event_store.query_user_events(user_id, time_range).await;
+        
+        PatternAnalysis {
+            best_performance_hours: self.analyze_time_patterns(&events),
+            category_performance: self.analyze_category_patterns(&events),
+            difficulty_progression: self.analyze_difficulty_patterns(&events),
+            common_mistakes: self.analyze_mistake_patterns(&events),
         }
     }
 }
 ```
 
-## リアルタイム処理
-
-### 1. ストリーム処理
+### 2. リアルタイム処理
 
 ```rust
 pub struct EventStreamProcessor {
+    handlers: Vec<Box<dyn EventHandler>>,
+}
+
+impl EventStreamProcessor {
     pub async fn process_stream(&self) {
         let mut stream = self.event_store.subscribe().await;
-
+        
         while let Some(event) = stream.next().await {
-            match event {
-                DomainEvent::QuestionAnswered(e) => {
-                    self.update_real_time_metrics(e).await;
+            for handler in &self.handlers {
+                if let Err(e) = handler.handle(event.clone()).await {
+                    log::error!("Handler error: {:?}", e);
                 }
-                DomainEvent::SessionCompleted(e) => {
-                    self.trigger_post_session_analysis(e).await;
-                }
-                _ => {}
             }
         }
     }
 }
 ```
 
-### 2. アラート生成
+### 3. アラート生成
 
 ```rust
 pub enum LearningAlert {
@@ -219,6 +280,24 @@ pub enum LearningAlert {
     ReviewOverdue { word_count: u32 },
     PerformanceDecline { metric: String, change: f32 },
     MilestoneApproaching { milestone: String, progress: f32 },
+}
+
+pub struct AlertGenerator {
+    pub async fn check_alerts(&self, user_id: Uuid) -> Vec<LearningAlert> {
+        let mut alerts = vec![];
+        
+        // ストリーク確認
+        if let Some(streak) = self.check_streak_status(user_id).await {
+            alerts.push(streak);
+        }
+        
+        // 復習期限確認
+        if let Some(overdue) = self.check_overdue_reviews(user_id).await {
+            alerts.push(overdue);
+        }
+        
+        alerts
+    }
 }
 ```
 
@@ -242,22 +321,47 @@ ORDER BY created_at ASC;
 SELECT
     DATE_TRUNC('day', created_at) as day,
     COUNT(*) FILTER (WHERE event_type = 'QuestionAnswered') as total_questions,
-    COUNT(*) FILTER (WHERE event_data->>'is_correct' = 'true') as correct_answers
+    COUNT(*) FILTER (WHERE event_data->>'is_correct' = 'true') as correct_answers,
+    AVG((event_data->>'response_time_ms')::int) as avg_response_time
 FROM events
 WHERE metadata->>'user_id' = ?
   AND created_at > NOW() - INTERVAL '7 days'
-GROUP BY day;
+GROUP BY day
+ORDER BY day;
 ```
 
-## プライバシーとセキュリティ
+### 3. 編集履歴クエリ
 
-### 1. イベントの匿名化
+```sql
+-- 単語の編集履歴
+SELECT 
+    event_data->>'version' as version,
+    event_data->>'updated_by' as editor_id,
+    event_data->>'changes' as changes,
+    created_at
+FROM events
+WHERE aggregate_type = 'Word'
+  AND aggregate_id = ?
+  AND event_type = 'WordUpdated'
+ORDER BY created_at DESC;
+```
 
-- ユーザーIDのハッシュ化オプション
-- 個人情報を含まないイベント設計
+## データ保持とプライバシー
 
-### 2. データ保持ポリシー
+### 1. イベントの保持期間
 
-- 詳細イベント: 6ヶ月
+- 詳細イベント: 1年間
 - 集計データ: 無期限
-- ユーザー要求による削除対応
+- 編集履歴: 無期限（監査用）
+
+### 2. プライバシー保護
+
+- ユーザー削除時のイベント匿名化
+- GDPR 準拠のデータエクスポート
+- 個人を特定できる情報の最小化
+
+### 3. パフォーマンス最適化
+
+- イベントの非同期処理
+- Read Model の適切なインデックス
+- 古いイベントのアーカイブ
