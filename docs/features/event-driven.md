@@ -239,7 +239,7 @@ pub struct LearningPatternAnalyzer {
         time_range: TimeRange,
     ) -> PatternAnalysis {
         let events = self.event_store.query_user_events(user_id, time_range).await;
-        
+
         PatternAnalysis {
             best_performance_hours: self.analyze_time_patterns(&events),
             category_performance: self.analyze_category_patterns(&events),
@@ -260,7 +260,7 @@ pub struct EventStreamProcessor {
 impl EventStreamProcessor {
     pub async fn process_stream(&self) {
         let mut stream = self.event_store.subscribe().await;
-        
+
         while let Some(event) = stream.next().await {
             for handler in &self.handlers {
                 if let Err(e) = handler.handle(event.clone()).await {
@@ -285,17 +285,17 @@ pub enum LearningAlert {
 pub struct AlertGenerator {
     pub async fn check_alerts(&self, user_id: Uuid) -> Vec<LearningAlert> {
         let mut alerts = vec![];
-        
+
         // ストリーク確認
         if let Some(streak) = self.check_streak_status(user_id).await {
             alerts.push(streak);
         }
-        
+
         // 復習期限確認
         if let Some(overdue) = self.check_overdue_reviews(user_id).await {
             alerts.push(overdue);
         }
-        
+
         alerts
     }
 }
@@ -334,7 +334,7 @@ ORDER BY day;
 
 ```sql
 -- 単語の編集履歴
-SELECT 
+SELECT
     event_data->>'version' as version,
     event_data->>'updated_by' as editor_id,
     event_data->>'changes' as changes,

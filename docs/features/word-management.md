@@ -162,9 +162,9 @@ Google Text-to-Speech API を使用：
 pub async fn generate_audio(word: &str) -> Result<AudioSource> {
     let client = GoogleTtsClient::new();
     let voice_id = "en-US-Standard-A";
-    
+
     client.synthesize_speech(word, voice_id).await?;
-    
+
     Ok(AudioSource::GoogleTts { voice_id })
 }
 ```
@@ -268,17 +268,20 @@ type Mutation {
 ## 実装の優先順位
 
 ### Phase 1（MVP）
+
 - 基本的な単語登録・編集
 - Google TTS による音声生成
 - お気に入り機能
 - 最終更新が勝つ協調編集
 
 ### Phase 2
+
 - AI 支援による情報自動生成
 - 編集履歴の詳細表示
 - スペルバリエーション管理
 
 ### Phase 3
+
 - 画像の自動推薦
 - 高度な協調編集（差分マージ）
 - 貢献度スコアリング

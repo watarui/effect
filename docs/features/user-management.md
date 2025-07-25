@@ -283,18 +283,21 @@ CREATE TABLE user_settings (
 ## 実装の優先順位
 
 ### Phase 1（MVP）
+
 - Email/Password 認証
 - 基本的なプロフィール管理
 - JWT によるセッション管理
 - 学習設定の基本機能
 
 ### Phase 2
+
 - OAuth 認証（Google）
 - アバター画像のアップロード
 - 通知設定の詳細化
 - タイムゾーン対応
 
 ### Phase 3
+
 - 貢献度スコアリング
 - ソーシャル機能（フォロー）
 - アクティビティフィード
