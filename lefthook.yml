@@ -5,6 +5,8 @@ colors: true
 no_tty: false
 pre-commit:
   parallel: true
+  # stage_fixed を並列実行時に安全に処理するため、
+  # フォーマッターのグループのみ並列実行を制限
   commands:
     # === グループ1: 言語別フォーマッター（並列実行） ===
     rustfmt:
@@ -48,17 +50,17 @@ pre-commit:
       priority: 3
       glob: "*.rs"
       run: cargo check --all
-      stage_fixed: true
+      stage_fixed: false
     clippy-check:
       priority: 3
       glob: "*.rs"
       run: cargo clippy --all-targets --all-features -- -D warnings
-      stage_fixed: true
+      stage_fixed: false
     hadolint:
       priority: 3
       glob: "*Dockerfile*"
       run: hadolint --ignore DL3008 --ignore DL3009 {staged_files}
-      stage_fixed: true
+      stage_fixed: false
     check-merge-conflict:
       priority: 3
       glob: "*"
@@ -66,7 +68,7 @@ pre-commit:
         for file in {staged_files}; do
           grep -E '^(<<<<<<<|=======|>>>>>>>)' "$file" && exit 1 || true
         done
-      stage_fixed: true
+      stage_fixed: false
     check-added-large-files:
       priority: 3
       glob: "*"
@@ -78,17 +80,17 @@ pre-commit:
             exit 1
           fi
         done
-      stage_fixed: true
+      stage_fixed: false
     # === グループ4: セキュリティチェック ===
     gitleaks:
       priority: 4
       run: gitleaks detect --source . --no-banner
-      stage_fixed: true
+      stage_fixed: false
     detect-secrets:
       priority: 4
       glob: "*"
       run: detect-secrets scan {staged_files} >/dev/null 2>&1
-      stage_fixed: true
+      stage_fixed: false
 pre-push:
   parallel: false
   commands:
