@@ -82,12 +82,12 @@ pre-commit:
     # === グループ4: セキュリティチェック ===
     gitleaks:
       priority: 4
-      run: gitleaks detect --source . --quiet
+      run: gitleaks detect --source . --no-banner
       stage_fixed: true
     detect-secrets:
       priority: 4
       glob: "*"
-      run: detect-secrets scan {staged_files} 2>/dev/null
+      run: detect-secrets scan {staged_files} >/dev/null 2>&1
       stage_fixed: true
 pre-push:
   parallel: false
