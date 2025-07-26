@@ -1,0 +1,82 @@
+# lefthook configuration
+# https://github.com/evilmartians/lefthook
+assert_lefthook_installed: true
+colors: true
+no_tty: false
+pre-commit:
+  parallel: true
+  commands:
+    # === グループ1: 言語別フォーマッター（並列実行） ===
+    rustfmt:
+      priority: 1
+      glob: "*.rs"
+      run: cargo fmt -- {staged_files}
+    taplo:
+      priority: 1
+      glob: "*.toml"
+      run: taplo fmt {staged_files}
+    biome:
+      priority: 1
+      glob: "*.{js,json,jsx,ts,tsx}"
+      run: biome format --write {staged_files}
+    yamlfmt:
+      priority: 1
+      glob: "*.{yml,yaml}"
+      run: yamlfmt {staged_files}
+    markdownlint:
+      priority: 1
+      glob: "*.md"
+      run: markdownlint-cli2 --fix {staged_files}
+    shfmt:
+      priority: 1
+      glob: "*.sh"
+      run: shfmt -w {staged_files}
+    # === グループ2: Rust 固有の修正 ===
+    clippy-fix:
+      priority: 2
+      glob: "*.rs"
+      run: cargo clippy --fix --allow-dirty --allow-staged
+    # === グループ3: チェックのみ（並列実行） ===
+    cargo-check:
+      priority: 3
+      glob: "*.rs"
+      run: cargo check --all
+    clippy-check:
+      priority: 3
+      glob: "*.rs"
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    hadolint:
+      priority: 3
+      glob: "*Dockerfile*"
+      run: hadolint --ignore DL3008 --ignore DL3009 {staged_files}
+    check-merge-conflict:
+      priority: 3
+      glob: "*"
+      run: |
+        for file in {staged_files}; do
+          grep -E '^(<<<<<<<|=======|>>>>>>>)' "$file" && exit 1 || true
+        done
+    check-added-large-files:
+      priority: 3
+      glob: "*"
+      run: |
+        for file in {staged_files}; do
+          size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
+          if [ "$size" -gt 1024000 ]; then
+            echo "Error: $file is larger than 1MB"
+            exit 1
+          fi
+        done
+    # === グループ4: セキュリティチェック ===
+    gitleaks:
+      priority: 4
+      run: gitleaks detect --source . --verbose
+    detect-secrets:
+      priority: 4
+      glob: "*"
+      run: detect-secrets scan {staged_files}
+pre-push:
+  parallel: false
+  commands:
+    cargo-test:
+      run: cargo test --all
