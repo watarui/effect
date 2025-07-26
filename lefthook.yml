@@ -11,44 +11,54 @@ pre-commit:
       priority: 1
       glob: "*.rs"
       run: cargo fmt -- {staged_files}
+      stage_fixed: true
     taplo:
       priority: 1
       glob: "*.toml"
       run: taplo fmt {staged_files}
+      stage_fixed: true
     biome:
       priority: 1
       glob: "*.{js,json,jsx,ts,tsx}"
       run: biome format --write {staged_files}
+      stage_fixed: true
     yamlfmt:
       priority: 1
       glob: "*.{yml,yaml}"
       run: yamlfmt {staged_files}
+      stage_fixed: true
     markdownlint:
       priority: 1
       glob: "*.md"
-      run: markdownlint-cli2 --fix {staged_files}
+      run: markdownlint-cli2 --fix --quiet {staged_files}
+      stage_fixed: true
     shfmt:
       priority: 1
       glob: "*.sh"
       run: shfmt -w {staged_files}
+      stage_fixed: true
     # === グループ2: Rust 固有の修正 ===
     clippy-fix:
       priority: 2
       glob: "*.rs"
       run: cargo clippy --fix --allow-dirty --allow-staged
+      stage_fixed: true
     # === グループ3: チェックのみ（並列実行） ===
     cargo-check:
       priority: 3
       glob: "*.rs"
       run: cargo check --all
+      stage_fixed: true
     clippy-check:
       priority: 3
       glob: "*.rs"
       run: cargo clippy --all-targets --all-features -- -D warnings
+      stage_fixed: true
     hadolint:
       priority: 3
       glob: "*Dockerfile*"
       run: hadolint --ignore DL3008 --ignore DL3009 {staged_files}
+      stage_fixed: true
     check-merge-conflict:
       priority: 3
       glob: "*"
@@ -56,6 +66,7 @@ pre-commit:
         for file in {staged_files}; do
           grep -E '^(<<<<<<<|=======|>>>>>>>)' "$file" && exit 1 || true
         done
+      stage_fixed: true
     check-added-large-files:
       priority: 3
       glob: "*"
@@ -67,14 +78,17 @@ pre-commit:
             exit 1
           fi
         done
+      stage_fixed: true
     # === グループ4: セキュリティチェック ===
     gitleaks:
       priority: 4
-      run: gitleaks detect --source . --verbose
+      run: gitleaks detect --source . --quiet
+      stage_fixed: true
     detect-secrets:
       priority: 4
       glob: "*"
-      run: detect-secrets scan {staged_files}
+      run: detect-secrets scan {staged_files} 2>/dev/null
+      stage_fixed: true
 pre-push:
   parallel: false
   commands:
