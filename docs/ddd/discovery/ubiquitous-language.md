@@ -2,16 +2,110 @@
 
 ## 概要
 
-このドキュメントは、Effect プロジェクトで使用する共通言語を定義します。
-すべてのステークホルダー（開発者、ドメインエキスパート、将来のコントリビューター）が同じ言葉で同じ概念を理解できるようにします。
+このドキュメントでは、Effect プロジェクトで使用する共通言語を定義します。
+すべてのステークホルダー（開発者、ドメインエキスパート）が同じ意味で用語を使用することを保証します。
+
+## 語彙管理ドメイン（Vocabulary Management Domain）
+
+### 項目（Item）
+
+**定義**: 学習対象となる言語的単位。単一の単語、フレーズ、熟語、慣用表現を含む。
+
+**構成要素**:
+
+- **Spelling**: 綴り
+- **Pronunciation**: 発音（音声ファイルURL等）
+- **Phonetic Respelling**: 発音記号（IPA形式）
+- **Definitions**: 意味のリスト（番号付き）
+- **Parts of Speech**: 品詞情報
+  - **Noun**（名詞）
+    - Countable Noun（可算名詞）
+    - Uncountable Noun（不可算名詞）
+    - Countable and Uncountable Noun（可算・不可算名詞）
+  - Article（冠詞）
+  - Pronoun（代名詞）
+  - **Verb**（動詞）
+    - Transitive Verb（他動詞）
+    - Intransitive Verb（自動詞）
+    - Auxiliary Verb（助動詞）
+  - Adjective（形容詞）
+  - Adverb（副詞）
+  - Preposition（前置詞）
+  - Conjunction（接続詞）
+  - Interjection（間投詞）
+- **Example Sentences**: 各意味に対する例文（最低1つ）
+- **Synonyms**: 類義語
+- **Antonyms**: 対義語
+- **Derived Words**: 派生語
+- **Related Words**: 関連語
+- **Dictionary Links**: 外部辞書へのリンク
+  - Oxford Learner's Dictionaries
+  - Cambridge Dictionary
+
+**実装での表現**:
+
+```rust
+pub struct VocabularyItem {
+    id: VocabularyId,
+    spelling: String,
+    pronunciation: Option<String>,
+    phonetic_respelling: String,
+    definitions: Vec<Definition>,
+    parts_of_speech: Vec<PartOfSpeech>,
+    example_sentences: Vec<ExampleSentence>,
+    synonyms: Vec<String>,
+    antonyms: Vec<String>,
+    derived_words: Vec<String>,
+    related_words: Vec<String>,
+    dictionary_links: DictionaryLinks,
+}
+```
+
+### グローバル辞書（Global Dictionary）
+
+**定義**: アプリケーション全体で共有される語句情報のリポジトリ。
+全ユーザーがアクセス可能で、AI によって生成された語句情報を格納する。
+
+**特徴**:
+
+- 語句の重複を防ぐ（同じ spelling は一度だけ登録）
+- AI生成情報の一貫性を保証
+- バージョン管理（将来的な情報更新に対応）
+
+### 領域（Domain）
+
+**定義**: 語句が関連する言語技能の分類。
+
+**種類**:
+
+- **R (Reading)**: 読解に重要な語句
+- **W (Writing)**: 作文に重要な語句
+- **L (Listening)**: 聞き取りに重要な語句
+- **S (Speaking)**: 会話に重要な語句
+
+**注**: 一つの語句は複数の領域に属することができる
 
 ## 学習ドメイン（Learning Domain）
 
+### 学習リスト（Learning List）
+
+**定義**: 個々のユーザーが学習対象として選択した語句の集合。
+
+**特徴**:
+
+- ユーザーごとに独立
+- グローバル辞書の語句を参照
+- 学習進捗情報を含む
+
 ### 学習セッション（Learning Session）
 
-**定義**: ユーザーが単語を学習する一連の活動の単位。開始と終了が明確で、複数の問題を含む。
+**定義**: 25分のポモドーロ単位で行われる学習活動の単位。
 
-**例**: 「今日の学習セッションでは 20 個の単語を復習しました」
+**種類**:
+
+- **復習セッション**: 既習語句のテスト
+- **新規学習セッション**: 新しい語句の学習
+- **混合セッション**: 復習と新規の組み合わせ
 
 **実装での表現**:
 
@@ -19,200 +113,154 @@
 pub struct LearningSession {
     id: SessionId,
     user_id: UserId,
+    session_type: SessionType,
     started_at: DateTime<Utc>,
     completed_at: Option<DateTime<Utc>>,
+    target_duration: Duration, // 25 minutes
 }
 ```
 
-### 間隔反復（Spaced Repetition）
+### テスト問題（Test Question）
 
-**定義**: 記憶の定着を最大化するために、適切な間隔を空けて復習を行う学習方法。
-
-**関連**: SM-2 アルゴリズム、復習間隔、忘却曲線
-
-### 習熟度（Mastery Level）
-
-**定義**: ユーザーが特定の単語をどれだけ理解し記憶しているかを示す指標。0-100% で表現。
-
-**計算方法**: 正答率、復習回数、最後の復習からの経過時間を考慮
-
-### 復習間隔（Review Interval）
-
-**定義**: ある単語を次に復習するまでの日数。SM-2 アルゴリズムによって計算される。
-
-**例**: 「この単語の復習間隔は 7 日です」
-
-### 質問（Question）
-
-**定義**: 学習セッション中にユーザーに提示される問題。様々な形式がある。
-
-**種類**:
-
-- 多肢選択（Multiple Choice）
-- タイピング（Typing）
-- リスニング（Listening）
-
-## 単語管理ドメイン（Word Management Domain）
-
-### 単語（Word）
-
-**定義**: 学習対象となる英単語とその関連情報の集合。
+**定義**: 学習セッション中に提示される個別の問題。
 
 **構成要素**:
 
-- テキスト（text）: 単語の綴り
-- 発音（pronunciation）: IPA 表記
-- 意味（meanings）: 複数の意味を持つ場合がある
-- 例文（examples）: 使用例
+- 語句の表示
+- 制限時間（30秒）
+- 反応選択肢（わかる/わからない/曖昧）
 
-### 意味（Meaning）
+### 反応（Response）
 
-**定義**: 単語が持つ個々の意味。品詞と共に管理される。
+**定義**: テスト問題に対するユーザーの回答。
 
-**例**: "run" の動詞としての意味「走る」、名詞としての意味「走ること」
+**属性**:
 
-### 例文（Example）
+- **反応タイプ**: わかる（Understood）/わからない（NotUnderstood）/曖昧（Ambiguous）
+- **反応時間**: ミリ秒単位
+- **タイムスタンプ**: 回答日時
 
-**定義**: 単語の使用方法を示す文章。文脈と共に理解を深める。
+### 「覚えた」状態（Mastered State）
 
-**要素**:
+**定義**: 語句が十分に定着したと判定される状態。
 
-- 文章（sentence）
-- 日本語訳（translation）
-- 文脈（context）: ビジネス、日常会話など
+**判定基準**:
 
-### カテゴリ（Category）
+- 「わかる」を3秒以内に選択
+- 過去3回連続で上記条件を満たす
 
-**定義**: 単語を試験対策や用途別に分類するための区分。複数選択可能。
+### 復習間隔（Review Interval）
 
-**例**: IELTS, TOEIC, TOEFL, Business, Academic
+**定義**: 「覚えた」項目を再度テストに出すまでの期間。
 
-### タグ（Tag）
+**アルゴリズム**:
 
-**定義**: 単語をより細かく分類するための自由記述のラベル。
-
-**例**: #technology, #environment, #daily-life
-
-### 協調編集（Collaborative Editing）
-
-**定義**: 複数のユーザーが単語情報を共同で編集・改善できる仕組み。
-
-**関連**: 編集履歴、バージョン管理、楽観的ロック
+- 初回: 7日後
+- 2回目以降: 前回間隔 × 2.5
 
 ## ユーザードメイン（User Domain）
 
 ### ユーザー（User）
 
-**定義**: システムを利用する個人。学習者であり、場合によっては貢献者でもある。
+**定義**: システムを利用する個人。学習者。
 
-### 学習目標（Learning Goal）
+**属性**:
 
-**定義**: ユーザーが設定する具体的な学習の目標。
+- Googleアカウント情報
+- 学習コース
+- 目標スコア
 
-**例**: 「IELTS 7.0 を 2025 年 12 月までに達成」
+### 学習コース（Learning Course）
 
-### 日課目標（Daily Goal）
+**定義**: 特定の試験や目的に向けた学習カリキュラム。
 
-**定義**: 1 日に学習する単語数の目標。
+**例**:
 
-**デフォルト**: 10 単語/日
+- IELTSコース
+- TOEFLコース
+- ビジネス英語コース
 
-### ストリーク（Streak）
+### 目標スコア（Target Score）
 
-**定義**: 連続して学習を行った日数。モチベーション維持の指標。
+**定義**: 学習者が目指す試験のスコア。
 
-**ルール**: 24 時間以内に学習すれば継続
+**例**: IELTS 7.0
 
 ## 進捗ドメイン（Progress Domain）
 
-### 学習進捗（Learning Progress）
+### 学習統計（Learning Statistics）
 
-**定義**: ユーザーの学習の進み具合を表す総合的な状態。
+**定義**: ユーザーの学習活動に関する集計データ。
 
 **含まれる情報**:
 
-- 学習済み単語数
-- 各カテゴリの習熟度
-- 学習時間の統計
+- 総学習語句数
+- 「覚えた」語句数
+- 領域別進捗（R/W/L/S）
+- 正答率
+- 平均反応時間
+- 学習時間
 
-### 学習統計（Learning Statistics）
+### IELTSスコア推定（IELTS Score Estimation）
 
-**定義**: ユーザーの学習活動を数値化したデータ。
+**定義**: 学習統計と領域別進捗から推定される現在のIELTSスコア。
 
-**メトリクス**:
+**計算要素**:
 
-- 正答率（Accuracy Rate）
-- 平均応答時間（Average Response Time）
-- 学習頻度（Learning Frequency）
+- 語彙カバー率（IELTS頻出語句に対する習得率）
+- 領域別習熟度
+- 正答率と反応時間
 
-### マイルストーン（Milestone）
+## AI統合ドメイン（AI Integration Domain）
 
-**定義**: 学習過程で達成すべき重要な節目。
+### AI深掘りチャット（AI Deep Dive Chat）
 
-**例**: 100 単語習得、30 日連続学習、IELTS 頻出語 500 語マスター
+**定義**: 特定の語句について、AIとの対話を通じて詳細な理解を深める機能。
 
-### 達成バッジ（Achievement Badge）
+**特徴**:
 
-**定義**: マイルストーンに到達した際に獲得できる視覚的な報酬。
+- 語句ごとに独立したセッション
+- 文脈に応じた説明
+- 使用例の提供
 
-## 技術用語
+### AIテストカスタマイズ（AI Test Customization）
 
-### アグリゲート（Aggregate）
+**定義**: AIへの指示によってテスト内容をカスタマイズする機能。
 
-**定義**: 一貫性の境界を持つ、関連するドメインオブジェクトのクラスター。
+**例**: "Speaking語句多めで" → Speaking領域の語句を優先的に出題
 
-**例**: Word アグリゲート（Word + Meanings + Examples）
+## ドメインイベント
 
-### ドメインイベント（Domain Event）
+### 語彙管理イベント
 
-**定義**: ドメインで起きた重要な出来事を表す不変のデータ。
+- 語句が登録された（VocabularyItemRegistered）
+- AI語句情報が生成された（AIVocabularyInfoGenerated）
+- グローバル辞書に保存された（SavedToGlobalDictionary）
 
-**例**: WordCreated, SessionCompleted, StreakUpdated
+### 学習イベント
 
-### 境界づけられたコンテキスト（Bounded Context）
+- テストが開始された（TestStarted）
+- ユーザーが反応した（UserResponded）
+- 語句が「覚えた」と判定された（VocabularyMastered）
+- セッションが完了した（SessionCompleted）
 
-**定義**: 特定のドメインモデルが適用される明確な境界。
+### 進捗イベント
 
-**Effect での例**: Learning Context, Word Management Context
+- 学習統計が更新された（LearningStatisticsUpdated）
+- IELTSスコアが推定された（IELTSScoreEstimated）
 
-### リードモデル（Read Model）
+### AI統合イベント
 
-**定義**: クエリ用に最適化されたデータモデル。
-
-**例**: DailyWordList, UserStatisticsView
-
-## アルゴリズム関連
-
-### SM-2 アルゴリズム
-
-**定義**: SuperMemo 2 アルゴリズム。間隔反復学習の計算方法。
-
-**パラメータ**:
-
-- 復習回数（Repetition Count）
-- 難易度係数（Easiness Factor）
-- 復習間隔（Interval）
-
-### 品質評価（Quality Rating）
-
-**定義**: 回答の質を 0-5 で評価。SM-2 アルゴリズムの入力値。
-
-**スケール**:
-
-- 0-2: 不正解（復習間隔リセット）
-- 3-5: 正解（復習間隔延長）
-
-### 忘却曲線（Forgetting Curve）
-
-**定義**: 時間経過と共に記憶が薄れる様子を表す曲線。エビングハウスの研究に基づく。
+- AI深掘りが要求された（AIDeepDiveRequested）
+- AIがテスト内容を生成した（AITestGenerated）
 
 ## 使用上の注意
 
 1. **一貫性**: 同じ概念には必ず同じ用語を使用する
 2. **コード内**: 変数名、クラス名、メソッド名に反映する
 3. **ドキュメント**: すべての文書で統一する
-4. **会話**: チーム内の議論でも使用する
+4. **日本語/英語**: ドメインエキスパートとの会話では日本語、コードでは英語を使用
 
 ## 更新履歴
 
-- 2025-07-25: 初版作成
+- 2025-07-27: ドメインエキスパートとの対話に基づき作成
