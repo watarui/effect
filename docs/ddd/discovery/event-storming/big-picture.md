@@ -164,7 +164,7 @@
 ### 📥 入力
 
 - Firebase Auth (Google認証)
-- OpenAI API / Claude API（語句情報生成、深掘り、スコア推定）
+- OpenAI API / Gemini API（項目情報生成、深掘り、スコア推定）
 
 ### 📤 出力
 
@@ -227,7 +227,7 @@
    - ユーザー別学習リスト
 
 4. **AI Integration Context**
-   - OpenAI/Claude API統合
+   - OpenAI/Gemini API統合
    - 深掘りチャット管理
    - テストカスタマイズ
 
