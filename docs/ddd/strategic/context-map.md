@@ -1,237 +1,252 @@
 # コンテキストマップ
 
-> **ステータス**: 🔄 ドラフト - 実際の境界づけられたコンテキストは探索セッションで決定
+## 概要
 
-## 境界づけられたコンテキスト一覧
+Effect プロジェクトにおける6つの境界づけられたコンテキスト間の関係性を示します。
 
-### 1. Learning Context（学習コンテキスト）
-
-**責務**: 学習の最適化とパーソナライゼーション（コアドメイン）
-
-**主要な概念**:
-
-- Learning Session（学習セッション）
-- Learning Algorithm（学習アルゴリズム）
-- Spaced Repetition（間隔反復）
-- Memory Strength（記憶強度）
-
-### 2. Word Management Context（単語管理コンテキスト）
-
-**責務**: 単語情報の管理と協調編集
-
-**主要な概念**:
-
-- Word（単語）
-- Meaning（意味）
-- Example（例文）
-- Collaborative Editing（協調編集）
-
-### 3. User Context（ユーザーコンテキスト）
-
-**責務**: ユーザー管理と認証
-
-**主要な概念**:
-
-- User（ユーザー）
-- Authentication（認証）
-- Profile（プロフィール）
-- Settings（設定）
-
-### 4. Progress Context（進捗コンテキスト）
-
-**責務**: 学習進捗の追跡と分析
-
-**主要な概念**:
-
-- Learning Progress（学習進捗）
-- Statistics（統計）
-- Achievement（達成）
-- Streak（連続記録）
-
-## コンテキストマップ図
+## コンテキスト関係図
 
 ```mermaid
 graph TB
     subgraph "Core Domain"
         LC[Learning Context]
+        LAC[Learning Algorithm Context]
+        VC[Vocabulary Context]
     end
-
-    subgraph "Supporting Subdomain"
-        WM[Word Management Context]
+    
+    subgraph "Supporting Domain"
+        UC[User Context]
         PC[Progress Context]
     end
-
+    
     subgraph "Generic Subdomain"
-        UC[User Context]
+        AIC[AI Integration Context]
     end
-
-    UC -->|Shared Kernel| LC
-    UC -->|Shared Kernel| WM
-    UC -->|Shared Kernel| PC
-
-    WM -->|Published Language| LC
-    LC -->|Domain Events| PC
-
-    WM -.->|ACL| EXT1[External Dictionary API]
-    UC -.->|ACL| EXT2[OAuth Providers]
+    
+    %% User Context relationships
+    UC -->|User Info| LC
+    UC -->|User Settings| PC
+    
+    %% Learning Context relationships
+    LC -->|Test Results| LAC
+    LC -->|Learning Data| PC
+    LC -->|Get Items| VC
+    LC -->|Test Customization Request| AIC
+    
+    %% Learning Algorithm Context relationships
+    LAC -->|Next Review Date| LC
+    LAC -->|Statistics| PC
+    
+    %% Vocabulary Context relationships
+    VC -->|Generate Item Info| AIC
+    
+    %% AI Integration Context relationships
+    AIC -->|Selected Items| LC
+    AIC -->|Generated Info| VC
+    AIC -->|Chat Response| LC
+    
+    %% Progress Context relationships
+    PC -->|Score Estimation| UC
 ```
 
-## 統合パターンの詳細
+## 関係性の詳細
 
-### User Context → Other Contexts
+### 1. User Context の関係
 
-**パターン**: Shared Kernel（共有カーネル）
+#### → Learning Context
 
-**共有されるもの**:
+- **関係パターン**: Customer-Supplier
+- **内容**: ユーザー情報（ID、学習設定）を提供
+- **統合方式**: 同期API
+
+#### → Progress Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: ユーザー設定（目標スコア、コース）を提供
+- **統合方式**: 同期API
+
+### 2. Learning Context の関係
+
+#### → Vocabulary Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: テストに必要な項目情報を要求
+- **統合方式**: 同期API
+- **備考**: Learning は Vocabulary の顧客として項目データを利用
+
+#### → AI Integration Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: テストカスタマイズ要求（"Speaking項目多めで"など）
+- **統合方式**: 非同期API
+- **備考**: AI がテスト項目を選定
+
+#### → Learning Algorithm Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: テスト結果（反応、反応時間）を送信
+- **統合方式**: イベント駆動
+
+#### → Progress Context
+
+- **関係パターン**: Publisher-Subscriber
+- **内容**: 学習データ（テスト完了イベント）を発行
+- **統合方式**: イベント駆動
+
+### 3. Learning Algorithm Context の関係
+
+#### → Learning Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: 次回復習日、復習対象項目を提供
+- **統合方式**: 同期API
+
+#### → Progress Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: 計算された統計情報を提供
+- **統合方式**: イベント駆動
+
+### 4. Vocabulary Context の関係
+
+#### → AI Integration Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: 項目情報生成を要求
+- **統合方式**: 非同期API
+- **備考**: AI Integration は生データを返し、Vocabulary が自モデルに変換
+
+### 5. AI Integration Context の関係
+
+#### → Learning Context
+
+- **関係パターン**: Service Provider
+- **内容**:
+  - 選定されたテスト項目
+  - 深掘りチャットの応答
+- **統合方式**: 非同期API
+
+#### → Vocabulary Context
+
+- **関係パターン**: Service Provider
+- **内容**: 生成された項目情報（無加工データ）
+- **統合方式**: 非同期API
+
+### 6. Progress Context の関係
+
+#### → User Context
+
+- **関係パターン**: Customer-Supplier
+- **内容**: 推定IELTSスコア、進捗レポート
+- **統合方式**: 同期API
+- **備考**: 単純計算によるスコア推定から開始
+
+## ドメインの分類
+
+### Core Domain（コアドメイン）
+
+- **Learning Context**: 学習体験の中核
+- **Learning Algorithm Context**: 学習効果を最大化するアルゴリズム
+- **Vocabulary Context**: 学習コンテンツの管理
+
+### Supporting Domain（支援ドメイン）
+
+- **User Context**: ユーザー管理
+- **Progress Context**: 進捗分析
+
+### Generic Subdomain（汎用サブドメイン）
+
+- **AI Integration Context**: AI サービスの統合層
+
+## 統合パターンの方針
+
+1. **イベント駆動を優先**
+   - 疎結合を実現
+   - 非同期処理による性能向上
+
+2. **Anti-Corruption Layer の適用**
+   - AI Integration からのデータは各コンテキストで変換
+   - 外部モデルから内部モデルを保護
+
+3. **Published Language**
+   - ドメインイベントを共通言語として定義
+   - 各コンテキスト間の契約を明確化
+
+## 共有される概念
+
+### Shared Kernel（共有カーネル）
 
 ```rust
-// Shared kernel
+// 全コンテキストで共有される識別子
 pub struct UserId(Uuid);
-pub struct UserInfo {
-    pub id: UserId,
-    pub display_name: String,
-}
+pub struct ItemId(Uuid);
+pub struct SessionId(Uuid);
+
+// 基本的な値オブジェクト
+pub struct CourseType(String); // IELTS, TOEFL, etc.
+pub struct CefrLevel(String);  // A1, A2, B1, B2, C1, C2
 ```
 
-**理由**:
+## ドメインイベント
 
-- ユーザー情報は全コンテキストで必要
-- 変更頻度が低い
-- シンプルな構造
-
-### Word Management → Learning Context
-
-**パターン**: Published Language（公開ホスト言語）
-
-**インターフェース**:
-
-```rust
-// Word Management が公開する API
-trait WordRepository {
-    async fn get_word(&self, id: WordId) -> Result<WordData>;
-    async fn get_words_for_learning(&self, criteria: LearningCriteria) -> Result<Vec<WordData>>;
-}
-
-// 標準化されたデータ構造
-pub struct WordData {
-    pub id: WordId,
-    pub text: String,
-    pub meanings: Vec<MeaningData>,
-    pub difficulty: u8,
-    pub categories: Vec<Category>,
-}
-```
-
-**理由**:
-
-- Learning Context は Word の詳細に依存しない
-- 安定したインターフェース
-- 将来の拡張性
-
-### Learning Context → Progress Context
-
-**パターン**: Domain Events（ドメインイベント）
-
-**イベント例**:
+### Learning Context が発行するイベント
 
 ```rust
 pub enum LearningEvent {
-    SessionStarted {
+    TestStarted {
         session_id: SessionId,
         user_id: UserId,
-        words: Vec<WordId>,
+        item_count: usize,
     },
-    QuestionAnswered {
+    UserResponded {
         session_id: SessionId,
-        word_id: WordId,
-        is_correct: bool,
+        item_id: ItemId,
+        response: ResponseType,
         response_time_ms: u32,
+    },
+    ItemMastered {
+        user_id: UserId,
+        item_id: ItemId,
+        mastered_at: DateTime<Utc>,
     },
     SessionCompleted {
         session_id: SessionId,
-        results: SessionResults,
+        correct_count: usize,
+        total_count: usize,
     },
 }
 ```
 
-**理由**:
-
-- 非同期で疎結合
-- Progress は Learning の結果のみに関心
-- イベントソーシングとの親和性
-
-### External Integrations
-
-**パターン**: Anti-Corruption Layer（腐敗防止層）
-
-**Dictionary API との統合**:
+### Vocabulary Context が発行するイベント
 
 ```rust
-// ACL の実装
-pub struct DictionaryAdapter {
-    client: ExternalDictionaryClient,
-}
-
-impl DictionaryAdapter {
-    pub async fn fetch_pronunciation(&self, word: &str) -> Result<Pronunciation> {
-        // 外部 API の形式を内部ドメインモデルに変換
-        let external_data = self.client.get_word_info(word).await?;
-        self.convert_to_domain_model(external_data)
-    }
+pub enum VocabularyEvent {
+    ItemRegistered {
+        item_id: ItemId,
+        spelling: String,
+        created_by: CreatedBy,
+    },
+    ItemInfoGenerated {
+        item_id: ItemId,
+        generated_at: DateTime<Utc>,
+    },
 }
 ```
 
-**理由**:
+## 今後の検討事項
 
-- 外部システムの変更から保護
-- ドメインモデルの純粋性維持
-- テスタビリティの向上
+1. **イベントストアの導入**
+   - Learning Context のイベントを永続化
+   - 監査証跡とイベントソーシング
 
-## チーム構造との対応
+2. **API Gateway の検討**
+   - 外部向けAPIの統一インターフェース
+   - 認証・認可の一元管理
 
-現在は個人開発ですが、将来的なチーム分割を考慮：
-
-| Context         | チーム         | 責任                   |
-| --------------- | -------------- | ---------------------- |
-| Learning        | Algorithm Team | 学習アルゴリズムの改善 |
-| Word Management | Content Team   | コンテンツの品質管理   |
-| User            | Platform Team  | 認証・インフラ         |
-| Progress        | Analytics Team | データ分析・可視化     |
-
-## 進化戦略
-
-### 短期（MVP）
-
-- 最小限の統合
-- 同期的な通信
-- モノリシックなデプロイ
-
-### 中期
-
-- イベント駆動への移行
-- マイクロサービス化
-- 非同期通信の導入
-
-### 長期
-
-- 完全な自律性
-- サービスメッシュ
-- 分散トランザクション
-
-## リスクと対策
-
-### リスク 1: 過度な分離
-
-**対策**: MVP では必要最小限の分離に留める
-
-### リスク 2: 統合の複雑性
-
-**対策**: シンプルな統合パターンから開始
-
-### リスク 3: データの一貫性
-
-**対策**: イベントソーシングによる結果整合性
+3. **サービスメッシュの評価**
+   - マイクロサービス間通信の管理
+   - 可観測性の向上
 
 ## 更新履歴
 
-- 2025-07-25: 初版作成
+- 2025-07-27: 初版作成（6つのコンテキストの関係性を定義）
