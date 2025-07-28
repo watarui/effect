@@ -185,7 +185,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - 認証: Firebase Auth + Google OAuth のみ
 - 通知機能: 実装しない
 - UI: 日本語固定、タイムゾーン JST 固定
-- テスト: 1 セッション最大 10 問、約 25 分
+- テスト: 1 セッション最大 100 問（設定可能）、約 25 分
 
 ## 再開時のチェックリスト
 

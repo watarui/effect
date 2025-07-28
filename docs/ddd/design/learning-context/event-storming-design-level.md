@@ -15,7 +15,7 @@ Learning Context は、Effect プロジェクトの中核となるコンテキ�
 
 ### 1. LearningSession（学習セッション）- 集約ルート
 
-学習セッション全体を管理する集約です。1 回のテストセッション（最大 10 問）の状態を保持します。
+学習セッション全体を管理する集約です。1 回のテストセッション（最大 100 問、設定可能）の状態を保持します。
 
 ```rust
 pub struct LearningSession {
@@ -138,7 +138,7 @@ pub enum LearningCommand {
 
 pub struct SessionConfig {
     session_type: SessionType,
-    item_count: usize,  // 10問など
+    item_count: usize,  // 100問まで（設定可能）
     selection_strategy: SelectionStrategy,
 }
 
@@ -537,8 +537,8 @@ impl LearningSession {
         user_id: UserId,
         config: SessionConfig
     ) -> Result<Vec<DomainEvent>> {
-        // ビジネスルール：1-20問の範囲
-        if config.item_count == 0 || config.item_count > 20 {
+        // ビジネスルール：1-100問の範囲（設定可能、デフォルト100）
+        if config.item_count == 0 || config.item_count > 100 {
             return Err(DomainError::InvalidItemCount);
         }
 
