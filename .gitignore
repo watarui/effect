@@ -54,3 +54,5 @@ pgadmin_data/
 
 # Docker ボリューム
 volumes/
+
+docs/archive/
