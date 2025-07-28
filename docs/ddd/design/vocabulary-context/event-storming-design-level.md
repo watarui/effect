@@ -592,6 +592,59 @@ pub struct ChangeEntry {
 - 項目作成者の情報取得
 - 編集権限の確認
 
+## CQRS 適用方針
+
+### 適用状況: ✅ フル CQRS
+
+Vocabulary Context では、Write Model と Read Model を明確に分離した CQRS を採用しています。
+
+### 理由
+
+1. **検索要件の複雑さ**
+   - 全文検索、カテゴリ検索、タグ検索など多様な検索パターン
+   - 検索用に最適化されたインデックスが必要
+   - Write Model の正規化構造とは異なる非正規化が有効
+
+2. **表示形式の多様性**
+   - 検索結果（ItemSearchView）：軽量な情報のみ
+   - 詳細表示（ItemDetailView）：リッチなフォーマット済みデータ
+   - 競合解決（ConflictResolutionView）：差分比較用の特殊形式
+   - 変更履歴（ChangeHistoryView）：時系列データ
+
+3. **スケーラビリティ**
+   - 読み取り（辞書検索）が圧倒的に多い
+   - グローバル辞書として多数のユーザーが参照
+   - Read Model は積極的にキャッシュ可能
+
+### Write Model（Command 側）
+
+- **VocabularyEntry（集約）**: Wikipedia スタイルの語彙エントリ
+- **VocabularyItem（エンティティ）**: 個々の意味・用法
+- **責務**: 語彙情報の管理、バージョン管理、競合解決、イベント発行
+
+### Read Model（Query 側）
+
+- **ItemSearchView**: 検索結果表示用（軽量）
+- **ItemDetailView**: 詳細表示用（フォーマット済み）
+- **ConflictResolutionView**: 競合解決UI用
+- **ChangeHistoryView**: 変更履歴表示用
+- **責務**: 各用途に最適化されたデータ提供
+
+### データ同期
+
+- Write Model の変更時に VocabularyUpdated イベントを発行
+- プロジェクションハンドラーが各 Read Model を更新
+- 検索インデックスの更新は非同期バッチ処理も併用
+
+### アーキテクチャ学習の観点
+
+Vocabulary Context の CQRS 実装を通じて以下を学習：
+
+- 検索に最適化された Read Model の設計
+- イベントソーシングによる完全な変更履歴の実装
+- 複数の Read Model を用途別に設計する手法
+- 大規模データに対するパフォーマンス最適化
+
 ## 実装の考慮事項
 
 ### パフォーマンス最適化
@@ -615,3 +668,4 @@ pub struct ChangeEntry {
 ## 更新履歴
 
 - 2025-07-27: 初版作成（ユーザーとの対話に基づく詳細設計）
+- 2025-07-28: CQRS 適用方針セクションを追加（フル CQRS 採用、複数の Read Model 設計を明記）

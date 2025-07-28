@@ -6,7 +6,7 @@ Learning Context は、Effect プロジェクトの中核となるコンテキ�
 
 ### 主要な責務
 
-- 25分のポモドーロ単位での学習セッション管理
+- 25 分のポモドーロ単位での学習セッション管理
 - 項目の提示と反応時間の記録
 - 正誤判定と学習状態の追跡
 - 他コンテキストとの連携（Vocabulary、AI Integration、Learning Algorithm）
@@ -15,7 +15,7 @@ Learning Context は、Effect プロジェクトの中核となるコンテキ�
 
 ### 1. LearningSession（学習セッション）- 集約ルート
 
-学習セッション全体を管理する集約です。1回のテストセッション（最大10問）の状態を保持します。
+学習セッション全体を管理する集約です。1 回のテストセッション（最大 10 問）の状態を保持します。
 
 ```rust
 pub struct LearningSession {
@@ -113,24 +113,24 @@ pub enum LearningCommand {
         user_id: UserId,
         session_config: SessionConfig,
     },
-    
+
     PresentItem {
         session_id: SessionId,
         item_id: ItemId,
     },
-    
+
     RequestAnswer {
         session_id: SessionId,
         item_id: ItemId,
         elapsed_time_ms: u32,
     },
-    
+
     JudgeCorrectness {
         session_id: SessionId,
         item_id: ItemId,
         judgment: CorrectnessJudgment,
     },
-    
+
     CompleteSession {
         session_id: SessionId,
     },
@@ -145,25 +145,25 @@ pub struct SessionConfig {
 pub enum SelectionStrategy {
     // 新規項目優先
     NewItemsFirst,
-    
+
     // 復習期限が来た項目
-    DueForReview { 
+    DueForReview {
         date: Date,
         include_overdue: bool,
     },
-    
+
     // 苦手項目優先
-    WeakItemsFirst { 
+    WeakItemsFirst {
         threshold: f32,  // 正答率60%以下など
     },
-    
+
     // 混合（デフォルト）
     Mixed {
         new_ratio: f32,      // 30%
         review_ratio: f32,   // 50%
         weak_ratio: f32,     // 20%
     },
-    
+
     // AIカスタマイズ
     AICustomized {
         instruction: String,  // "Speaking項目多めで"
@@ -183,14 +183,14 @@ pub enum LearningDomainEvent {
         strategy: SelectionStrategy,
         requested_count: usize,
     },
-    
+
     ItemsSelected {
         event_id: EventId,
         occurred_at: DateTime<Utc>,
         user_id: UserId,
         selected_items: Vec<SelectedItem>,
     },
-    
+
     // セッション関連
     SessionStarted {
         event_id: EventId,
@@ -200,7 +200,7 @@ pub enum LearningDomainEvent {
         item_count: usize,
         strategy: SelectionStrategy,
     },
-    
+
     ItemPresented {
         event_id: EventId,
         occurred_at: DateTime<Utc>,
@@ -208,7 +208,7 @@ pub enum LearningDomainEvent {
         item_id: ItemId,
         time_limit: Duration,
     },
-    
+
     AnswerRevealed {
         event_id: EventId,
         occurred_at: DateTime<Utc>,
@@ -216,7 +216,7 @@ pub enum LearningDomainEvent {
         item_id: ItemId,
         trigger: AnswerRevealTrigger,
     },
-    
+
     CorrectnessJudged {
         event_id: EventId,
         occurred_at: DateTime<Utc>,
@@ -224,7 +224,7 @@ pub enum LearningDomainEvent {
         item_id: ItemId,
         judgment: CorrectnessJudgment,
     },
-    
+
     SessionCompleted {
         event_id: EventId,
         occurred_at: DateTime<Utc>,
@@ -232,7 +232,7 @@ pub enum LearningDomainEvent {
         total_items: usize,
         correct_count: usize,
     },
-    
+
     ItemMasteryUpdated {
         event_id: EventId,
         occurred_at: DateTime<Utc>,
@@ -265,22 +265,22 @@ pub enum SelectionReason {
 flowchart TD
     A[学習開始要求] --> B[戦略選択]
     B --> C{戦略タイプ}
-    
+
     C -->|新規優先| D[NewItemsFirst]
     C -->|復習優先| E[DueForReview]
     C -->|苦手優先| F[WeakItemsFirst]
     C -->|混合| G[Mixed]
     C -->|AIカスタム| H[AICustomized]
-    
+
     D --> I[Learning Algorithm Context<br/>項目選定]
     E --> I
     F --> I
     G --> I
     H --> J[AI Integration Context<br/>カスタム選定]
-    
+
     I --> K[項目リスト返却]
     J --> K
-    
+
     K --> L[セッション開始]
 ```
 
@@ -309,11 +309,11 @@ stateDiagram-v2
     項目選定 --> 問題表示: セッション開始
     問題表示 --> 解答表示: 解答を表示クリック
     問題表示 --> 解答表示: 30秒経過（タイムアウト）
-    
+
     解答表示 --> 正解判定: わかったクリック
     解答表示 --> 不正解判定: わからなかったクリック
     解答表示 --> 正解判定: 3秒経過（自動）
-    
+
     正解判定 --> 次の問題: 自動遷移
     不正解判定 --> 次の問題: 自動遷移
     次の問題 --> 問題表示: まだ問題がある
@@ -364,10 +364,10 @@ when CorrectnessJudgedEvent {
         // ユーザーが自発的に解答表示 → わかった/自動 = 正解
         (UserRequested, UserConfirmedCorrect) => mark_as_correct(),
         (UserRequested, AutoConfirmed) => mark_as_correct(),
-        
+
         // わからなかった = 不正解
         (_, UserConfirmedIncorrect) => mark_as_incorrect(),
-        
+
         // 時間切れ = 不正解（そもそも解答を思い出せなかった）
         (TimeLimit, _) => mark_as_incorrect(),
     }
@@ -380,7 +380,7 @@ when CorrectnessJudgedEvent {
 // 3回連続正解かつ平均反応時間3秒以内
 fn should_mark_short_term_mastered(record: &UserItemRecord) -> bool {
     let recent_responses = record.last_n_responses(3);
-    
+
     recent_responses.len() == 3 &&
     recent_responses.iter().all(|r| r.is_correct()) &&
     recent_responses.iter().map(|r| r.response_time_ms).sum::<u32>() / 3 < 3000
@@ -419,16 +419,16 @@ stateDiagram-v2
     [*] --> Unknown: 初期状態
     Unknown --> Searched: 辞書で検索
     Unknown --> Tested: テストで出題
-    
+
     Searched --> Tested: テストで出題
     Tested --> TestFailed: 不正解
     Tested --> ShortTermMastered: 条件満たす
     TestFailed --> Tested: 再挑戦
     TestFailed --> ShortTermMastered: 条件満たす
-    
+
     ShortTermMastered --> TestFailed: 間違えた
     ShortTermMastered --> LongTermMastered: 7日後も正解
-    
+
     LongTermMastered --> TestFailed: 忘れた
 ```
 
@@ -477,20 +477,71 @@ pub struct MasteryUpdateView {
 }
 ```
 
+## CQRS 適用方針
+
+### 適用状況: ✅ フル CQRS
+
+Learning Context では、Write Model と Read Model を明確に分離した CQRS を採用しています。
+
+### 理由
+
+1. **複雑な表示要件**
+
+   - 学習中のリアルタイム状態表示（残り時間、進捗）
+   - セッション完了後の詳細な統計表示
+   - 学習履歴の様々な切り口での表示
+
+2. **パフォーマンス最適化**
+
+   - Write Model: ビジネスロジックの実行に最適化
+   - Read Model: UI 表示に最適化（事前計算、非正規化）
+
+3. **スケーラビリティ**
+   - 読み取り（統計確認）と書き込み（学習実行）の頻度が異なる
+   - Read Model は必要に応じてキャッシュ可能
+
+### Write Model（Command 側）
+
+- **LearningSession（集約）**: セッション全体の状態管理
+- **UserItemRecord（集約）**: ユーザーごとの項目学習状態
+- **責務**: ビジネスルールの実行、状態遷移の管理、イベント発行
+
+### Read Model（Query 側）
+
+- **CurrentSessionView**: 学習中の表示用（リアルタイム更新）
+- **SessionResultView**: セッション結果の表示用
+- **MasteryUpdateView**: マスタリー状態変更の表示用
+- **責務**: UI に最適化されたデータ提供、事前集計
+
+### データ同期
+
+- Write Model の変更時にドメインイベントを発行
+- イベントハンドラーが Read Model を更新
+- 結果整合性で十分（リアルタイム性は CurrentSessionView のみ必要）
+
+### アーキテクチャ学習の観点
+
+Learning Context の CQRS 実装を通じて以下を学習：
+
+- Write と Read の責務分離の実践
+- ドメインイベントを使った同期メカニズム
+- UI 要件に応じた Read Model の設計
+- 結果整合性の実装パターン
+
 ## 集約の実装例
 
 ```rust
 impl LearningSession {
     // 項目選定要求（新規）
     pub fn request_item_selection(
-        user_id: UserId, 
+        user_id: UserId,
         config: SessionConfig
     ) -> Result<Vec<DomainEvent>> {
         // ビジネスルール：1-20問の範囲
         if config.item_count == 0 || config.item_count > 20 {
             return Err(DomainError::InvalidItemCount);
         }
-        
+
         Ok(vec![
             DomainEvent::ItemSelectionRequested {
                 event_id: EventId::new(),
@@ -501,7 +552,7 @@ impl LearningSession {
             }
         ])
     }
-    
+
     // セッション開始（選定済み項目を使用）
     pub fn start_with_selected_items(
         user_id: UserId,
@@ -518,7 +569,7 @@ impl LearningSession {
             started_at: None,
             session_type: determine_session_type(&strategy),
         };
-        
+
         let event = DomainEvent::SessionStarted {
             event_id: EventId::new(),
             occurred_at: Utc::now(),
@@ -527,26 +578,26 @@ impl LearningSession {
             item_count: session.items.len(),
             strategy,
         };
-        
+
         Ok((session, vec![event]))
     }
-    
-    pub fn request_answer(&mut self, item_id: ItemId, elapsed_time_ms: u32) 
+
+    pub fn request_answer(&mut self, item_id: ItemId, elapsed_time_ms: u32)
         -> Result<Vec<DomainEvent>> {
         // 現在の項目を取得
         let current_item = self.get_current_item_mut()?;
-        
+
         // ビジネスルール：同じ項目に対して複数回の解答要求は不可
         if current_item.answer_revealed_at.is_some() {
             return Err(DomainError::AnswerAlreadyRevealed);
         }
-        
+
         current_item.answer_revealed_at = Some(Utc::now());
         current_item.response_time_ms = Some(elapsed_time_ms);
         current_item.answer_reveal_trigger = Some(
             AnswerRevealTrigger::UserRequested { elapsed_time_ms }
         );
-        
+
         let event = DomainEvent::AnswerRevealed {
             event_id: EventId::new(),
             occurred_at: Utc::now(),
@@ -554,7 +605,7 @@ impl LearningSession {
             item_id,
             trigger: AnswerRevealTrigger::UserRequested { elapsed_time_ms },
         };
-        
+
         Ok(vec![event])
     }
 }
@@ -564,19 +615,19 @@ impl LearningSession {
 
 ### Vocabulary Context との連携
 
-- テスト項目の情報取得（同期API）
+- テスト項目の情報取得（同期 API）
 - 項目の詳細情報（spelling, definitions など）
 
 ### AI Integration Context との連携
 
-- テストカスタマイズ要求（非同期API）
+- テストカスタマイズ要求（非同期 API）
 - 深掘りチャット機能への遷移
 
 ### Learning Algorithm Context との連携
 
-- 項目選定サービスの呼び出し（同期API）- **新規追加**
+- 項目選定サービスの呼び出し（同期 API）- **新規追加**
 - テスト結果の送信（イベント駆動）
-- 次回復習日の取得（同期API）
+- 次回復習日の取得（同期 API）
 
 #### 項目選定サービスインターフェース
 
@@ -589,13 +640,13 @@ trait ItemSelectionService {
         strategy: SelectionStrategy,
         count: usize,
     ) -> Result<Vec<SelectedItem>>;
-    
+
     async fn get_review_items(
         &self,
         user_id: UserId,
         date: Date,
     ) -> Result<Vec<ItemWithSchedule>>;
-    
+
     async fn get_weak_items(
         &self,
         user_id: UserId,
@@ -612,10 +663,12 @@ trait ItemSelectionService {
 ## 今後の検討事項
 
 1. **パフォーマンス最適化**
+
    - 大量の学習履歴データの効率的な管理
    - リードモデルのキャッシュ戦略
 
 2. **エラーハンドリング**
+
    - ネットワーク障害時の対応
    - 部分的なデータ保存の実装
 
@@ -627,3 +680,4 @@ trait ItemSelectionService {
 
 - 2025-07-27: 初版作成（ユーザーとの対話に基づく詳細設計）
 - 2025-07-27: 項目選定戦略を追加（Learning Algorithm Context との連携強化）
+- 2025-07-28: CQRS 適用方針セクションを追加（フル CQRS 採用の理由と設計を明記）
