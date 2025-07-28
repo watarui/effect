@@ -7,114 +7,91 @@
 
 ## プロジェクトの背景
 
-Effect は、英単語学習アプリケーションです。学習者（主に開発者自身）が：
+Effect は、英語語彙学習プラットフォームです（IELTS 対策）。主な目的：
 
-- IELTS/TOEIC/TOEFL などの試験対策
-- 科学的な学習方法（SM-2 アルゴリズム）による効率的な記憶定着
-- 協調的な単語管理による学習コンテンツの充実
+- **真の目的**: アーキテクチャ学習（DDD、マイクロサービス、イベントソーシング、CQRS、ヘキサゴナルアーキテクチャ）
+- **ユーザー**: 開発者本人と家族数名（学習デモアプリ）
+- **方針**: 対話を通じて少しずつ確実に進める
 
-これらを実現しながら、DDD の実践的な学習も行います。
+## 現在のドキュメント構造
 
-## ドキュメント構造
+### [進捗サマリー](./progress-summary.md) ⭐
 
-### 1. [プロセス記録](./process.md)
+現在の進捗状況と再開時のガイド（最初に読むべきドキュメント）
 
-DDD 実践の進捗と学習内容を記録
-
-### 2. 戦略的設計 (Strategic Design)
+### 戦略的設計 (Strategic Design)
 
 - [ドメインビジョン](./strategic/domain-vision.md) - ビジネス目標と成功の定義
-- [ドメインタイプ](./strategic/domain-types.md) - コアドメイン、サブドメインの分類
-- [コンテキストマップ](./strategic/context-map.md) - 境界づけられたコンテキストの関係
+- [境界づけられたコンテキスト](./strategic/bounded-contexts.md) - 6 つのコンテキストの定義
+- [コンテキストマップ](./strategic/context-map.md) - コンテキスト間の関係
 - [統合パターン](./strategic/integration-patterns.md) - コンテキスト間の統合方法
 
-### 3. 発見フェーズ (Discovery)
+### 発見フェーズ (Discovery)
 
-- イベントストーミング
-  - [ビッグピクチャー](./discovery/event-storming/big-picture.md) - 全体像の把握
-  - [デザインレベル](./discovery/event-storming/design-level.md) - 詳細設計
+- [イベントストーミング - ビッグピクチャー](./discovery/event-storming/big-picture.md) - 全体像の把握
 - [ユビキタス言語](./discovery/ubiquitous-language.md) - ドメイン用語辞書
-- [ドメインストーリー](./discovery/domain-stories.md) - ユーザージャーニー
 
-### 4. 戦術的設計 (Tactical Design)
+### 詳細設計 (Design)
 
-- [集約](./tactical/aggregates.md) - アグリゲートの設計
-- [値オブジェクト](./tactical/value-objects.md) - 値オブジェクトのカタログ
-- [ドメインサービス](./tactical/domain-services.md) - ドメインサービスの定義
-- [ドメインイベント](./tactical/domain-events.md) - イベントのカタログ
+#### EventStorming Design Level（各コンテキスト）
 
-## DDD プロセスの流れ
+- [Learning Context](./design/learning-context/event-storming-design-level.md)
+- [Vocabulary Context](./design/vocabulary-context/event-storming-design-level.md)
+- [Learning Algorithm Context](./design/learning-algorithm-context/event-storming-design-level.md)
+- [Progress Context](./design/progress-context/event-storming-design-level.md)
+- [AI Integration Context](./design/ai-integration-context/event-storming-design-level.md)
+- [User Context](./design/user-context/event-storming-design-level.md)
+
+#### 集約設計
+
+- [集約の特定と境界](./design/aggregate-identification.md) - 全集約の整理と分析
+
+## 確定した 6 つのコンテキスト
+
+1. **Learning Context（学習）** - 学習セッション管理
+2. **Vocabulary Context（語彙管理）** - 語彙エントリの管理
+3. **Learning Algorithm Context（学習アルゴリズム）** - SM-2 アルゴリズム実装
+4. **Progress Context（進捗）** - CQRS/イベントソーシング
+5. **AI Integration Context（AI 統合）** - AI 生成と深掘り
+6. **User Context（ユーザー）** - 認証と権限管理
+
+## DDD プロセスの進捗
 
 ```mermaid
 graph TD
-    A[Align - 調整] --> B[Discover - 発見]
-    B --> C[Decompose - 分解]
-    C --> D[Design - 設計]
+    A[Align - 調整 ✅] --> B[Discover - 発見 ✅]
+    B --> C[Decompose - 分解 ✅]
+    C --> D[Design - 設計 ⚡進行中]
     D --> E[Implement - 実装]
     E --> F[Evolve - 進化]
     F --> B
 ```
 
-### Phase 1: Align（調整）
+### 完了フェーズ
 
-- ビジネス目標の明確化
-- ステークホルダーの特定
-- 成功の定義
+- ✅ Phase 1: Align - ビジネス目標の明確化
+- ✅ Phase 2: Discover - EventStorming Big Picture、ユビキタス言語
+- ✅ Phase 3: Decompose - 境界づけられたコンテキストの特定
+- ✅ Phase 4: Design - EventStorming Design Level（全コンテキスト）
+- ✅ Phase 4: Design - 集約の特定（テキスト整理）
 
-### Phase 2: Discover（発見）
+### 現在の作業
 
-- EventStorming Big Picture
-- ドメインの探索
-- ユビキタス言語の構築
+- ⚡ Phase 4: Design - 集約の PlantUML 図作成
+- 📋 Phase 4: Design - リポジトリとサービスの設計
 
-### Phase 3: Decompose（分解）
+## 重要な決定事項
 
-- 境界づけられたコンテキストの特定
-- コンテキストマップの作成
-- チーム構造の検討
+- **用語統一**: 「語句」→「項目（Item）」
+- **認証**: Firebase Auth + Google OAuth のみ
+- **通知機能**: 実装しない
+- **UI**: 日本語固定、タイムゾーン JST 固定
+- **テスト**: 1 セッション最大 10 問、約 25 分
+- **マイクロサービス**: 最初から分離（cargo workspace monorepo）
 
-### Phase 4: Design（設計）
+## アーカイブ
 
-- EventStorming Design Level
-- 集約の設計
-- ドメインモデリング
-
-### Phase 5: Implement（実装）
-
-- テスト駆動開発
-- 継続的リファクタリング
-- ドメイン知識の深化
-
-### Phase 6: Evolve（進化）
-
-- フィードバックループ
-- モデルの改善
-- 新たな発見
-
-## 主要な概念
-
-### ドメインエキスパート
-
-- **主要**: 開発者自身（英語学習者として）
-- **補助**: AI アシスタント（技術的観点）
-- **仮想**: IELTS 7.0 を目指す社会人ペルソナ
-
-### コアドメイン
-
-- 学習最適化アルゴリズム（SM-2）
-- 個人に最適化された学習体験
-
-### サポーティングサブドメイン
-
-- 単語管理
-- 進捗追跡
-- 統計分析
-
-### ジェネリックサブドメイン
-
-- ユーザー認証
-- 通知
-- ファイル管理
+古いドキュメントは [`docs/archive/ddd/`](./../archive/ddd/) フォルダに移動しました。
 
 ## 参考資料
 
@@ -122,10 +99,3 @@ graph TD
 - [Domain-Driven Design (Eric Evans)](https://www.dddcommunity.org/book/evans_2003/)
 - [Implementing Domain-Driven Design (Vaughn Vernon)](https://www.amazon.com/dp/0321834577)
 - [Event Storming (Alberto Brandolini)](https://www.eventstorming.com/)
-
-## 進め方
-
-1. このドキュメントを起点として、各フェーズを順番に進めます
-2. 各ステップで発見した内容を該当するドキュメントに記録します
-3. AI アシスタントとの対話を通じて、ドメイン知識を深めていきます
-4. 実装と並行して、ドキュメントを継続的に更新します
