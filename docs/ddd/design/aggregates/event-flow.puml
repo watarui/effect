@@ -1,0 +1,105 @@
+@startuml event-flow
+!theme plain
+title Effect プロジェクト - 学習セッションのイベントフロー
+
+' 参加者定義
+participant "User\nユーザー" as User
+participant "Learning Context\n学習コンテキスト" as LC
+participant "Learning Algorithm\nアルゴリズム" as LA
+participant "Vocabulary Context\n語彙管理" as VC
+participant "Progress Context\n進捗" as PC
+participant "AI Integration\nAI統合" as AI
+
+' セッション開始フロー
+== セッション開始 ==
+User -> LC: 学習開始
+activate LC
+
+LC -> LA: RequestOptimalItems\n最適な項目を要求
+activate LA
+LA -> LA: 次回復習日を確認\n優先度計算
+LA --> LC: ItemsSelected\n選定された項目リスト
+deactivate LA
+
+LC -> LC: LearningSession作成\n最大100問まで
+LC --> User: セッション開始
+deactivate LC
+
+' 学習フロー
+== 学習セッション ==
+loop 各問題（1〜100問）
+  LC -> User: 問題提示
+  User -> User: 考える（最大30秒）
+  
+  alt 30秒以内に解答
+    User -> LC: 解答を見る
+  else 30秒経過
+    LC -> User: 自動的に解答表示
+  end
+  
+  LC -> User: 解答表示（3秒）
+  note right of User: ハイブリッドUIフロー\n3秒後自動で正誤判定
+  
+  LC -> LC: CorrectnessJudged\n正誤判定
+  
+  ' 各コンテキストへのイベント発行
+  LC -> LA: CorrectnessJudged
+  activate LA
+  LA -> LA: SM-2アルゴリズム更新\neasiness_factor調整\n次回復習日計算
+  LA -> PC: ReviewRecorded
+  deactivate LA
+  
+  LC -> PC: ItemAttempted
+  activate PC
+  PC -> PC: 統計更新（非同期）
+  deactivate PC
+  
+  ' マスタリー更新
+  opt 3回連続正解 & 平均反応時間3秒以内
+    LC -> LC: 短期マスター判定
+    LC -> PC: ItemMasteryUpdated
+  end
+end
+
+' セッション完了
+== セッション完了 ==
+LC -> PC: SessionCompleted
+activate PC
+PC -> PC: 日次統計更新\nストリーク計算
+deactivate PC
+
+LC --> User: セッション結果表示
+
+' 補足的なフロー
+== その他のイベント ==
+opt 新規語彙追加時
+  User -> VC: 新規項目追加
+  VC -> AI: AIGenerationRequested
+  activate AI
+  AI -> AI: 非同期で情報生成
+  AI --> VC: GenerationCompleted
+  deactivate AI
+end
+
+opt 深掘り学習
+  User -> AI: チャット開始
+  AI -> AI: ChatSession作成
+  loop 対話
+    User <-> AI: メッセージ交換
+  end
+end
+
+' 凡例
+note right of PC
+  <b>イベント駆動アーキテクチャ</b>
+  ・各コンテキストは独立して動作
+  ・イベントで疎結合に連携
+  ・結果整合性で同期
+  
+  <b>重要なイベント</b>
+  ・CorrectnessJudged：正誤判定（LC→LA）
+  ・SessionCompleted：セッション完了（LC→PC）
+  ・ItemMasteryUpdated：マスタリー更新（LC→PC）
+end note
+
+@enduml

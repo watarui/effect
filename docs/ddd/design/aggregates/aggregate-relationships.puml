@@ -1,0 +1,144 @@
+@startuml aggregate-relationships
+!theme plain
+title Effect プロジェクト - 集約間の関係
+
+' スタイル定義
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+
+skinparam note {
+  BackgroundColor #FFF9C4
+  BorderColor #F57C00
+}
+
+' 中心となる集約
+class UserProfile {
+  <<User Context>>
+  user_id: UserId
+  email: String
+  role: UserRole
+}
+
+class VocabularyItem {
+  <<Vocabulary Context>>
+  item_id: ItemId
+  spelling: String
+  disambiguation: String
+}
+
+' User × Item の集約
+class UserItemRecord {
+  <<Learning Context>>
+  user_id: UserId
+  item_id: ItemId
+  --
+  UI表示用
+}
+
+class ItemLearningRecord {
+  <<Learning Algorithm>>
+  user_id: UserId
+  item_id: ItemId
+  --
+  アルゴリズム計算用
+}
+
+' その他の集約
+class LearningSession {
+  <<Learning Context>>
+  session_id: SessionId
+  user_id: UserId
+  items: List<ItemId>
+}
+
+class AIGenerationTask {
+  <<AI Integration>>
+  task_id: TaskId
+  user_id: UserId
+  entry_id: EntryId
+}
+
+class ChatSession {
+  <<AI Integration>>
+  session_id: SessionId
+  user_id: UserId
+  item_id: ItemId
+}
+
+class VocabularyEntry {
+  <<Vocabulary Context>>
+  entry_id: EntryId
+  spelling: String
+}
+
+' Progress Context
+class "Progress Context" as Progress {
+  <<Read Only>>
+  イベントから生成
+  集約なし
+}
+
+' ID参照関係（user_id）
+UserProfile <.. UserItemRecord : user_id
+UserProfile <.. ItemLearningRecord : user_id
+UserProfile <.. LearningSession : user_id
+UserProfile <.. AIGenerationTask : user_id
+UserProfile <.. ChatSession : user_id
+
+' ID参照関係（item_id）
+VocabularyItem <.. UserItemRecord : item_id
+VocabularyItem <.. ItemLearningRecord : item_id
+VocabularyItem <.. LearningSession : item_id
+VocabularyItem <.. ChatSession : item_id
+
+' ID参照関係（entry_id）
+VocabularyEntry <.. AIGenerationTask : entry_id
+VocabularyEntry "1" *-- "1..*" VocabularyItem : contains
+
+' イベント受信関係
+UserItemRecord ..> Progress : events
+ItemLearningRecord ..> Progress : events
+LearningSession ..> Progress : events
+
+' 重要な説明
+note top of UserProfile
+  全集約から参照される中心
+  削除時は全コンテキストに通知
+end note
+
+note right of UserItemRecord
+  責務：UI表示
+  - マスタリー状態
+  - 学習統計表示
+end note
+
+note right of ItemLearningRecord
+  責務：アルゴリズム
+  - SM-2計算
+  - 次回出題日決定
+end note
+
+note bottom of Progress
+  純粋なCQRS Readモデル
+  他の集約のイベントを集約して
+  統計情報を生成
+end note
+
+' 関係性の説明
+note as N1
+  <b>集約間の参照ルール</b>
+  ・集約間はIDのみで参照
+  ・直接のオブジェクト参照は禁止
+  ・イベント駆動で結果整合性を保つ
+  
+  <b>User × Item の分離理由</b>
+  ・UserItemRecord：UI要求で変更
+  ・ItemLearningRecord：アルゴリズム変更で変更
+  ・責務が明確に異なるため分離は妥当
+end note
+
+@enduml

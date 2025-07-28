@@ -1,0 +1,187 @@
+@startuml aggregate-overview
+!theme plain
+title Effect プロジェクト - 集約の全体像
+
+' カラー定義
+!define AGGREGATE_COLOR #FFE0B2
+!define ENTITY_COLOR #E1F5FE
+!define VALUE_OBJECT_COLOR #F3E5F5
+!define NO_AGGREGATE_COLOR #F5F5F5
+
+' スタイル定義
+skinparam class {
+  BackgroundColor<<Aggregate Root>> AGGREGATE_COLOR
+  BackgroundColor<<Entity>> ENTITY_COLOR
+  BackgroundColor<<Value Object>> VALUE_OBJECT_COLOR
+  BackgroundColor<<No Aggregate>> NO_AGGREGATE_COLOR
+  BorderColor #424242
+  ArrowColor #616161
+}
+
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #BDBDBD
+  FontSize 14
+}
+
+' Learning Context
+package "Learning Context\n学習コンテキスト" {
+  class LearningSession <<Aggregate Root>> {
+    session_id: SessionId
+    user_id: UserId
+    items: List<SessionItem>
+    status: SessionStatus
+    started_at: DateTime?
+    completed_at: DateTime?
+    --
+    最大100問（設定可能）
+    25分ポモドーロセッション
+  }
+  
+  class SessionItem <<Value Object>> {
+    item_id: ItemId
+    presented_at: DateTime?
+    answered_at: DateTime?
+    correctness: Correctness?
+    response_time_ms: u32?
+  }
+  
+  class UserItemRecord <<Aggregate Root>> {
+    record_id: RecordId
+    user_id: UserId
+    item_id: ItemId
+    mastery_state: MasteryState
+    total_attempts: u32
+    correct_attempts: u32
+    consecutive_correct: u32
+    average_response_time_ms: u32
+    --
+    UI表示用の学習状態
+    マスタリー判定ロジック
+  }
+  
+  LearningSession "1" *-- "1..100" SessionItem : contains
+}
+
+' Vocabulary Context
+package "Vocabulary Context\n語彙管理コンテキスト" {
+  class VocabularyEntry <<Aggregate Root>> {
+    entry_id: EntryId
+    spelling: String
+    items: List<ItemSummary>
+    created_at: DateTime
+    --
+    軽量なインデックス役
+    Wikipediaスタイル
+  }
+  
+  class ItemSummary <<Value Object>> {
+    item_id: ItemId
+    disambiguation: String
+    is_primary: bool
+  }
+  
+  class VocabularyItem <<Aggregate Root>> {
+    item_id: ItemId
+    entry_id: EntryId
+    spelling: String
+    disambiguation: String
+    definitions: List<Definition>
+    examples: List<Example>
+    version: u32
+    --
+    詳細データを保持
+    独立して編集可能
+  }
+  
+  VocabularyEntry "1" *-- "1..*" ItemSummary : indexes
+  VocabularyEntry "1" ..> "1..*" VocabularyItem : references
+}
+
+' Learning Algorithm Context
+package "Learning Algorithm Context\n学習アルゴリズムコンテキスト" {
+  class ItemLearningRecord <<Aggregate Root>> {
+    record_id: RecordId
+    user_id: UserId
+    item_id: ItemId
+    easiness_factor: f32
+    repetition_count: u32
+    interval_days: u32
+    next_review_date: Date
+    status: ReviewStatus
+    --
+    SM-2アルゴリズム専用
+    次回出題タイミング計算
+  }
+}
+
+' Progress Context
+package "Progress Context\n進捗コンテキスト" <<No Aggregate>> {
+  note "純粋なCQRS Readモデル\n集約なし（イベントソーシング）" as N1
+  
+  class Projections <<Read Model>> {
+    DailyStatsProjection
+    CategoryProgressProjection
+    UserProgressSummaryProjection
+    LearningStreakProjection
+    --
+    他コンテキストのイベントから生成
+    守るべき不変条件なし
+  }
+}
+
+' AI Integration Context
+package "AI Integration Context\nAI統合コンテキスト" {
+  class AIGenerationTask <<Aggregate Root>> {
+    task_id: TaskId
+    user_id: UserId
+    task_type: TaskType
+    status: TaskStatus
+    retry_count: u32
+    result: GenerationResult?
+    --
+    AI生成タスク管理
+    非同期処理
+  }
+  
+  class ChatSession <<Aggregate Root>> {
+    session_id: SessionId
+    user_id: UserId
+    item_id: ItemId
+    messages: List<ChatMessage>
+    started_at: DateTime
+    --
+    深掘りチャット
+    項目ごとの対話
+  }
+}
+
+' User Context
+package "User Context\nユーザーコンテキスト" {
+  class UserProfile <<Aggregate Root>> {
+    user_id: UserId
+    email: String
+    display_name: String
+    role: UserRole
+    settings: UserSettings
+    created_at: DateTime
+    --
+    Firebase Auth連携
+    全コンテキストから参照
+  }
+}
+
+' 凡例
+legend right
+  |= 色 |= 種類 |
+  |<back:AGGREGATE_COLOR>   </back>| 集約ルート |
+  |<back:ENTITY_COLOR>   </back>| エンティティ |
+  |<back:VALUE_OBJECT_COLOR>   </back>| 値オブジェクト |
+  |<back:NO_AGGREGATE_COLOR>   </back>| 集約なし |
+  
+  |= 記号 |= 意味 |
+  | * -- | コンポジション（所有） |
+  | ..> | 参照（IDのみ） |
+endlegend
+
+@enduml
