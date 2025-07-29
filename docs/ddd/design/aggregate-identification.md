@@ -95,9 +95,7 @@
 - **特徴**: Write Model を持たない、Read Model のみ
 - **プロジェクション**:
   - DailyStatsProjection（日別統計）
-  - CategoryProgressProjection（カテゴリ別進捗）
-  - UserProgressSummaryProjection（全体サマリー）
-  - LearningStreakProjection（ストリーク管理）
+  - UserProgressSummaryProjection（全体サマリー、ストリーク含む）
 - **イベントソース**: 他のコンテキストからのドメインイベント
 - **更新戦略**: リアルタイム、バッチ、遅延評価の使い分け
 

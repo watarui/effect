@@ -121,9 +121,7 @@ package "Progress Context\n進捗コンテキスト" <<No Aggregate>> {
   
   class Projections <<Read Model>> {
     DailyStatsProjection
-    CategoryProgressProjection
     UserProgressSummaryProjection
-    LearningStreakProjection
     --
     他コンテキストのイベントから生成
     守るべき不変条件なし

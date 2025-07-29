@@ -93,7 +93,6 @@ pub struct DailyStatsProjection {
     
     // パフォーマンス
     accuracy_rate: f32,
-    streak_maintained: bool,
     
     // メタ情報
     last_updated: DateTime<Utc>,
@@ -167,7 +166,6 @@ pub struct UserProgressSummaryProjection {
     
     // 現在の状態
     current_streak: u32,
-    longest_streak: u32,
     last_study_date: Date,
     
     // パフォーマンストレンド
@@ -196,30 +194,6 @@ pub struct IeltsEstimation {
 }
 ```
 
-### 4. LearningStreakProjection（ストリーク管理）
-
-```rust
-pub struct LearningStreakProjection {
-    user_id: UserId,
-    
-    // 現在のストリーク
-    current_streak: u32,
-    current_streak_start: Date,
-    
-    // 記録
-    longest_streak: u32,
-    longest_streak_period: (Date, Date),
-    
-    // カレンダー表示用
-    study_calendar: HashMap<Date, bool>,  // 過去365日
-    
-    // 統計
-    total_study_days: u32,
-    study_days_this_month: u32,
-    study_days_this_week: u32,
-}
-```
-
 ## イベントハンドリング
 
 ### イベント受信と処理
@@ -235,8 +209,8 @@ impl ProgressContext {
         // 2. カテゴリ別統計を更新（非同期）
         self.schedule_category_update(event.user_id, event.items);
         
-        // 3. ストリークを更新
-        self.update_streak(event.user_id, event.date).await?;
+        // 3. サマリーのストリークを更新
+        self.update_user_summary_streak(event.user_id, event.date).await?;
         
         // 4. キャッシュを無効化
         self.cache.invalidate_user(event.user_id);
