@@ -73,12 +73,13 @@ graph TD
 - ✅ Phase 2: Discover - EventStorming Big Picture、ユビキタス言語
 - ✅ Phase 3: Decompose - 境界づけられたコンテキストの特定
 - ✅ Phase 4: Design - EventStorming Design Level（全コンテキスト）
-- ✅ Phase 4: Design - 集約の特定（テキスト整理）
+- ✅ Phase 4: Design - 集約の特定と可視化
+- ✅ Phase 4: Design - リポジトリ設計（全コンテキスト）
 
 ### 現在の作業
 
-- ⚡ Phase 4: Design - 集約の PlantUML 図作成
-- 📋 Phase 4: Design - リポジトリとサービスの設計
+- 📋 Phase 4: Design - ドメインサービスの設計（必要に応じて）
+- 📋 Phase 5: Implementation - 技術選定と設計
 
 ## 重要な決定事項
 

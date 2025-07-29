@@ -4,7 +4,8 @@
 
 このドキュメントは、Effect プロジェクトの戦略的 DDD 設計の現在の進捗状況と、今後の作業再開のためのガイドです。
 
-作成日: 2025-07-27
+作成日: 2025-07-27  
+最終更新: 2025-07-29
 
 ## プロジェクト背景
 
@@ -104,26 +105,29 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - `aggregate-overview.puml` - 全集約の俯瞰図
 - `aggregate-relationships.puml` - 集約間の参照関係
 - `event-flow.puml` - イベントフロー図
-- `transaction-boundaries.puml` - トランザクション境界図
 
-### Phase 4: Design - 重複問題の分析 ✅ 完了
+### Phase 4: Design - 集約設計の検証 ✅ 完了
 
-`/docs/ddd/design/aggregates/duplicate-analysis.md` で分析:
+`/docs/ddd/design/aggregate-identification.md` で以下を分析:
 
 - UserItemRecord（UI 表示用）と ItemLearningRecord（アルゴリズム用）の責務を明確化
 - **現状維持を推奨**：DDD の原則に従い、各コンテキストが独自のモデルを持つ
 
-### Phase 4: Design - リポジトリ設計 ⚡ 進行中
+### Phase 4: Design - リポジトリ設計 ✅ 完了
 
-リポジトリインターフェースの設計を開始（`/docs/ddd/design/repositories/`）:
+リポジトリインターフェースの設計を完了（`/docs/ddd/design/repositories/`）:
 
 - ✅ `repository-design-overview.md` - 設計原則と共通インターフェース
 - ✅ `learning-context-repositories.md` - Learning Context のリポジトリ
-- 📋 他のコンテキストのリポジトリ設計（未実装）
+- ✅ `vocabulary-context-repositories.md` - Vocabulary Context のリポジトリ
+- ✅ `learning-algorithm-context-repositories.md` - Learning Algorithm Context のリポジトリ
+- ✅ `progress-context-repositories.md` - Progress Context のイベントストア
+- ✅ `ai-integration-context-repositories.md` - AI Integration Context のリポジトリ
+- ✅ `user-context-repositories.md` - User Context のリポジトリ
 
 ## 現在の状態
 
-### 2025-07-27 の作業内容
+### 直近の作業内容（2025-07-27 〜 2025-07-29）
 
 1. **ドキュメント整理**
 
@@ -132,38 +136,49 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
 2. **集約の可視化**
 
-   - 4 つの PlantUML 図を作成
+   - 3 つの PlantUML 図を作成（overview、relationships、event-flow）
    - 集約間の関係性を明確化
 
 3. **設計上の課題解決**
 
-   - UserItemRecord と ItemLearningRecord の重複問題を分析
+   - UserItemRecord と ItemLearningRecord の責務分析
    - 現状維持（責務分離）を推奨する結論
 
-4. **リポジトリ設計開始**
+4. **リポジトリ設計完了**
    - 設計原則の文書化
-   - Learning Context のリポジトリインターフェース定義
+   - 全コンテキストのリポジトリインターフェース定義
+   - Progress Context のプロジェクション簡素化（ストリーク追跡の統合）
 
 ## 今後の作業
 
 ### 直近のタスク
 
-1. Phase 4: Design - リポジトリ設計の完了
-
-   - Vocabulary Context のリポジトリ
-   - Learning Algorithm Context のリポジトリ
-   - Progress Context のイベントストア
-   - AI Integration Context のリポジトリ
-   - User Context のリポジトリ
-
-2. Phase 4: Design - ドメインサービスの設計
+1. **Phase 4: Design - ドメインサービスの設計**（必要に応じて）
    - 各コンテキストのドメインサービス特定
    - サービスインターフェースの定義
 
-### 残りのフェーズ
+2. **Phase 5: Implementation - 技術選定と設計**
+   - 技術スタックの選定（Rust、データベース、メッセージブローカー等）
+   - プロジェクト構造の設計（cargo workspace 構成）
+   - インフラストラクチャ層の設計
+   - API 設計（GraphQL/REST）
 
-- Phase 5: Implementation - 技術スタックの選定
-- Phase 5: Implementation - プロジェクト構造の設計
+### 実装フェーズの検討事項
+
+1. **マイクロサービス構成**
+   - cargo workspace を使用したモノレポ構成
+   - 各コンテキストを独立したクレートとして実装
+   - 共通ライブラリの設計
+
+2. **イベント駆動アーキテクチャ**
+   - イベントバスの実装方針
+   - イベントストアの選定（Progress Context 用）
+   - 集約間通信の実装
+
+3. **永続化戦略**
+   - 各コンテキストのデータベース選定
+   - リポジトリパターンの実装
+   - トランザクション管理
 
 ## 会話・設計方針
 
@@ -190,9 +205,9 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ## 再開時のチェックリスト
 
 1. このドキュメントを読んで全体像を把握
-2. `/docs/ddd/design/aggregate-identification.md` を確認
-3. PlantUML 図の作成から再開
-4. 必要に応じて UserItemRecord と ItemLearningRecord の重複問題を議論
+2. `/docs/ddd/design/aggregate-identification.md` で集約設計を確認
+3. `/docs/ddd/design/repositories/` でリポジトリ設計を確認
+4. 次のステップ（ドメインサービス設計 or 実装フェーズ）を決定
 
 ## 関連ドキュメント
 
