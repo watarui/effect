@@ -9,8 +9,8 @@
 
 ## プロジェクト背景
 
-- **目的**: 英語語彙学習プラットフォーム（IELTS 対策）
-- **真の目的**: アーキテクチャ学習（DDD、マイクロサービス、イベントソーシング、CQRS、ヘキサゴナルアーキテクチャ）
+- **目的**: 英語語彙学習プラットフォーム（試験対策：IELTS、TOEFL 等）
+- **真の目的**: アーキテクチャ学習（DDD、マイクロサービス、イベントソーシング、CQRS、ヘキサゴナルアーキテクチャ、Saga パターン）
 - **ユーザー**: 開発者本人と家族数名（学習デモアプリ）
 - **方針**: 対話を通じて少しずつ確実に進める
 
@@ -151,6 +151,15 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - イベント整合性分析（命名規則の統一案を提示）
    - Progress Context プロジェクション設計の詳細化（GraphQL マッピング）
 
+6. **Bounded Context Canvas 作成開始**（2025-07-29）
+   - Canvas テンプレート作成（DDD-Crew ベース、日本語説明付き）
+   - Learning Context Canvas 作成
+   - ItemsSelected を非同期から同期に変更（UX 優先の設計判断）
+
+7. **Saga パターン分析**
+   - 使用機会の分析と文書化（`/docs/ddd/design/saga-pattern-opportunities.md`）
+   - AI 生成タスクの補償処理を最優先実装候補として選定
+
 ## 今後の作業
 
 ### Phase 4: Design - 既存成果の改善 ✅ 完了
@@ -167,17 +176,21 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - `/docs/ddd/design/progress-context-projection-mapping.md` で GraphQL との対応を文書化
    - 各プロジェクションの責務とクエリマッピングを明確化
 
-### Phase 4: Design - Bounded Context Canvas（次のステップ）
+### Phase 4: Design - Bounded Context Canvas（作業中）
 
 1. **各コンテキストの責務と境界の明確化**
-   - Core Domain（Learning, Learning Algorithm, Vocabulary）から優先的に作成
-   - Purpose、Strategic Classification、Business Decisions の定義
-   - Inbound/Outbound Communication の明確化
-   - Ubiquitous Language の確認
+   - ✅ Canvas テンプレート作成完了
+   - ✅ Learning Context Canvas 作成完了
+   - 残りのコンテキスト：
+     - Learning Algorithm Context
+     - Vocabulary Context
+     - User Context
+     - Progress Context
+     - AI Integration Context
 
-2. **作成順序案**
-   - Learning Context → Learning Algorithm Context → Vocabulary Context
-   - User Context → Progress Context → AI Integration Context
+2. **Canvas 作成での決定事項**
+   - ItemsSelected を非同期から同期に変更（Learning Context）
+   - アーキテクチャの適材適所を重視
 
 ### Phase 4: Design - ドメインサービス設計（必要に応じて）
 
@@ -212,6 +225,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 3. **メッセージング**
    - イベントバス: 検討中（NATS, RabbitMQ, カスタム実装）
    - 非同期処理: Tokio
+   - Saga 実行: saga-executor サービス（Orchestration パターン）
 
 ### Phase 5: Implementation - プロジェクト構造設計
 
@@ -231,9 +245,11 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    │   ├── domain-events/
    │   ├── common-types/
    │   └── infrastructure/
-   └── applications/
-       ├── api-gateway/
-       └── event-processor/
+   ├── applications/
+   │   ├── api-gateway/
+   │   └── event-processor/
+   └── services/
+       └── saga-executor/
    ```
 
 2. **共通ライブラリ設計**
@@ -259,6 +275,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
 4. **Phase 4: 統合と拡張**
    - AI Integration Context
+   - Saga パターン実装（AI 生成タスクから開始）
    - 全体統合テスト
 
 ## 会話・設計方針
@@ -274,7 +291,9 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - **マイクロサービス**: 最初から分離（cargo workspace monorepo）
 - **イベント駆動**: 集約間は疎結合
 - **CQRS/ES**: 適切な箇所で採用（Progress Context など）
+- **Saga パターン**: 分散トランザクション管理（AI 生成タスクなど）
 - **シンプル優先**: 過度な抽象化を避ける
+- **適材適所**: 全てを非同期にせず、UX を考慮して同期/非同期を選択
 
 ### 決定事項
 
@@ -282,6 +301,8 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - 通知機能: 実装しない
 - UI: 日本語固定、タイムゾーン JST 固定
 - テスト: 1 セッション最大 100 問（設定可能）、約 25 分
+- 対応試験: IELTS、TOEFL 等（IELTS だけに特化しない）
+- ItemsSelected: 同期通信（UX 優先の設計判断）
 
 ## 再開時のチェックリスト
 
@@ -291,8 +312,13 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 4. 改善成果を確認:
    - `/docs/ddd/strategic/context-map.md` - 戦略的分類の詳細
    - `/docs/ddd/design/event-consistency-analysis.md` - イベント命名規則
-   - `/docs/ddd/design/progress-context-projection-mapping.md` - プロジェクション設計
-5. 次のステップ（Bounded Context Canvas 作成）を開始
+   - `/docs/ddd/design/projections/progress-context-projection-mapping.md` - プロジェクション設計
+5. Bounded Context Canvas を確認:
+   - `/docs/ddd/design/bounded-context-canvas/template.md` - Canvas テンプレート
+   - `/docs/ddd/design/bounded-context-canvas/learning-context.md` - 作成済み Canvas
+6. Saga パターンの使用機会を確認:
+   - `/docs/ddd/design/saga-pattern-opportunities.md` - 実装機会の分析
+7. 次のステップ（残りの Bounded Context Canvas 作成）を継続
 
 ## 関連ドキュメント
 
@@ -311,7 +337,10 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
 - `/docs/ddd/design/event-storming-design-level/`（各コンテキストの設計）
 - `/docs/ddd/design/aggregate-identification.md`
+- `/docs/ddd/design/repositories/`（リポジトリ設計）
 - `/docs/ddd/design/projections/progress-context-projection-mapping.md`
+- `/docs/ddd/design/bounded-context-canvas/`（Canvas 設計）
+- `/docs/ddd/design/saga-pattern-opportunities.md`（Saga パターン分析）
 
 ## メモ
 
