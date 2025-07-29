@@ -130,17 +130,14 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ### 直近の作業内容（2025-07-27 〜 2025-07-29）
 
 1. **ドキュメント整理**
-
    - 古いファイルを `docs/archive/` フォルダに移動
    - README.md を更新して現在の構成を明確化
 
 2. **集約の可視化**
-
    - 3 つの PlantUML 図を作成（overview、relationships、event-flow）
    - 集約間の関係性を明確化
 
 3. **設計上の課題解決**
-
    - UserItemRecord と ItemLearningRecord の責務分析
    - 現状維持（責務分離）を推奨する結論
 
@@ -149,36 +146,120 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - 全コンテキストのリポジトリインターフェース定義
    - Progress Context のプロジェクション簡素化（ストリーク追跡の統合）
 
+5. **既存成果の改善**
+   - 戦略的分類の詳細化（各コンテキストの分類理由を明確化）
+   - イベント整合性分析（命名規則の統一案を提示）
+   - Progress Context プロジェクション設計の詳細化（GraphQL マッピング）
+
 ## 今後の作業
 
-### 直近のタスク
+### Phase 4: Design - 既存成果の改善 ✅ 完了
 
-1. **Phase 4: Design - ドメインサービスの設計**（必要に応じて）
-   - 各コンテキストのドメインサービス特定
-   - サービスインターフェースの定義
+1. **戦略的分類の詳細化**
+   - `/docs/ddd/strategic/context-map.md` に各コンテキストの分類理由を追記
+   - Core Domain の判定基準と差別化要因を明確化
 
-2. **Phase 5: Implementation - 技術選定と設計**
-   - 技術スタックの選定（Rust、データベース、メッセージブローカー等）
-   - プロジェクト構造の設計（cargo workspace 構成）
-   - インフラストラクチャ層の設計
-   - API 設計（GraphQL/REST）
+2. **イベント整合性の確認**
+   - `/docs/ddd/design/event-consistency-analysis.md` でイベント一覧と命名規則を分析
+   - 命名規則の統一案を提示
 
-### 実装フェーズの検討事項
+3. **Progress Context プロジェクション設計の詳細化**
+   - `/docs/ddd/design/progress-context-projection-mapping.md` で GraphQL との対応を文書化
+   - 各プロジェクションの責務とクエリマッピングを明確化
 
-1. **マイクロサービス構成**
-   - cargo workspace を使用したモノレポ構成
-   - 各コンテキストを独立したクレートとして実装
-   - 共通ライブラリの設計
+### Phase 4: Design - Bounded Context Canvas（次のステップ）
 
-2. **イベント駆動アーキテクチャ**
-   - イベントバスの実装方針
-   - イベントストアの選定（Progress Context 用）
-   - 集約間通信の実装
+1. **各コンテキストの責務と境界の明確化**
+   - Core Domain（Learning, Learning Algorithm, Vocabulary）から優先的に作成
+   - Purpose、Strategic Classification、Business Decisions の定義
+   - Inbound/Outbound Communication の明確化
+   - Ubiquitous Language の確認
 
-3. **永続化戦略**
-   - 各コンテキストのデータベース選定
-   - リポジトリパターンの実装
-   - トランザクション管理
+2. **作成順序案**
+   - Learning Context → Learning Algorithm Context → Vocabulary Context
+   - User Context → Progress Context → AI Integration Context
+
+### Phase 4: Design - ドメインサービス設計（必要に応じて）
+
+1. **既に識別されているドメインサービス**
+   - Learning Algorithm Context: `SM2Calculator`, `PerformanceAnalyzer`
+   - AI Integration Context: `AIServiceAdapter`
+
+2. **他のコンテキストでの検討**
+   - 各コンテキストで必要なドメインサービスを特定
+   - インターフェース設計
+
+### Phase 4: Design - Aggregate Design Canvas（必要に応じて）
+
+1. **重要な集約の詳細設計**
+   - `LearningSession`（Learning Context）
+   - `VocabularyEntry`（Vocabulary Context）
+   - State Transitions、Invariants の文書化
+
+### Phase 5: Implementation - 技術選定
+
+1. **基本技術スタック**
+   - 言語: Rust
+   - Web フレームワーク: 検討中（Axum, Actix-web 等）
+   - GraphQL: async-graphql
+   - 認証: Firebase Auth
+
+2. **データ永続化**
+   - RDB: PostgreSQL（Vocabulary, User Context）
+   - イベントストア: 検討中（EventStore, PostgreSQL + カスタム実装）
+   - キャッシュ: Redis
+
+3. **メッセージング**
+   - イベントバス: 検討中（NATS, RabbitMQ, カスタム実装）
+   - 非同期処理: Tokio
+
+### Phase 5: Implementation - プロジェクト構造設計
+
+1. **cargo workspace 構成**
+
+   ```
+   effect/
+   ├── Cargo.toml (workspace)
+   ├── contexts/
+   │   ├── learning/
+   │   ├── learning-algorithm/
+   │   ├── vocabulary/
+   │   ├── user/
+   │   ├── progress/
+   │   └── ai-integration/
+   ├── shared/
+   │   ├── domain-events/
+   │   ├── common-types/
+   │   └── infrastructure/
+   └── applications/
+       ├── api-gateway/
+       └── event-processor/
+   ```
+
+2. **共通ライブラリ設計**
+   - ドメインイベント定義
+   - 共通型（UserId, ItemId 等）
+   - インフラストラクチャ抽象化
+
+### 実装フェーズの優先順位
+
+1. **Phase 1: 基盤構築**
+   - プロジェクト構造のセットアップ
+   - 共通ライブラリの実装
+   - CI/CD パイプライン
+
+2. **Phase 2: Core Domain 実装**
+   - Learning Context
+   - Vocabulary Context
+   - 基本的な GraphQL API
+
+3. **Phase 3: アルゴリズムと分析**
+   - Learning Algorithm Context
+   - Progress Context（イベントソーシング）
+
+4. **Phase 4: 統合と拡張**
+   - AI Integration Context
+   - 全体統合テスト
 
 ## 会話・設計方針
 
@@ -207,7 +288,11 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 1. このドキュメントを読んで全体像を把握
 2. `/docs/ddd/design/aggregate-identification.md` で集約設計を確認
 3. `/docs/ddd/design/repositories/` でリポジトリ設計を確認
-4. 次のステップ（ドメインサービス設計 or 実装フェーズ）を決定
+4. 改善成果を確認:
+   - `/docs/ddd/strategic/context-map.md` - 戦略的分類の詳細
+   - `/docs/ddd/design/event-consistency-analysis.md` - イベント命名規則
+   - `/docs/ddd/design/progress-context-projection-mapping.md` - プロジェクション設計
+5. 次のステップ（Bounded Context Canvas 作成）を開始
 
 ## 関連ドキュメント
 
@@ -224,8 +309,9 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
 ### 詳細設計
 
-- `/docs/ddd/design/*/event-storming-design-level.md`（各コンテキスト）
+- `/docs/ddd/design/event-storming-design-level/`（各コンテキストの設計）
 - `/docs/ddd/design/aggregate-identification.md`
+- `/docs/ddd/design/projections/progress-context-projection-mapping.md`
 
 ## メモ
 

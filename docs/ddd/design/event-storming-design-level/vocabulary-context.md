@@ -144,7 +144,7 @@ pub enum CreationMethod {
 ### ドメインイベント（オレンジの付箋 🟠）
 
 ```rust
-pub enum VocabularyDomainEvent {
+pub enum VocabularyEvent {
     // エントリー関連
     EntryCreated {
         event_id: EventId,
@@ -448,7 +448,7 @@ when CreateItemCommand {
 ### AI生成完了ポリシー
 
 ```rust
-when AIGenerationCompletedEvent {
+when AIIntegrationEvent::GenerationCompleted {
     if item.status == PendingAI {
         apply_ai_content()
         update_status(Published)

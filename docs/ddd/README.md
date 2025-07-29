@@ -35,12 +35,12 @@ Effect は、英語語彙学習プラットフォームです（IELTS 対策）�
 
 #### EventStorming Design Level（各コンテキスト）
 
-- [Learning Context](./design/learning-context/event-storming-design-level.md)
-- [Vocabulary Context](./design/vocabulary-context/event-storming-design-level.md)
-- [Learning Algorithm Context](./design/learning-algorithm-context/event-storming-design-level.md)
-- [Progress Context](./design/progress-context/event-storming-design-level.md)
-- [AI Integration Context](./design/ai-integration-context/event-storming-design-level.md)
-- [User Context](./design/user-context/event-storming-design-level.md)
+- [Learning Context](./design/event-storming-design-level/learning-context.md)
+- [Vocabulary Context](./design/event-storming-design-level/vocabulary-context.md)
+- [Learning Algorithm Context](./design/event-storming-design-level/learning-algorithm-context.md)
+- [Progress Context](./design/event-storming-design-level/progress-context.md)
+- [AI Integration Context](./design/event-storming-design-level/ai-integration-context.md)
+- [User Context](./design/event-storming-design-level/user-context.md)
 
 #### 集約設計
 

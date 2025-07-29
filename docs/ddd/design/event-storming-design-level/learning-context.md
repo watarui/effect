@@ -174,7 +174,7 @@ pub enum SelectionStrategy {
 ### ドメインイベント（オレンジの付箋 🟠）
 
 ```rust
-pub enum LearningDomainEvent {
+pub enum LearningEvent {
     // 項目選定関連（新規追加）
     ItemSelectionRequested {
         event_id: EventId,
@@ -328,14 +328,14 @@ stateDiagram-v2
 // セッション開始時に項目選定を要求
 when StartSessionCommand {
     // まず項目選定を要求
-    emit ItemSelectionRequestedEvent {
+    emit LearningEvent::ItemSelectionRequested {
         strategy: command.session_config.selection_strategy,
         requested_count: command.session_config.item_count,
     }
 }
 
 // 項目が選定されたらセッションを開始
-when ItemsSelectedEvent {
+when LearningEvent::ItemsSelected {
     // 選定された項目でセッションを作成
     create_session_with_items(event.selected_items)
     emit SessionStartedEvent
@@ -359,7 +359,7 @@ when AnswerRevealedEvent && trigger == UserRequested {
 
 ```rust
 // 正答・不正答の判定ロジック
-when CorrectnessJudgedEvent {
+when LearningEvent::CorrectnessJudged {
     match (answer_reveal_trigger, judgment) {
         // ユーザーが自発的に解答表示 → わかった/自動 = 正解
         (UserRequested, UserConfirmedCorrect) => mark_as_correct(),

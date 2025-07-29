@@ -183,7 +183,7 @@ pub enum UserCommand {
 ### ドメインイベント（オレンジの付箋 🟠）
 
 ```rust
-pub enum UserDomainEvent {
+pub enum UserEvent {
     // 認証イベント
     UserSignedUp {
         event_id: EventId,
@@ -327,7 +327,7 @@ when DeleteAccountCommand {
 }
 
 // カスケード削除
-when AccountDeletedEvent {
+when UserEvent::AccountDeleted {
     trigger_cascade_deletion_in_all_contexts()
 }
 ```
@@ -441,18 +441,18 @@ impl LearningContext {
 
 ```rust
 // User → Progress Context
-when UserSignedUpEvent {
+when UserEvent::UserSignedUp {
     initialize_user_progress()
     create_default_statistics()
 }
 
 // User → Learning Algorithm Context
-when DifficultyPreferenceUpdatedEvent {
+when UserEvent::ProfileUpdated {
     adjust_item_selection_difficulty()
 }
 
 // User → 全コンテキスト
-when AccountDeletedEvent {
+when UserEvent::AccountDeleted {
     trigger_cascade_deletion()
     anonymize_all_data()
 }

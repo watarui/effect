@@ -362,7 +362,7 @@ pub enum LearningAlgorithmEvent {
 
 ```rust
 // 品質評価に基づくスケジュール更新
-when ReviewRecordedEvent {
+when LearningAlgorithmEvent::ReviewRecorded {
     if quality >= 3 {
         // 成功 → 間隔を延ばす
         calculate_next_interval()
@@ -371,7 +371,7 @@ when ReviewRecordedEvent {
         // 失敗 → リセット
         reset_to_learning_phase()
     }
-    emit ScheduleUpdatedEvent
+    emit LearningAlgorithmEvent::ScheduleUpdated
 }
 ```
 
@@ -389,7 +389,7 @@ when SelectItemsCommand {
     // 3. 重複や除外項目をフィルタ
     filter_invalid_items()
     
-    emit ItemsSelectedEvent
+    emit LearningAlgorithmEvent::ItemsSelected
 }
 ```
 
@@ -397,12 +397,12 @@ when SelectItemsCommand {
 
 ```rust
 // セッション完了時の戦略調整
-when SessionCompletedEvent {
+when LearningEvent::SessionCompleted {
     calculate_session_accuracy()
     
     if should_adjust_strategy(accuracy) {
         adjust_strategy_ratios()
-        emit StrategyAdjustedEvent
+        emit LearningAlgorithmEvent::StrategyAdjusted
     }
 }
 
@@ -661,12 +661,12 @@ StatisticsUpdatedEvent {
 impl EventHandler for LearningAlgorithmContext {
     async fn handle(&self, event: LearningDomainEvent) -> Result<()> {
         match event {
-            LearningDomainEvent::CorrectnessJudged { user_id, item_id, judgment, .. } => {
+            LearningEvent::CorrectnessJudged { user_id, item_id, judgment, .. } => {
                 // 品質を計算してレビューを記録
                 let quality = self.calculate_quality(judgment);
                 self.record_review(user_id, item_id, quality).await?;
             }
-            LearningDomainEvent::SessionCompleted { user_id, .. } => {
+            LearningEvent::SessionCompleted { user_id, .. } => {
                 // パフォーマンスを更新
                 self.update_user_performance(user_id).await?;
             }

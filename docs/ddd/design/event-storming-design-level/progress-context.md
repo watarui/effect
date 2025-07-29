@@ -521,7 +521,7 @@ type CategoryProgress {
 
 ```rust
 // 日別統計は即座に更新
-when SessionCompletedEvent || ItemReviewedEvent {
+when LearningEvent::SessionCompleted || LearningAlgorithmEvent::ReviewRecorded {
     update DailyStatsProjection immediately
 }
 
