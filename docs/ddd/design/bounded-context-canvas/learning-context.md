@@ -60,7 +60,7 @@ Learning Context
 | SessionStarted         | Progress Context           | 非同期     | セッション開始を通知       |
 | SessionCompleted       | Progress Context           | 非同期     | セッション完了と結果を通知 |
 | CorrectnessJudged      | Learning Algorithm Context | 非同期     | 項目の正誤判定結果を通知   |
-| ItemSelectionRequested | Learning Algorithm Context | 非同期     | 新しい項目の選定を要求     |
+| ItemSelectionRequested | Learning Algorithm Context | 同期       | 新しい項目の選定を要求     |
 
 ### 統合パターン
 
@@ -157,3 +157,6 @@ Learning Context
   - 理由：UX の一貫性を優先（学習開始時に即座に項目リストが必要）
   - 非同期パターンの学習は他の箇所（Progress Context のイベントソーシング、ドメインイベント発行）で十分に実践可能
   - アーキテクチャの適材適所（全てを非同期にする必要はない）という設計判断も重要な学習要素
+- 2025-07-30: ItemSelectionRequested を非同期から同期に変更
+  - 理由：Learning Algorithm Context との整合性を保つ
+  - セッション中の項目選定は即座の応答が必要

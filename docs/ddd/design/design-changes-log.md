@@ -9,6 +9,18 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-07-29: Learning Algorithm Context Canvas 作成
+
+- **変更内容**: Learning Algorithm Context の Bounded Context Canvas を作成
+- **決定事項**:
+  - ItemsSelected は同期通信として確定（Learning Context との整合性）
+  - Partnership パターンの詳細を定義
+  - SM-2 アルゴリズムの詳細仕様を文書化
+  - 85% ルールによる動的調整を明確化
+- **影響範囲**:
+  - 項目選定ロジックの実装方針
+  - Learning Context との統合設計
+
 ### 2025-07-29: ItemsSelected の同期化
 
 - **変更内容**: ItemsSelected を非同期から同期に変更
