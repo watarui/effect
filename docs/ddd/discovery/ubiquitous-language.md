@@ -245,7 +245,8 @@ pub enum DomainEvent {
 
 ### 語彙管理イベント（VocabularyEvent）
 
-- 項目が登録された（ItemRegistered）
+- エントリーが作成された（EntryCreated）
+- 項目が作成された（ItemCreated）
 - AI情報生成がリクエストされた（AIGenerationRequested）
 - AI情報が生成された（AIInfoGenerated）
 

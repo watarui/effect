@@ -231,12 +231,13 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ### 中優先度
 
-12. **イベント名の不統一（詳細）**
+~~12. **イベント名の不統一（詳細）**~~ （2025-07-30 完了）
 
-- ubiquitous-language.md：`VocabularyItemRegistered`（line 238）
-- context-map.md：`ItemRegistered`（line 257）
-- vocabulary-context.md：異なるイベント体系
-- 内容：プレフィックスルールを決定（例：`{Context}_{Action}`）
+    ~~- ubiquitous-language.md：`VocabularyItemRegistered`（line 238）~~
+    ~~- context-map.md：`ItemRegistered`（line 257）~~
+    ~~- vocabulary-context.md：異なるイベント体系~~
+    ~~- 内容：プレフィックスルールを決定（例：`{Context}_{Action}`）~~
+    - 注記: 調査の結果、DomainEvent wrapper パターンが既に採用済み。ubiquitous-language.md を実装に合わせて修正（ItemCreated、EntryCreated）
 
 13. **セッション時間の不整合**
 
