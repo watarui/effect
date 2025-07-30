@@ -169,15 +169,16 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ### 中優先度
 
-4. **集約の責務説明の明確化**
+~~4. **集約の責務説明の明確化**~~ （既に対応済み）
 
-   - 対象: `/docs/ddd/design/aggregate-identification.md`
-   - 内容: UserItemRecord と ItemLearningRecord の責務の違いを明確に説明
+    ~~- 対象: `/docs/ddd/design/aggregate-identification.md`~~
+    ~~- 内容: UserItemRecord と ItemLearningRecord の責務の違いを明確に説明~~
+    - 注記: aggregate-identification.md の 201-208 行目に既に明確な説明がある
 
 5. **Progress Context の責務範囲**
 
-   - 対象: `/docs/ddd/strategic/bounded-contexts.md`
-   - 内容: 最新の設計（純粋なイベントソーシング）に合わせて更新
+- 対象: `/docs/ddd/strategic/bounded-contexts.md`
+- 内容: 最新の設計（純粋なイベントソーシング）に合わせて更新
 
 6. **AI Integration Context の戦略的分類**
    - 対象: `/docs/ddd/strategic/context-map.md`
@@ -201,11 +202,12 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ### 高優先度
 
-9. **Progress Context の設計不整合**
+~~9. **Progress Context の設計不整合**~~ （既に対応済み）
 
-   - bounded-contexts.md：統計計算の責務あり（line 101-104）
-   - progress-context.md：純粋なイベントソーシング、集約なし（line 26-28）
-   - 内容：Progress Context は集約を持たない純粋な Read Model として統一すべき
+    ~~- bounded-contexts.md：統計計算の責務あり（line 101-104）~~
+    ~~- progress-context.md：純粋なイベントソーシング、集約なし（line 26-28）~~
+    ~~- 内容：Progress Context は集約を持たない純粋な Read Model として統一すべき~~
+    - 注記: bounded-contexts.md は既に簡素化され、Progress Context は「CQRS/Event Sourcing パターン」として正しく記載
 
 10. **Vocabulary Context の設計アプローチ不整合**
 
