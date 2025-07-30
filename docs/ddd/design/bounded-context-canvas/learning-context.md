@@ -140,6 +140,8 @@ Learning Context
 - [ ] セッション中断時の部分保存は必要か？
 - [ ] 学習モード（速習/じっくり）の追加は必要か？
 - [ ] 項目の難易度をリアルタイムで調整すべきか？
+- [ ] AI によるテストカスタマイズ機能を追加するか？（自然言語での指示）
+- [ ] 深掘りチャット機能を学習セッションに統合するか？
 
 ### 実装上の課題
 
@@ -160,3 +162,6 @@ Learning Context
 - 2025-07-30: ItemSelectionRequested を非同期から同期に変更
   - 理由：Learning Algorithm Context との整合性を保つ
   - セッション中の項目選定は即座の応答が必要
+- 2025-07-30: AI 機能（カスタマイズ、チャット）を Open Questions に追加
+  - 現時点では Learning Context は AI Integration Context と直接連携なし
+  - 将来的な拡張可能性として記載

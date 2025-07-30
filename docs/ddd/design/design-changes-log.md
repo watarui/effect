@@ -28,6 +28,24 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
   - Vocabulary Context、Learning Context との統合パターンが変更
   - リポジトリ設計に TaskQueue の永続化が必要
 
+### 2025-07-30: AI Integration Context 非同期化に伴う整合性修正
+
+- **変更内容**: 非同期化に伴う関連ドキュメントの整合性修正
+- **決定事項**:
+  - AI Integration Context リポジトリ設計に TaskQueueRepository と NotificationRepository を追加
+  - Vocabulary Context に TaskCreatedAck とタスク ID 管理を追加
+  - Learning Context に AI 機能の将来拡張を Open Questions として記載
+  - context-map.md の統合パターンを Event-Driven に更新
+- **理由**:
+  - 非同期処理の実装に必要な永続化設計を明確化
+  - タスク ID による非同期処理の追跡を可能に
+  - WebSocket/SSE によるリアルタイム通知の基盤を整備
+- **影響範囲**:
+  - repositories/ai-integration-context-repositories.md: 3 つのリポジトリインターフェースを定義
+  - bounded-context-canvas/vocabulary-context.md: タスク管理の追記
+  - bounded-context-canvas/learning-context.md: 将来拡張の明記
+  - strategic/context-map.md: Event-Driven Partnership への更新
+
 ### 2025-07-30: Progress Context Canvas 作成と IELTS スコア推定の見直し
 
 - **変更内容**: Progress Context の Bounded Context Canvas を作成
@@ -85,22 +103,28 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ### 高優先度
 
-0. **AI Integration Context の非同期化に伴う関連更新**
-   - 対象: `/docs/ddd/design/repositories/ai-integration-context-repositories.md`
-   - 内容: TaskQueueRepository の追加、非同期処理のための永続化設計
-   - 理由: TaskQueue 集約の永続化が必要
+~~0. **AI Integration Context の非同期化に伴う関連更新**~~ （2025-07-30 完了）
+
+~~- 対象: `/docs/ddd/design/repositories/ai-integration-context-repositories.md`~~
+
+~~- 内容: TaskQueueRepository の追加、非同期処理のための永続化設計~~
+
+~~- 理由: TaskQueue 集約の永続化が必要~~
 
 1. **IELTS スコア推定の除外**
+
    - 対象: `/docs/ddd/design/event-storming-design-level/progress-context.md`
    - 内容: IeltsEstimation 関連のコード・ロジックを削除または Open Questions へ移動
    - 理由: Canvas での決定事項を反映
 
 2. **ItemsSelected の同期化**
+
    - 対象: `/docs/ddd/design/event-storming-design-level/learning-context.md`
    - 対象: `/docs/ddd/design/event-storming-design-level/learning-algorithm-context.md`
    - 内容: 非同期イベントから同期 API 呼び出しに変更
 
 3. **コンテキスト間の関係パターン**
+
    - 対象: `/docs/ddd/strategic/context-map.md`
    - 内容: Learning Context と Learning Algorithm Context の関係を Partnership に更新
    - 内容: AI Integration Context との関係を Event-Driven に更新
@@ -112,10 +136,12 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 ### 中優先度
 
 4. **集約の責務説明の明確化**
+
    - 対象: `/docs/ddd/design/aggregate-identification.md`
    - 内容: UserItemRecord と ItemLearningRecord の責務の違いを明確に説明
 
 5. **Progress Context の責務範囲**
+
    - 対象: `/docs/ddd/strategic/bounded-contexts.md`
    - 内容: 最新の設計（純粋なイベントソーシング）に合わせて更新
 
@@ -126,6 +152,7 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 ### 低優先度
 
 7. **ドメイン用語の統一**
+
    - 対象: 全ドキュメント
    - 内容:
      - 「項目」→「Item」に統一
@@ -141,6 +168,7 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 ### 高優先度
 
 9. **Progress Context の設計不整合**
+
    - bounded-contexts.md：統計計算の責務あり（line 101-104）
    - progress-context.md：純粋なイベントソーシング、集約なし（line 26-28）
    - 内容：Progress Context は集約を持たない純粋な Read Model として統一すべき
@@ -168,8 +196,8 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 13. **セッション時間の不整合**
 
-- ubiquitous-language.md：25分のポモドーロ単位（line 101）
-- learning-context.md：最大100問（設定可能）、約25分（line 18）
+- ubiquitous-language.md：25 分のポモドーロ単位（line 101）
+- learning-context.md：最大 100 問（設定可能）、約 25 分（line 18）
 - 内容：時間ベースか問題数ベースかを明確化
 
 14. **共有カーネルの定義場所**
@@ -218,21 +246,22 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 更新対象ドキュメント一覧
 
-| ドキュメント | 更新内容 | 優先度 | 備考 |
-|------------|---------|--------|------|
-| `/docs/ddd/strategic/context-map.md` | コンテキスト関係、AI の分類 | 高 | 全体像に影響 |
-| `/docs/ddd/design/event-storming-design-level/learning-context.md` | ItemsSelected の同期化 | 高 | 実装に直接影響 |
-| `/docs/ddd/design/event-storming-design-level/learning-algorithm-context.md` | ItemsSelected の同期化 | 高 | 実装に直接影響 |
-| `/docs/ddd/strategic/bounded-contexts.md` | Progress Context の責務 | 中 | 概念理解に影響 |
-| `/docs/ddd/design/aggregate-identification.md` | 集約の責務説明 | 中 | 設計理解に影響 |
-| `/docs/ddd/discovery/ubiquitous-language.md` | 用語の統一 | 低 | 可読性向上 |
-| 各 event-storming ドキュメント | イベント名の統一 | 低 | 一貫性向上 |
+| ドキュメント                                                                 | 更新内容                    | 優先度 | 備考           |
+| ---------------------------------------------------------------------------- | --------------------------- | ------ | -------------- |
+| `/docs/ddd/strategic/context-map.md`                                         | コンテキスト関係、AI の分類 | 高     | 全体像に影響   |
+| `/docs/ddd/design/event-storming-design-level/learning-context.md`           | ItemsSelected の同期化      | 高     | 実装に直接影響 |
+| `/docs/ddd/design/event-storming-design-level/learning-algorithm-context.md` | ItemsSelected の同期化      | 高     | 実装に直接影響 |
+| `/docs/ddd/strategic/bounded-contexts.md`                                    | Progress Context の責務     | 中     | 概念理解に影響 |
+| `/docs/ddd/design/aggregate-identification.md`                               | 集約の責務説明              | 中     | 設計理解に影響 |
+| `/docs/ddd/discovery/ubiquitous-language.md`                                 | 用語の統一                  | 低     | 可読性向上     |
+| 各 event-storming ドキュメント                                               | イベント名の統一            | 低     | 一貫性向上     |
 
 ## Canvas 完成後の更新計画
 
-### Phase 1: 重要な概念の更新（1-2時間）
+### Phase 1: 重要な概念の更新（1-2 時間）
 
 1. context-map.md の更新
+
    - コンテキスト間の関係を最新化
    - 戦略的分類を統一
 
@@ -240,18 +269,20 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
    - 関連する event-storming ドキュメントを更新
    - 統合パターンの説明を修正
 
-### Phase 2: 責務と境界の明確化（1-2時間）
+### Phase 2: 責務と境界の明確化（1-2 時間）
 
 3. bounded-contexts.md の更新
+
    - 各コンテキストの責務を最新化
    - 特に Progress Context の簡素化を反映
 
 4. aggregate-identification.md の更新
    - 集約間の責務の違いを明確に説明
 
-### Phase 3: 詳細の統一（1時間）
+### Phase 3: 詳細の統一（1 時間）
 
 5. イベント名の統一
+
    - 命名規則を決定
    - 全ドキュメントで統一
 
@@ -286,15 +317,15 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 - **技術的検討事項**:
   - **ストレージ**: AWS S3 を想定（他の選択肢：Google Cloud Storage、Azure Blob）
-  - **CDN配信**: CloudFront で配信（キャッシュとパフォーマンス最適化）
+  - **CDN 配信**: CloudFront で配信（キャッシュとパフォーマンス最適化）
   - **アクセス制御**:
-    - 公開アクセス（CDN経由）
-    - または署名付きURL（期限付きアクセス）
+    - 公開アクセス（CDN 経由）
+    - または署名付き URL（期限付きアクセス）
   - **ファイル形式**:
     - 画像：WebP、JPEG、PNG
     - 音声：MP3、AAC（ブラウザ互換性を考慮）
   - **アップロード処理**:
-    - 直接アップロード or API経由
+    - 直接アップロード or API 経由
     - ファイルサイズ制限
     - ウイルススキャン
 - **他コンテキストへの影響**:
@@ -311,11 +342,13 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 **理由**：
 
 1. **学習目標から外れる**
+
    - DDD/CQRS/Event Sourcing の本質的な学習には寄与しない
    - インフラ層の実装に時間を取られ、ドメインロジックの学習が疎かになる
    - ファイルアップロード処理は定型的で学習価値が低い
 
 2. **実装の複雑さとコスト**
+
    - マルチパートアップロードの実装
    - ファイル検証、サイズ制限、ウイルススキャン
    - ストレージ料金、CDN 転送料金（少量なら無料枠内だが）
@@ -326,7 +359,7 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
    ```rust
    // 案1: 外部URLを直接参照（実装なし）
    image_url: Option<String>,  // "https://example.com/apple.jpg"
-   
+
    // 案2: テキスト説明のみ（AI生成時に使用）
    image_description: Option<String>,  // "赤いリンゴのイラスト"
    pronunciation_guide: Option<String>,  // "/ˈæp.əl/" (IPA表記)

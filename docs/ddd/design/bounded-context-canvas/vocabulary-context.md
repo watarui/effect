@@ -62,6 +62,7 @@ AI と連携して豊富な語彙情報を自動生成し、全ユーザーが�
 | VocabularyItemUpdated    | Progress Context       | 非同期     | 語彙項目の更新通知            |
 | RequestAIGeneration      | AI Integration Context | 非同期     | AI コンテンツ生成要求         |
 | ItemDetails              | Learning Context       | 同期       | 語彙項目の詳細情報レスポンス   |
+| TaskCreatedAck           | AI Integration Context | 同期       | AI タスク ID の受領確認        |
 
 ### 統合パターン
 
@@ -120,6 +121,7 @@ Wikipedia 方式により、1 つのスペリングに複数の意味を持た�
 ### 技術的前提
 
 - AI サービスは非同期で動作し、遅延やエラーが発生しうる
+- AI タスク ID を保持し、生成状態を追跡可能
 - 楽観的ロックのためのバージョン管理が可能
 - 全文検索インデックスの構築が可能
 - 大規模データ（数万〜数十万項目）への対応
@@ -162,6 +164,7 @@ Wikipedia 方式により、1 つのスペリングに複数の意味を持た�
 
 - [ ] 大規模データでの検索性能の最適化方法は？
 - [ ] AI 生成の優先順位付けアルゴリズムは？
+- [ ] AI タスク ID と生成状態の永続化方法は？
 - [ ] 変更履歴の保持期間とアーカイブ戦略は？
 - [ ] 外部辞書 API との連携は必要か？
 
@@ -170,3 +173,4 @@ Wikipedia 方式により、1 つのスペリングに複数の意味を持た�
 ## 改訂履歴
 
 - 2025-07-30: 初版作成
+- 2025-07-30: AI Integration Context の非同期化に伴う更新（TaskCreatedAck 追加、AI タスク ID 管理を明記）

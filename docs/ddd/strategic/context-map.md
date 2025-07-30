@@ -76,10 +76,13 @@ graph TB
 
 #### → AI Integration Context
 
-- **関係パターン**: Customer-Supplier
+- **関係パターン**: Event-Driven Customer-Supplier（将来実装）
 - **内容**: テストカスタマイズ要求（"Speaking項目多めで"など）
-- **統合方式**: 非同期API
-- **備考**: AI がテスト項目を選定
+- **統合方式**: 非同期イベント駆動
+- **備考**:
+  - 現時点では未実装
+  - 将来的にAIがテスト項目を選定
+  - タスクIDによる非同期処理管理
 
 #### → Learning Algorithm Context
 
@@ -111,26 +114,33 @@ graph TB
 
 #### → AI Integration Context
 
-- **関係パターン**: Customer-Supplier
-- **内容**: 項目情報生成を要求
-- **統合方式**: 非同期API
-- **備考**: AI Integration は生データを返し、Vocabulary が自モデルに変換
+- **関係パターン**: Event-Driven Partnership
+- **内容**: 項目情報生成を要求、タスクIDを受領
+- **統合方式**: 非同期イベント駆動（タスクキュー経由）
+- **備考**:
+  - 即座にタスクIDを返却
+  - WebSocket/SSE でリアルタイム進捗通知
+  - AI Integration は生データを返し、Vocabulary が自モデルに変換
 
 ### 5. AI Integration Context の関係
 
 #### → Learning Context
 
-- **関係パターン**: Service Provider
+- **関係パターン**: Event-Driven Service Provider
 - **内容**:
-  - 選定されたテスト項目
-  - 深掘りチャットの応答
-- **統合方式**: 非同期API
+  - 選定されたテスト項目（将来実装）
+  - 深掘りチャットの応答（将来実装）
+- **統合方式**: 非同期イベント駆動
+- **備考**: 現時点では直接連携なし、将来の拡張として検討
 
 #### → Vocabulary Context
 
-- **関係パターン**: Service Provider
+- **関係パターン**: Event-Driven Service Provider
 - **内容**: 生成された項目情報（無加工データ）
-- **統合方式**: 非同期API
+- **統合方式**: 非同期イベント駆動
+- **備考**:
+  - TaskCompleted イベントで結果通知
+  - WebSocket/SSE でリアルタイム更新
 
 ### 6. Progress Context の関係
 
