@@ -9,6 +9,25 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-07-30: AI Integration Context の完全非同期化
+
+- **変更内容**: AI Integration Context を完全非同期処理（イベント駆動アーキテクチャ）に変更
+- **決定事項**:
+  - 全ての AI 要求を非同期処理に変更（即座にタスク ID を返却）
+  - WebSocket/SSE によるリアルタイム進捗通知を実装
+  - TaskQueue 集約を追加してタスク管理を強化
+  - ProcessingMode を最初から Asynchronous に設定
+- **理由**:
+  - より良いユーザー体験（待ち時間中も他の操作が可能）
+  - スケーラビリティの向上（大量の AI 要求を並列処理）
+  - エラー耐性の向上（タスクキューによるリトライ管理）
+  - 学習を妨げない（AI 生成中も学習セッションを継続可能）
+- **影響範囲**:
+  - bounded-context-canvas/ai-integration-context.md を更新
+  - event-storming-design-level/ai-integration-context.md を更新
+  - Vocabulary Context、Learning Context との統合パターンが変更
+  - リポジトリ設計に TaskQueue の永続化が必要
+
 ### 2025-07-30: Progress Context Canvas 作成と IELTS スコア推定の見直し
 
 - **変更内容**: Progress Context の Bounded Context Canvas を作成
@@ -66,21 +85,27 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ### 高優先度
 
-0. **IELTS スコア推定の除外**
+0. **AI Integration Context の非同期化に伴う関連更新**
+   - 対象: `/docs/ddd/design/repositories/ai-integration-context-repositories.md`
+   - 内容: TaskQueueRepository の追加、非同期処理のための永続化設計
+   - 理由: TaskQueue 集約の永続化が必要
+
+1. **IELTS スコア推定の除外**
    - 対象: `/docs/ddd/design/event-storming-design-level/progress-context.md`
    - 内容: IeltsEstimation 関連のコード・ロジックを削除または Open Questions へ移動
    - 理由: Canvas での決定事項を反映
 
-1. **ItemsSelected の同期化**
+2. **ItemsSelected の同期化**
    - 対象: `/docs/ddd/design/event-storming-design-level/learning-context.md`
    - 対象: `/docs/ddd/design/event-storming-design-level/learning-algorithm-context.md`
    - 内容: 非同期イベントから同期 API 呼び出しに変更
 
-2. **コンテキスト間の関係パターン**
+3. **コンテキスト間の関係パターン**
    - 対象: `/docs/ddd/strategic/context-map.md`
    - 内容: Learning Context と Learning Algorithm Context の関係を Partnership に更新
+   - 内容: AI Integration Context との関係を Event-Driven に更新
 
-3. **イベント名の統一**
+4. **イベント名の統一**
    - 対象: 全 event-storming-design-level ドキュメント
    - 内容: 命名規則の統一（例: SessionStarted → LearningSessionStarted）
 

@@ -15,7 +15,8 @@ OpenAI、Gemini などの AI サービスを抽象化し、Anti-Corruption Layer
 ### 設計方針
 
 - **機能別インターフェース**: 各機能に最適なプロバイダーを選択可能
-- **同期的処理**: タイムアウト付きの同期処理を基本とする（将来的に非同期化可能）
+- **非同期処理**: イベント駆動アーキテクチャによる完全非同期処理
+- **リアルタイム通知**: WebSocket/SSE による進捗・完了通知
 - **エラー回復**: Circuit Breaker とリトライによる安定性確保
 - **Anti-Corruption Layer**: 外部 API の詳細を内部ドメインから隠蔽
 
@@ -114,6 +115,47 @@ pub struct ChatContext {
     item_details: ItemSummary,
     user_level: Option<CefrLevel>,
     focus_areas: Vec<String>,  // ["usage", "collocations", "synonyms"]
+}
+```
+
+### 3. TaskQueue（タスクキュー）- 集約ルート
+
+非同期処理のためのタスクキューを管理します。
+
+```rust
+pub struct TaskQueue {
+    queue_id: QueueId,
+    queue_type: QueueType,
+    
+    // キュー状態
+    pending_tasks: Vec<TaskId>,
+    processing_tasks: HashMap<TaskId, WorkerId>,
+    completed_count: u64,
+    failed_count: u64,
+    
+    // 設定
+    max_concurrent_tasks: usize,
+    priority_enabled: bool,
+}
+
+pub enum QueueType {
+    Standard,      // FIFO
+    Priority,      // 優先度付き
+    RateLimited,   // レート制限付き
+}
+
+pub struct QueuedTask {
+    task_id: TaskId,
+    priority: TaskPriority,
+    queued_at: DateTime<Utc>,
+    attempts: u32,
+    last_attempt_at: Option<DateTime<Utc>>,
+}
+
+pub enum TaskPriority {
+    High,
+    Normal,
+    Low,
 }
 ```
 
@@ -1019,27 +1061,43 @@ pub struct AIMetrics {
 }
 ```
 
-### 非同期処理の将来拡張
+### 非同期処理とリアルタイム通知
 
 ```rust
-// 将来的な非同期処理への拡張準備
+// 非同期処理モード
 pub enum ProcessingMode {
-    // 現在の実装
-    Synchronous {
-        timeout: Duration,
-    },
-
-    // 将来の拡張
+    // 標準非同期処理
     Asynchronous {
-        callback_url: Option<String>,
-        webhook_secret: Option<String>,
+        notification_method: NotificationMethod,
+        priority: TaskPriority,
     },
 
-    // ハイブリッド
-    Hybrid {
-        sync_timeout: Duration,
-        fallback_to_async: bool,
+    // 高速応答が必要な場合（チャットなど）
+    FastTrack {
+        timeout_ms: u32,
+        fallback_to_queue: bool,
     },
+}
+
+pub enum NotificationMethod {
+    WebSocket {
+        channel: String,
+    },
+    ServerSentEvents {
+        stream_id: String,
+    },
+    Polling {
+        interval_ms: u32,
+    },
+}
+
+// リアルタイム通知イベント
+pub struct TaskProgressEvent {
+    task_id: TaskId,
+    status: TaskStatus,
+    progress_percentage: Option<u8>,
+    message: Option<String>,
+    timestamp: DateTime<Utc>,
 }
 ```
 
@@ -1061,19 +1119,21 @@ AI Integration Context では、従来の DDD パターンを採用し、CQRS �
    - AI プロバイダーへの仲介役
    - UI への直接的な表示要件が少ない
 
-3. **リアルタイム性の要求**
-   - 同期的な AI 呼び出しが中心
-   - 結果整合性より強い整合性が必要
-   - タスクの状態は即座に反映される必要がある
+3. **非同期処理の利点**
+   - 大量の AI 要求を効率的に処理
+   - WebSocket/SSE によるリアルタイム進捗通知
+   - タスクキューによる耐障害性の向上
 
 ### アーキテクチャ設計
 
 - **集約**:
   - AIGenerationTask（AI生成タスク管理）
   - ChatSession（チャットセッション管理）
-- **リポジトリ**: 標準的な CRUD 操作
+  - TaskQueue（非同期タスクキュー管理）
+- **リポジトリ**: 標準的な CRUD 操作 + タスクキュー永続化
 - **ドメインサービス**: AIServiceAdapter（プロバイダー抽象化）
 - **Anti-Corruption Layer**: 外部 AI サービスとの境界
+- **リアルタイム通知**: WebSocket/SSE による進捗配信
 
 ### 将来の拡張可能性
 
@@ -1096,3 +1156,4 @@ AI Integration Context を通じて以下を学習：
 
 - 2025-07-27: 初版作成（機能別インターフェース設計、同期処理実装、エラーハンドリング）
 - 2025-07-28: CQRS 適用方針セクションを追加（通常の DDD パターン採用、Anti-Corruption Layer の重要性を明記）
+- 2025-07-30: 完全非同期処理への変更（TaskQueue 集約追加、WebSocket/SSE 通知機構、ProcessingMode を非同期に変更）
