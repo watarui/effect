@@ -140,7 +140,7 @@ pub struct LearningSession {
 - **反応時間**: ミリ秒単位
 - **タイムスタンプ**: 回答日時
 
-### 「覚えた」状態（Mastered State）
+### 「覚えた」状態（Mastered State / Sense of Mastery）
 
 **定義**: 語句が十分に定着したと判定される状態。
 
@@ -231,28 +231,52 @@ pub struct LearningSession {
 
 ## ドメインイベント
 
-### 語彙管理イベント
+最新の設計では、各コンテキストのイベントを DomainEvent wrapper で管理します：
 
-- 語句が登録された（VocabularyItemRegistered）
-- AI語句情報が生成された（AIVocabularyInfoGenerated）
-- グローバル辞書に保存された（SavedToGlobalDictionary）
+```rust
+pub enum DomainEvent {
+    Learning(LearningEvent),
+    Algorithm(LearningAlgorithmEvent),
+    Vocabulary(VocabularyEvent),
+    AI(AIIntegrationEvent),
+    User(UserEvent),
+}
+```
 
-### 学習イベント
+### 語彙管理イベント（VocabularyEvent）
 
-- テストが開始された（TestStarted）
-- ユーザーが反応した（UserResponded）
-- 語句が「覚えた」と判定された（VocabularyMastered）
+- 項目が登録された（ItemRegistered）
+- AI情報生成がリクエストされた（AIGenerationRequested）
+- AI情報が生成された（AIInfoGenerated）
+
+### 学習イベント（LearningEvent）
+
+- セッションが開始された（SessionStarted）
+- 正誤が判定された（CorrectnessJudged）
 - セッションが完了した（SessionCompleted）
+- 項目マスタリーが更新された（ItemMasteryUpdated）
+
+### 学習アルゴリズムイベント（LearningAlgorithmEvent）
+
+- 復習スケジュールが更新された（ReviewScheduleUpdated）
+- 統計が更新された（StatisticsUpdated）
 
 ### 進捗イベント
 
-- 学習統計が更新された（LearningStatisticsUpdated）
-- IELTSスコアが推定された（IELTSScoreEstimated）
+進捗コンテキストは純粋な Read Model のため、独自のイベントは発行しません。
+他のコンテキストからのイベントを受信して集計します。
 
-### AI統合イベント
+### AI統合イベント（AIIntegrationEvent）
 
-- AI深掘りが要求された（AIDeepDiveRequested）
-- AIがテスト内容を生成した（AITestGenerated）
+- タスクが作成された（TaskCreated）
+- タスクが開始された（TaskStarted）
+- タスクが完了した（TaskCompleted）
+- タスクが失敗した（TaskFailed）
+
+### ユーザーイベント（UserEvent）
+
+- アカウントが作成された（AccountCreated）
+- アカウントが削除された（AccountDeleted）
 
 ## 使用上の注意
 
