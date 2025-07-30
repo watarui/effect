@@ -21,13 +21,22 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup PlantUML environment
         run: |
+          # 日本語フォントとロケールの設定
           sudo apt-get update
-          sudo apt-get install -y graphviz
+          sudo apt-get install -y graphviz fonts-noto-cjk language-pack-ja
+          sudo update-locale LANG=ja_JP.UTF-8
+          export LANG=ja_JP.UTF-8
+          fc-cache -fv
+
+          # PlantUML のダウンロード
           wget -O plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2024.0/plantuml.jar
       - name: Generate SVG diagrams
         run: |
           # エラーハンドリングを有効化
           set -e
+
+          # 日本語ロケールを設定
+          export LANG=ja_JP.UTF-8
 
           # 処理対象のファイル数をカウント
           puml_count=$(find docs -name "*.puml" | wc -l)
