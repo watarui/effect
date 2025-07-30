@@ -27,7 +27,7 @@ pre-commit:
     yamlfmt:
       priority: 1
       glob: "*.{yml,yaml}"
-      run: yamlfmt {staged_files}
+      run: yamlfmt -formatter retain_line_breaks=true {staged_files}
       stage_fixed: true
     markdownlint:
       priority: 1

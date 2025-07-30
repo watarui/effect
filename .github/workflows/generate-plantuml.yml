@@ -25,7 +25,40 @@ jobs:
           sudo apt-get install -y graphviz
           wget -O plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2024.0/plantuml.jar
       - name: Generate SVG diagrams
-        run: "# エラーハンドリングを有効化\nset -e\n\n# 処理対象のファイル数をカウント\npuml_count=$(find docs -name \"*.puml\" | wc -l)\necho \"Found $puml_count PlantUML files to process\"\n\n# すべての .puml ファイルを検索して処理\nfind docs -name \"*.puml\" | while read puml; do\n  echo \"Processing: $puml\"\n  \n  # ディレクトリとファイル名を取得\n  dir=$(dirname \"$puml\")\n  filename=$(basename \"$puml\" .puml)\n  \n  # svg サブディレクトリを作成\n  mkdir -p \"$dir/svg\"\n  \n  # SVG を生成\n  if java -jar plantuml.jar -tsvg -o \"$(pwd)/$dir/svg\" \"$puml\"; then\n    echo \"✓ Generated: $dir/svg/$filename.svg\"\n  else\n    echo \"✗ Failed to generate: $puml\"\n    exit 1\n  fi\ndone\n\necho \"Successfully processed all PlantUML files\"\n\n# 生成されたSVGファイルを確認\necho \"\"\necho \"Generated SVG files:\"\nfind docs -name \"*.svg\" -path \"*/svg/*\" | sort\n"
+        run: |
+          # エラーハンドリングを有効化
+          set -e
+
+          # 処理対象のファイル数をカウント
+          puml_count=$(find docs -name "*.puml" | wc -l)
+          echo "Found $puml_count PlantUML files to process"
+
+          # すべての .puml ファイルを検索して処理
+          find docs -name "*.puml" | while read puml; do
+            echo "Processing: $puml"
+
+            # ディレクトリとファイル名を取得
+            dir=$(dirname "$puml")
+            filename=$(basename "$puml" .puml)
+
+            # svg サブディレクトリを作成
+            mkdir -p "$dir/svg"
+
+            # SVG を生成
+            if java -jar plantuml.jar -tsvg -o "$(pwd)/$dir/svg" "$puml"; then
+              echo "✓ Generated: $dir/svg/$filename.svg"
+            else
+              echo "✗ Failed to generate: $puml"
+              exit 1
+            fi
+          done
+
+          echo "Successfully processed all PlantUML files"
+
+          # 生成されたSVGファイルを確認
+          echo ""
+          echo "Generated SVG files:"
+          find docs -name "*.svg" -path "*/svg/*" | sort
       - name: Check for changes
         id: check_changes
         run: |
