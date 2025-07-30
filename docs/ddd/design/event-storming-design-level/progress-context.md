@@ -32,29 +32,38 @@ pub struct ProgressContext {
     cache: ProgressCache,
 }
 
+// コンテキスト別のイベントを集約するラッパー
+pub enum DomainEvent {
+    Learning(LearningEvent),
+    Algorithm(LearningAlgorithmEvent),
+    Vocabulary(VocabularyEvent),
+    AI(AIIntegrationEvent),
+    User(UserEvent),
+}
+
 // イベントハンドラー
 impl EventHandler for ProgressContext {
     async fn handle(&mut self, event: DomainEvent) -> Result<()> {
         match event {
-            // Learning Context から
-            DomainEvent::SessionCompleted { .. } => {
+            // Learning Context イベント
+            DomainEvent::Learning(LearningEvent::SessionCompleted { .. }) => {
                 self.update_daily_stats(event).await?;
                 self.update_session_stats(event).await?;
             }
-            DomainEvent::ItemMasteryUpdated { .. } => {
+            DomainEvent::Learning(LearningEvent::ItemMasteryUpdated { .. }) => {
                 self.update_mastery_stats(event).await?;
             }
             
-            // Learning Algorithm Context から
-            DomainEvent::ReviewRecorded { .. } => {
+            // Learning Algorithm Context イベント
+            DomainEvent::Algorithm(LearningAlgorithmEvent::ReviewRecorded { .. }) => {
                 self.update_item_stats(event).await?;
             }
-            DomainEvent::StatisticsUpdated { .. } => {
+            DomainEvent::Algorithm(LearningAlgorithmEvent::StatisticsUpdated { .. }) => {
                 self.update_performance_stats(event).await?;
             }
             
-            // Vocabulary Context から
-            DomainEvent::ItemCreated { .. } => {
+            // Vocabulary Context イベント
+            DomainEvent::Vocabulary(VocabularyEvent::ItemCreated { .. }) => {
                 self.update_vocabulary_stats(event).await?;
             }
             
@@ -196,7 +205,9 @@ pub struct UserProgressSummaryProjection {
 ```rust
 impl ProgressContext {
     /// セッション完了イベントの処理
-    async fn handle_session_completed(&mut self, event: SessionCompletedEvent) -> Result<()> {
+    async fn handle_session_completed(&mut self, event: &LearningEvent) -> Result<()> {
+        // SessionCompleted イベントから必要な情報を抽出
+        if let LearningEvent::SessionCompleted { user_id, .. } = event {
         // 1. 日別統計を更新
         let daily_stats = self.get_or_create_daily_stats(event.user_id, event.date).await?;
         daily_stats.update_from_session(event.session_summary);
@@ -511,7 +522,8 @@ type DomainProgress {
 
 ```rust
 // 日別統計は即座に更新
-when LearningEvent::SessionCompleted || LearningAlgorithmEvent::ReviewRecorded {
+when DomainEvent::Learning(LearningEvent::SessionCompleted) || 
+     DomainEvent::Algorithm(LearningAlgorithmEvent::ReviewRecorded) {
     update DailyStatsProjection immediately
 }
 

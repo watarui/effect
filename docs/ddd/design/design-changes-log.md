@@ -161,10 +161,11 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     ~~- 内容: Learning Context と Learning Algorithm Context の関係を Partnership に更新~~
     ~~- 内容: AI Integration Context との関係を Event-Driven に更新~~
 
-4. **イベント名の統一**
+~~4. **イベント名の統一**~~ （2025-07-30 完了）
 
-- 対象: 全 event-storming-design-level ドキュメント
-- 内容: 命名規則の統一（例: SessionStarted → LearningSessionStarted）
+    ~~- 対象: 全 event-storming-design-level ドキュメント~~
+    ~~- 内容: 命名規則の統一（例: SessionStarted → LearningSessionStarted）~~
+    - 追記: 冗長性を避けるため、プレフィックスを削除し、代わりに DomainEvent wrapper を追加
 
 ### 中優先度
 
