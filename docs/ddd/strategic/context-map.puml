@@ -1,0 +1,74 @@
+@startuml Effect Context Map
+
+title Effect Project - Bounded Context Map
+
+skinparam component {
+  BorderColor #333333
+  BorderThickness 2
+}
+
+skinparam arrow {
+  Color #333333
+  FontSize 10
+}
+
+skinparam package {
+  BorderColor #666666
+}
+
+' Core Domain
+package "Core Domain" #FFE6CC {
+  [Learning Context] as LC
+  [Learning Algorithm Context] as LAC
+  [Vocabulary Context] as VC
+}
+
+' Supporting Domain
+package "Supporting Domain" #CCE5FF {
+  [User Context] as UC
+  [Progress Context] as PC
+}
+
+' Generic Subdomain
+package "Generic Subdomain" #E6E6E6 {
+  [AI Integration Context] as AIC
+}
+
+' User Context relationships
+UC --> LC : "[C]->[S] Sync API"
+UC --> PC : "[C]->[S] Sync API"
+
+' Learning Context relationships
+LC --> LAC : "[P] Sync API"
+LC --> PC : "PL Event-Driven"
+LC --> VC : "[C]->[S] Sync API"
+LC ..> AIC : "[C]->[S] Event-Driven (Future)"
+
+' Learning Algorithm Context relationships
+LAC --> LC : "[P] Sync API"
+LAC --> PC : "PL Event-Driven"
+
+' Vocabulary Context relationships
+VC --> AIC : "[P] Event-Driven + ACL"
+
+' AI Integration Context relationships
+AIC ..> LC : "[S]->[C] Event-Driven (Future)"
+AIC --> VC : "[S]->[C] Event-Driven + ACL"
+AIC ..> LC : "[S]->[C] WebSocket (Future)"
+
+' Progress Context relationships
+PC ..> UC : "[S]->[C] Event-Driven (Future)"
+
+note right
+  <b>Legend:</b>
+  [C]->[S] : Customer -> Supplier
+  [S]->[C] : Supplier -> Customer  
+  [P] : Partnership
+  PL : Published Language
+  ACL : Anti-Corruption Layer
+  
+  Solid line : Implemented
+  Dotted line : Future implementation
+end note
+
+@enduml

@@ -9,6 +9,40 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-07-30: PlantUML 自動画像生成の GitHub Actions 設定
+
+- **変更内容**: PlantUML ファイルから SVG 画像を自動生成する CI/CD パイプライン構築
+- **決定事項**:
+  - `.github/workflows/generate-plantuml.yml` を作成
+  - main ブランチへの push/PR マージで自動実行
+  - 各 `.puml` ファイルと同じディレクトリ内の `svg/` サブディレクトリに SVG を保存
+  - 例: `context-map.puml` → `svg/context-map.svg`
+- **理由**:
+  - PlantUML をインストールしていない環境でも図を確認可能
+  - 常に最新の図が自動的に生成される
+  - GitHub 上で直接 SVG を表示できる
+- **技術詳細**:
+  - PlantUML v1.2024.0 を使用
+  - [skip ci] タグで無限ループを防止
+  - github-actions[bot] として自動コミット
+
+### 2025-07-30: 戦略的 DDD ドキュメントの再構成
+
+- **変更内容**: DDD ドキュメントの重複解消と責務の明確化
+- **決定事項**:
+  - context-map.md を簡素化（図と統合パターン一覧のみに）
+  - domain-classification.md を新規作成（Core/Supporting/Generic の分類を統合）
+  - shared-kernel.md を新規作成（共有概念を独立管理）
+  - bounded-contexts.md を簡素化（詳細は Canvas に委譲）
+  - domain-types.md を削除（内容を domain-classification.md に統合）
+- **理由**:
+  - 各ドキュメントの責務を明確化し、重複を解消
+  - Single Source of Truth の原則に従う
+  - メンテナンス性の向上
+- **影響範囲**:
+  - /docs/ddd/strategic/ 配下のドキュメント構成が変更
+  - 関連ドキュメントへの参照パスの更新が必要
+
 ### 2025-07-30: AI Integration Context の完全非同期化
 
 - **変更内容**: AI Integration Context を完全非同期処理（イベント駆動アーキテクチャ）に変更
