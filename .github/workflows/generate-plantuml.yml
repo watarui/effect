@@ -25,12 +25,16 @@ jobs:
           sudo apt-get install -y graphviz
           wget -O plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2024.0/plantuml.jar
       - name: Generate SVG diagrams
-        run: "# エラーハンドリングを有効化\nset -e\n\n# 処理対象のファイル数をカウント\npuml_count=$(find docs -name \"*.puml\" | wc -l)\necho \"Found $puml_count PlantUML files to process\"\n\n# すべての .puml ファイルを検索して処理\nfind docs -name \"*.puml\" | while read puml; do\n  echo \"Processing: $puml\"\n  \n  # ディレクトリとファイル名を取得\n  dir=$(dirname \"$puml\")\n  filename=$(basename \"$puml\" .puml)\n  \n  # svg サブディレクトリを作成\n  mkdir -p \"$dir/svg\"\n  \n  # SVG を生成\n  if java -jar plantuml.jar -tsvg -o \"$(pwd)/$dir/svg\" \"$puml\"; then\n    echo \"✓ Generated: $dir/svg/$filename.svg\"\n  else\n    echo \"✗ Failed to generate: $puml\"\n    exit 1\n  fi\ndone\n\necho \"Successfully processed all PlantUML files\"\n"
+        run: "# エラーハンドリングを有効化\nset -e\n\n# 処理対象のファイル数をカウント\npuml_count=$(find docs -name \"*.puml\" | wc -l)\necho \"Found $puml_count PlantUML files to process\"\n\n# すべての .puml ファイルを検索して処理\nfind docs -name \"*.puml\" | while read puml; do\n  echo \"Processing: $puml\"\n  \n  # ディレクトリとファイル名を取得\n  dir=$(dirname \"$puml\")\n  filename=$(basename \"$puml\" .puml)\n  \n  # svg サブディレクトリを作成\n  mkdir -p \"$dir/svg\"\n  \n  # SVG を生成\n  if java -jar plantuml.jar -tsvg -o \"$(pwd)/$dir/svg\" \"$puml\"; then\n    echo \"✓ Generated: $dir/svg/$filename.svg\"\n  else\n    echo \"✗ Failed to generate: $puml\"\n    exit 1\n  fi\ndone\n\necho \"Successfully processed all PlantUML files\"\n\n# 生成されたSVGファイルを確認\necho \"\"\necho \"Generated SVG files:\"\nfind docs -name \"*.svg\" -path \"*/svg/*\" | sort\n"
       - name: Check for changes
         id: check_changes
         run: |
+          # 生成されたSVGファイルを明示的に追加
+          find docs -name "*.svg" -path "*/svg/*" -exec git add {} \;
+
           if git diff --quiet && git diff --staged --quiet; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
             # 変更されたファイルを表示
@@ -43,9 +47,6 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-
-          # SVG ファイルをステージング
-          git add 'docs/**/svg/*.svg'
 
           # コミット（[skip ci] タグを付けて無限ループを防止）
           git commit -m "Auto-generate PlantUML diagrams [skip ci]"
@@ -66,4 +67,13 @@ jobs:
             done
           else
             echo "ℹ️ No changes detected - SVG files are up to date" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Existing SVG files:" >> $GITHUB_STEP_SUMMARY
+            if [ -z "$(find docs -name "*.svg" -path "*/svg/*")" ]; then
+              echo "_No SVG files found in the repository_" >> $GITHUB_STEP_SUMMARY
+            else
+              find docs -name "*.svg" -path "*/svg/*" | while read svg; do
+                echo "- $svg" >> $GITHUB_STEP_SUMMARY
+              done
+            fi
           fi
