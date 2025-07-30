@@ -119,7 +119,6 @@ Progress Context
 
 遅延評価（アクセス時）:
 - MonthlyTrends
-- YearlyReport
 ```
 
 ## 9. Assumptions
