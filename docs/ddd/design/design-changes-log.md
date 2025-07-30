@@ -175,14 +175,17 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     ~~- 内容: UserItemRecord と ItemLearningRecord の責務の違いを明確に説明~~
     - 注記: aggregate-identification.md の 201-208 行目に既に明確な説明がある
 
-5. **Progress Context の責務範囲**
+~~5. **Progress Context の責務範囲**~~ （既に対応済み）
 
-- 対象: `/docs/ddd/strategic/bounded-contexts.md`
-- 内容: 最新の設計（純粋なイベントソーシング）に合わせて更新
+    ~~- 対象: `/docs/ddd/strategic/bounded-contexts.md`~~
+    ~~- 内容: 最新の設計（純粋なイベントソーシング）に合わせて更新~~
+    - 注記: 27行目に既に「CQRS/Event Sourcing パターンを採用」と記載
 
-6. **AI Integration Context の戦略的分類**
-   - 対象: `/docs/ddd/strategic/context-map.md`
-   - 内容: Generic Subdomain として統一
+~~6. **AI Integration Context の戦略的分類**~~ （既に対応済み）
+
+    ~~- 対象: `/docs/ddd/strategic/context-map.md`~~
+    ~~- 内容: Generic Subdomain として統一~~
+    - 注記: context-map.md と domain-classification.md で既に Generic として分類
 
 ### 低優先度
 
