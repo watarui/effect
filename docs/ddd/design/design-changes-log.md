@@ -209,17 +209,19 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     ~~- 内容：Progress Context は集約を持たない純粋な Read Model として統一すべき~~
     - 注記: bounded-contexts.md は既に簡素化され、Progress Context は「CQRS/Event Sourcing パターン」として正しく記載
 
-10. **Vocabulary Context の設計アプローチ不整合**
+~~10. **Vocabulary Context の設計アプローチ不整合**~~ （既に対応済み）
 
-- bounded-contexts.md：単純な CRUD 操作（line 36）
-- vocabulary-context.md：Wikipedia 方式、楽観的ロック、イベントソーシング（line 9-12）
-- 内容：最新の Wikipedia 方式の設計に統一
+    ~~- bounded-contexts.md：単純な CRUD 操作（line 36）~~
+    ~~- vocabulary-context.md：Wikipedia 方式、楽観的ロック、イベントソーシング（line 9-12）~~
+    ~~- 内容：最新の Wikipedia 方式の設計に統一~~
+    - 注記: bounded-contexts.md の15行目に既に「Wikipedia スタイル」と記載されている
 
-11. **domain-types.md の存在**
+~~11. **domain-types.md の存在**~~ （既に対応済み）
 
-- 対象：`/docs/ddd/strategic/domain-types.md`
-- 内容：このファイルは使用されていない（空またはテンプレート）
-- アクション：削除または内容を追加
+    ~~- 対象：`/docs/ddd/strategic/domain-types.md`~~
+    ~~- 内容：このファイルは使用されていない（空またはテンプレート）~~
+    ~~- アクション：削除または内容を追加~~
+    - 注記: ファイルは既に削除済み、domain-classification.md が代替として機能
 
 ### 中優先度
 
