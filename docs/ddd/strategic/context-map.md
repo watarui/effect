@@ -60,7 +60,7 @@ graph TB
 | User Context               | Learning Context           | Customer-Supplier  | 同期 API          | 実装済み |
 | User Context               | Progress Context           | Customer-Supplier  | 同期 API          | 実装済み |
 | Learning Context           | Vocabulary Context         | Customer-Supplier  | 同期 API          | 実装済み |
-| Learning Context           | AI Integration Context     | Customer-Supplier  | 非同期イベント    | 将来実装 |
+| Learning Context           | AI Integration Context     | Event-Driven Partnership | 非同期イベント    | 将来実装 |
 | Learning Context           | Learning Algorithm Context | Partnership        | 同期 API/イベント | 実装済み |
 | Learning Context           | Progress Context           | Published Language | イベント駆動      | 実装済み |
 | Learning Algorithm Context | Progress Context           | Published Language | イベント駆動      | 実装済み |

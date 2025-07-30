@@ -42,7 +42,7 @@ UC --> PC : "[C]->[S] Sync API"
 LC --> LAC : "[P] Sync API"
 LC --> PC : "PL Event-Driven"
 LC --> VC : "[C]->[S] Sync API"
-LC ..> AIC : "[C]->[S] Event-Driven (Future)"
+LC ..> AIC : "[P] Event-Driven (Future)"
 
 ' Learning Algorithm Context relationships
 LAC --> LC : "[P] Sync API"

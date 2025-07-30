@@ -155,15 +155,16 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     ~~- 対象: `/docs/ddd/design/event-storming-design-level/learning-algorithm-context.md`~~
     ~~- 内容: 非同期イベントから同期 API 呼び出しに変更~~
 
-3. **コンテキスト間の関係パターン**
+~~3. **コンテキスト間の関係パターン**~~ （2025-07-30 完了）
 
-- 対象: `/docs/ddd/strategic/context-map.md`
-- 内容: Learning Context と Learning Algorithm Context の関係を Partnership に更新
-- 内容: AI Integration Context との関係を Event-Driven に更新
+    ~~- 対象: `/docs/ddd/strategic/context-map.md`~~
+    ~~- 内容: Learning Context と Learning Algorithm Context の関係を Partnership に更新~~
+    ~~- 内容: AI Integration Context との関係を Event-Driven に更新~~
 
 4. **イベント名の統一**
-   - 対象: 全 event-storming-design-level ドキュメント
-   - 内容: 命名規則の統一（例: SessionStarted → LearningSessionStarted）
+
+- 対象: 全 event-storming-design-level ドキュメント
+- 内容: 命名規則の統一（例: SessionStarted → LearningSessionStarted）
 
 ### 中優先度
 
