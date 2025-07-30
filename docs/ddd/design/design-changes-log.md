@@ -139,29 +139,27 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ~~0. **AI Integration Context の非同期化に伴う関連更新**~~ （2025-07-30 完了）
 
-~~- 対象: `/docs/ddd/design/repositories/ai-integration-context-repositories.md`~~
-
-~~- 内容: TaskQueueRepository の追加、非同期処理のための永続化設計~~
-
-~~- 理由: TaskQueue 集約の永続化が必要~~
+    ~~- 対象: `/docs/ddd/design/repositories/ai-integration-context-repositories.md`~~
+    ~~- 内容: TaskQueueRepository の追加、非同期処理のための永続化設計~~
+    ~~- 理由: TaskQueue 集約の永続化が必要~~
 
 ~~1. **IELTS スコア推定の除外**~~ （2025-07-30 完了）
 
-   ~~- 対象: `/docs/ddd/design/event-storming-design-level/progress-context.md`~~
-   ~~- 内容: IeltsEstimation 関連のコード・ロジックを削除または Open Questions へ移動~~
-   ~~- 理由: Canvas での決定事項を反映~~
+    ~~- 対象: `/docs/ddd/design/event-storming-design-level/progress-context.md`~~
+    ~~- 内容: IeltsEstimation 関連のコード・ロジックを削除または Open Questions へ移動~~
+    ~~- 理由: Canvas での決定事項を反映~~
 
-2. **ItemsSelected の同期化**
+~~2. **ItemsSelected の同期化**~~ （2025-07-30 完了）
 
-   - 対象: `/docs/ddd/design/event-storming-design-level/learning-context.md`
-   - 対象: `/docs/ddd/design/event-storming-design-level/learning-algorithm-context.md`
-   - 内容: 非同期イベントから同期 API 呼び出しに変更
+    ~~- 対象: `/docs/ddd/design/event-storming-design-level/learning-context.md`~~
+    ~~- 対象: `/docs/ddd/design/event-storming-design-level/learning-algorithm-context.md`~~
+    ~~- 内容: 非同期イベントから同期 API 呼び出しに変更~~
 
 3. **コンテキスト間の関係パターン**
 
-   - 対象: `/docs/ddd/strategic/context-map.md`
-   - 内容: Learning Context と Learning Algorithm Context の関係を Partnership に更新
-   - 内容: AI Integration Context との関係を Event-Driven に更新
+- 対象: `/docs/ddd/strategic/context-map.md`
+- 内容: Learning Context と Learning Algorithm Context の関係を Partnership に更新
+- 内容: AI Integration Context との関係を Event-Driven に更新
 
 4. **イベント名の統一**
    - 対象: 全 event-storming-design-level ドキュメント

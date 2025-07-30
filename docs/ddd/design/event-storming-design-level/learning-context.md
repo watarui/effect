@@ -175,22 +175,6 @@ pub enum SelectionStrategy {
 
 ```rust
 pub enum LearningEvent {
-    // 項目選定関連（新規追加）
-    ItemSelectionRequested {
-        event_id: EventId,
-        occurred_at: DateTime<Utc>,
-        user_id: UserId,
-        strategy: SelectionStrategy,
-        requested_count: usize,
-    },
-
-    ItemsSelected {
-        event_id: EventId,
-        occurred_at: DateTime<Utc>,
-        user_id: UserId,
-        selected_items: Vec<SelectedItem>,
-    },
-
     // セッション関連
     SessionStarted {
         event_id: EventId,
@@ -241,19 +225,6 @@ pub enum LearningEvent {
         old_status: MasteryStatus,
         new_status: MasteryStatus,
     },
-}
-
-pub struct SelectedItem {
-    item_id: ItemId,
-    reason: SelectionReason,
-    priority: f32,
-}
-
-pub enum SelectionReason {
-    NewItem,
-    DueForReview { days_overdue: i32 },
-    WeakItem { accuracy_rate: f32 },
-    AIRecommended { reason: String },
 }
 ```
 
@@ -322,23 +293,21 @@ stateDiagram-v2
 
 ## ビジネスポリシー（紫の付箋 🟪）
 
-### 項目選定ポリシー（新規追加）
+### 項目選定ポリシー
 
 ```rust
-// セッション開始時に項目選定を要求
+// セッション開始時に同期的に項目を選定
 when StartSessionCommand {
-    // まず項目選定を要求
-    emit LearningEvent::ItemSelectionRequested {
-        strategy: command.session_config.selection_strategy,
-        requested_count: command.session_config.item_count,
-    }
-}
-
-// 項目が選定されたらセッションを開始
-when LearningEvent::ItemsSelected {
+    // Learning Algorithm Context に同期的に項目選定を依頼
+    let selected_items = item_selection_service.select_items(
+        user_id,
+        command.session_config.selection_strategy,
+        command.session_config.item_count,
+    ).await?;
+    
     // 選定された項目でセッションを作成
-    create_session_with_items(event.selected_items)
-    emit SessionStartedEvent
+    create_session_with_items(selected_items);
+    emit SessionStartedEvent;
 }
 ```
 
@@ -653,6 +622,20 @@ trait ItemSelectionService {
         threshold: f32,
     ) -> Result<Vec<ItemWithStats>>;
 }
+
+// 選定された項目の構造
+pub struct SelectedItem {
+    item_id: ItemId,
+    reason: SelectionReason,
+    priority: f32,
+}
+
+pub enum SelectionReason {
+    NewItem,
+    DueForReview { days_overdue: i32 },
+    WeakItem { accuracy_rate: f32 },
+    AIRecommended { reason: String },
+}
 ```
 
 ### Progress Context との連携
@@ -681,3 +664,4 @@ trait ItemSelectionService {
 - 2025-07-27: 初版作成（ユーザーとの対話に基づく詳細設計）
 - 2025-07-27: 項目選定戦略を追加（Learning Algorithm Context との連携強化）
 - 2025-07-28: CQRS 適用方針セクションを追加（フル CQRS 採用の理由と設計を明記）
+- 2025-07-30: ItemsSelected を非同期イベントから同期 API 呼び出しに変更

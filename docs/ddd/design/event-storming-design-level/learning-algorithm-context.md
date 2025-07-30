@@ -296,15 +296,6 @@ pub enum LearningAlgorithmCommand {
 
 ```rust
 pub enum LearningAlgorithmEvent {
-    // 項目選定
-    ItemsSelected {
-        event_id: EventId,
-        occurred_at: DateTime<Utc>,
-        user_id: UserId,
-        selected_items: Vec<SelectedItem>,
-        strategy: SelectionStrategy,
-    },
-    
     // 復習記録
     ReviewRecorded {
         event_id: EventId,
@@ -378,18 +369,19 @@ when LearningAlgorithmEvent::ReviewRecorded {
 ### 項目選定ポリシー
 
 ```rust
-// 期限切れ項目の優先処理
+// 期限切れ項目の優先処理（同期的に結果を返す）
 when SelectItemsCommand {
     // 1. 期限切れ項目を最優先
-    prioritize_overdue_items()
+    let overdue_items = prioritize_overdue_items()
     
     // 2. 戦略に基づいて残りを選定
-    apply_selection_strategy()
+    let strategic_items = apply_selection_strategy()
     
     // 3. 重複や除外項目をフィルタ
-    filter_invalid_items()
+    let selected_items = filter_invalid_items()
     
-    emit LearningAlgorithmEvent::ItemsSelected
+    // 同期的に結果を返す
+    return selected_items
 }
 ```
 
@@ -615,7 +607,8 @@ impl LearningAlgorithmContext {
 ### Learning Context への提供
 
 ```rust
-// 項目選定サービス
+// 項目選定サービス（同期的に結果を返す）
+#[async_trait]
 trait ItemSelectionService {
     async fn select_items(
         &self,
@@ -623,6 +616,20 @@ trait ItemSelectionService {
         strategy: SelectionStrategy,
         count: usize,
     ) -> Result<Vec<SelectedItem>>;
+}
+
+// 選定された項目の構造
+pub struct SelectedItem {
+    item_id: ItemId,
+    reason: SelectionReason,
+    priority: f32,
+}
+
+pub enum SelectionReason {
+    NewItem,
+    DueForReview { days_overdue: i32 },
+    WeakItem { accuracy_rate: f32 },
+    AIRecommended { reason: String },
 }
 
 // スケジュール照会サービス
@@ -763,3 +770,4 @@ Learning Algorithm Context を通じて以下を学習：
 
 - 2025-07-27: 初版作成（SM-2アルゴリズム実装、項目選定戦略の詳細設計）
 - 2025-07-28: CQRS 適用方針セクションを追加（通常の DDD パターンで十分な理由を明記）
+- 2025-07-30: ItemsSelected イベントを削除し、同期的な項目選定サービスに変更
