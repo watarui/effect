@@ -9,6 +9,21 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-07-30: Progress Context Canvas 作成と IELTS スコア推定の見直し
+
+- **変更内容**: Progress Context の Bounded Context Canvas を作成
+- **決定事項**:
+  - IELTS スコア推定を実装対象から除外（Open Questions へ移動）
+  - 代替指標として CEFR レベル分布と進捗スコア（0-100）を採用
+  - 純粋な CQRS/イベントソーシングの実装例として位置付け
+- **理由**:
+  - アーキテクチャ学習の本質に集中するため
+  - 実装の複雑さを軽減
+  - CEFR レベルと進捗スコアで学力認識は十分可能
+- **影響範囲**:
+  - event-storming-design-level/progress-context.md との不整合が発生
+  - GraphQL スキーマの修正が必要
+
 ### 2025-07-29: Learning Algorithm Context Canvas 作成
 
 - **変更内容**: Learning Algorithm Context の Bounded Context Canvas を作成
@@ -50,6 +65,11 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 ## 未反映の変更リスト
 
 ### 高優先度
+
+0. **IELTS スコア推定の除外**
+   - 対象: `/docs/ddd/design/event-storming-design-level/progress-context.md`
+   - 内容: IeltsEstimation 関連のコード・ロジックを削除または Open Questions へ移動
+   - 理由: Canvas での決定事項を反映
 
 1. **ItemsSelected の同期化**
    - 対象: `/docs/ddd/design/event-storming-design-level/learning-context.md`
