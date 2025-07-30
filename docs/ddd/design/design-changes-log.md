@@ -145,11 +145,11 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ~~- 理由: TaskQueue 集約の永続化が必要~~
 
-1. **IELTS スコア推定の除外**
+~~1. **IELTS スコア推定の除外**~~ （2025-07-30 完了）
 
-   - 対象: `/docs/ddd/design/event-storming-design-level/progress-context.md`
-   - 内容: IeltsEstimation 関連のコード・ロジックを削除または Open Questions へ移動
-   - 理由: Canvas での決定事項を反映
+   ~~- 対象: `/docs/ddd/design/event-storming-design-level/progress-context.md`~~
+   ~~- 内容: IeltsEstimation 関連のコード・ロジックを削除または Open Questions へ移動~~
+   ~~- 理由: Canvas での決定事項を反映~~
 
 2. **ItemsSelected の同期化**
 

@@ -175,23 +175,18 @@ pub struct UserProgressSummaryProjection {
     // レベル別サマリー
     level_distribution: HashMap<CefrLevel, LevelStats>,
     
-    // IELTS スコア推定
-    estimated_ielts_score: IeltsEstimation,
+    // CEFR レベル分布と進捗スコア
+    // 注: IELTS スコア推定は複雑さを避けるため実装しない
+    // 代わりに CEFR レベル別の習熟度を表示
     
     // メタ情報
     created_at: DateTime<Utc>,
     last_updated: DateTime<Utc>,
 }
 
-pub struct IeltsEstimation {
-    overall: f32,
-    reading: f32,
-    writing: f32,
-    listening: f32,
-    speaking: f32,
-    confidence: f32,  // 推定の信頼度
-    last_calculated: DateTime<Utc>,
-}
+// IELTS スコア推定は実装しない
+// 理由: アーキテクチャ学習の本質に集中するため
+// 代替案: CEFR レベル分布と進捗スコア（0-100）で学力を表現
 ```
 
 ## イベントハンドリング
@@ -259,7 +254,7 @@ impl ProgressContext {
             "UserSummary" => UpdateStrategy::Batch { 
                 interval: Duration::hours(1) 
             },
-            "IeltsEstimation" => UpdateStrategy::Lazy,  // 要求時に計算
+            "ProgressScore" => UpdateStrategy::Lazy,  // 要求時に計算
             _ => UpdateStrategy::Realtime,
         }
     }
@@ -340,65 +335,49 @@ impl CategoryProgressProjection {
 }
 ```
 
-### IELTS スコア推定
+### 進捗スコアの計算（IELTS スコア推定の代替）
 
 ```rust
-impl IeltsEstimationCalculator {
-    pub fn estimate_score(
+impl ProgressScoreCalculator {
+    /// CEFR レベル別の進捗スコアを計算（0-100）
+    /// IELTS スコア推定の代わりに、よりシンプルで理解しやすい指標を提供
+    pub fn calculate_cefr_progress(
         &self,
-        user_progress: &UserProgressSummaryProjection,
         category_progress: &[CategoryProgressProjection],
-    ) -> IeltsEstimation {
-        // 領域別のスコアを計算
-        let reading_score = self.estimate_domain_score(
-            &category_progress.iter()
-                .find(|c| matches!(c.category, ProgressCategory::ByDomain(Domain::Reading)))
-                .unwrap()
-        );
+    ) -> HashMap<CefrLevel, f32> {
+        let mut result = HashMap::new();
         
-        let writing_score = self.estimate_domain_score(
-            &category_progress.iter()
-                .find(|c| matches!(c.category, ProgressCategory::ByDomain(Domain::Writing)))
-                .unwrap()
-        );
-        
-        // 他の領域も同様...
-        
-        // 総合スコアは4領域の平均（0.5刻み）
-        let overall = ((reading_score + writing_score + listening_score + speaking_score) / 4.0 * 2.0).round() / 2.0;
-        
-        // 信頼度は学習項目数とレビュー数に基づく
-        let confidence = self.calculate_confidence(user_progress);
-        
-        IeltsEstimation {
-            overall,
-            reading: reading_score,
-            writing: writing_score,
-            listening: listening_score,
-            speaking: speaking_score,
-            confidence,
-            last_calculated: Utc::now(),
+        for level in [CefrLevel::A1, CefrLevel::A2, CefrLevel::B1, 
+                      CefrLevel::B2, CefrLevel::C1, CefrLevel::C2] {
+            let progress = category_progress.iter()
+                .find(|c| matches!(c.category, ProgressCategory::ByCefrLevel(l) if l == level))
+                .map(|p| p.calculate_progress_score())
+                .unwrap_or(0.0);
+                
+            result.insert(level, progress);
         }
+        
+        result
     }
     
-    fn estimate_domain_score(&self, progress: &CategoryProgressProjection) -> f32 {
-        // 基準：
-        // - CEFR A1-A2: IELTS 3.0-4.0
-        // - CEFR B1-B2: IELTS 4.5-6.5
-        // - CEFR C1-C2: IELTS 7.0-9.0
+    /// ドメイン別（R/W/L/S）の進捗スコアを計算
+    pub fn calculate_domain_progress(
+        &self,
+        category_progress: &[CategoryProgressProjection],
+    ) -> HashMap<Domain, f32> {
+        let mut result = HashMap::new();
         
-        // 習熟度とカバー率から推定
-        let base_score = 3.0;
-        let max_increment = 6.0;
+        for domain in [Domain::Reading, Domain::Writing, 
+                       Domain::Listening, Domain::Speaking] {
+            let progress = category_progress.iter()
+                .find(|c| matches!(c.category, ProgressCategory::ByDomain(d) if d == domain))
+                .map(|p| p.calculate_progress_score())
+                .unwrap_or(0.0);
+                
+            result.insert(domain, progress);
+        }
         
-        let mastery_factor = progress.mastery_rate;
-        let coverage_factor = progress.coverage_rate;
-        let accuracy_factor = progress.accuracy_rate;
-        
-        let weighted_factor = mastery_factor * 0.4 + coverage_factor * 0.4 + accuracy_factor * 0.2;
-        
-        // 0.5刻みに丸める
-        ((base_score + max_increment * weighted_factor) * 2.0).round() / 2.0
+        result
     }
 }
 ```
@@ -490,8 +469,9 @@ type Query {
   # ストリーク
   learningStreak(userId: ID!): LearningStreak
   
-  # IELTS推定
-  ieltsEstimation(userId: ID!): IeltsEstimation
+  # 進捗スコア（CEFR レベル別、0-100）
+  cefrProgress(userId: ID!): [CefrProgress!]!
+  domainProgress(userId: ID!): [DomainProgress!]!
 }
 
 type DailyStats {
@@ -513,6 +493,16 @@ type CategoryProgress {
   accuracyRate: Float!
   progressScore: Float!
 }
+
+type CefrProgress {
+  level: CefrLevel!
+  progressScore: Float!  # 0-100
+}
+
+type DomainProgress {
+  domain: Domain!
+  progressScore: Float!  # 0-100
+}
 ```
 
 ## ビジネスポリシー（紫の付箋 🟪）
@@ -532,12 +522,12 @@ when timer.every(5.minutes) {
     }
 }
 
-// IELTSスコアは要求時に計算（遅延評価）
-when GetIeltsEstimationQuery {
-    if last_calculated > 24.hours.ago {
-        return cached_estimation
+// 進捗スコアは要求時に計算（遅延評価）
+when GetProgressScoreQuery {
+    if last_calculated > 1.hour.ago {
+        return cached_progress
     } else {
-        recalculate_estimation()
+        recalculate_progress()
     }
 }
 ```
@@ -789,3 +779,4 @@ CQRS/ES の教科書的な実装例として、アーキテクチャ学習の中
 
 - 2025-07-27: 初版作成（CQRS/イベントソーシング実装、GraphQL対応設計）
 - 2025-07-28: CQRS 適用方針セクションを追加（純粋な CQRS/ES の教科書的実装例として明記）
+- 2025-07-30: IELTS スコア推定を除外し、CEFR レベル別進捗スコア（0-100）に変更
