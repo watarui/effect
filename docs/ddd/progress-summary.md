@@ -303,6 +303,9 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - テスト: 1 セッション最大 100 問（設定可能）、約 25 分
 - 対応試験: IELTS、TOEFL 等（IELTS だけに特化しない）
 - ItemsSelected: 同期通信（UX 優先の設計判断）
+- AI Integration Context: 完全非同期化（タスクキュー方式）
+- イベント名: DomainEvent wrapper パターンで統一
+- IELTS スコア推定: 除外決定（CEFR レベルと進捗スコアで代替）
 
 ## 再開時のチェックリスト
 
