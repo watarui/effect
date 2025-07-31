@@ -99,7 +99,13 @@ pub struct VocabularyItem {
 
 ### 学習セッション（Learning Session）
 
-**定義**: 25分のポモドーロ単位で行われる学習活動の単位。
+**定義**: ユーザーが自由に設定した問題数で行われる学習活動の単位。
+
+**構成要素**:
+
+- 問題数: 1-100問（1問単位で設定可能）
+- デフォルト設定: 50問
+- よく使われる設定: 25問、50問、75問
 
 **種類**:
 
@@ -116,7 +122,7 @@ pub struct LearningSession {
     session_type: SessionType,
     started_at: DateTime<Utc>,
     completed_at: Option<DateTime<Utc>>,
-    target_duration: Duration, // 25 minutes
+    item_count: usize, // 1-100問
 }
 ```
 
