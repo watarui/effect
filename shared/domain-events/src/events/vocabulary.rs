@@ -49,3 +49,53 @@ pub enum VocabularyEvent {
         definitions:   Vec<String>,
     },
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn item_created_should_have_creator() {
+        let user_id = UserId::new();
+        let event = VocabularyEvent::ItemCreated {
+            metadata:   EventMetadata::new(),
+            item_id:    ItemId::new(),
+            spelling:   "example".to_string(),
+            created_by: user_id,
+        };
+
+        match event {
+            VocabularyEvent::ItemCreated {
+                created_by,
+                spelling,
+                ..
+            } => {
+                assert_eq!(created_by, user_id);
+                assert_eq!(spelling, "example");
+            },
+            _ => unreachable!("Expected ItemCreated event"),
+        }
+    }
+
+    #[test]
+    fn ai_info_generated_should_contain_definitions() {
+        let definitions = vec!["定義1".to_string(), "定義2".to_string()];
+
+        let event = VocabularyEvent::AIInfoGenerated {
+            metadata:      EventMetadata::new(),
+            item_id:       ItemId::new(),
+            pronunciation: "/ɪɡˈzæmpəl/".to_string(),
+            definitions:   definitions.clone(),
+        };
+
+        match event {
+            VocabularyEvent::AIInfoGenerated {
+                definitions: defs, ..
+            } => {
+                assert_eq!(defs.len(), 2);
+                assert_eq!(defs, definitions);
+            },
+            _ => unreachable!("Expected AIInfoGenerated event"),
+        }
+    }
+}

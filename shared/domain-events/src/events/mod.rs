@@ -78,3 +78,67 @@ impl DomainEvent {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use common_types::{SessionId, UserId};
+
+    use super::*;
+
+    #[test]
+    fn domain_event_should_have_correct_event_type() {
+        let learning_event = DomainEvent::Learning(LearningEvent::SessionStarted {
+            metadata:   EventMetadata::new(),
+            session_id: SessionId::new(),
+            user_id:    UserId::new(),
+            item_count: 50,
+        });
+
+        assert_eq!(learning_event.event_type(), "Learning");
+    }
+
+    #[test]
+    fn domain_event_should_serialize_with_type_tag() {
+        let event = DomainEvent::Learning(LearningEvent::SessionStarted {
+            metadata:   EventMetadata::new(),
+            session_id: SessionId::new(),
+            user_id:    UserId::new(),
+            item_count: 50,
+        });
+
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"type\":\"Learning\""));
+    }
+
+    #[test]
+    fn domain_event_should_deserialize_correctly() {
+        let original = DomainEvent::User(UserEvent::AccountCreated {
+            metadata: EventMetadata::new(),
+            user_id:  UserId::new(),
+            email:    "test@example.com".to_string(),
+        });
+
+        let json = serde_json::to_string(&original).unwrap();
+        let deserialized: DomainEvent = serde_json::from_str(&json).unwrap();
+
+        match deserialized {
+            DomainEvent::User(UserEvent::AccountCreated { email, .. }) => {
+                assert_eq!(email, "test@example.com");
+            },
+            _ => unreachable!("Expected User AccountCreated event"),
+        }
+    }
+
+    #[test]
+    fn metadata_should_be_accessible() {
+        let metadata = EventMetadata::new();
+        let event = DomainEvent::Vocabulary(VocabularyEvent::ItemCreated {
+            metadata:   metadata.clone(),
+            item_id:    common_types::ItemId::new(),
+            spelling:   "test".to_string(),
+            created_by: UserId::new(),
+        });
+
+        assert_eq!(event.metadata().event_id, metadata.event_id);
+    }
+}

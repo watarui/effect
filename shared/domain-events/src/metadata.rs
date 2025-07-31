@@ -7,7 +7,7 @@ use common_types::{EventId, Timestamp};
 use serde::{Deserialize, Serialize};
 
 /// 全てのドメインイベントに共通のメタデータ
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EventMetadata {
     /// イベント ID
     pub event_id:    EventId,
