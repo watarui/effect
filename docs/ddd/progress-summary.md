@@ -5,7 +5,7 @@
 このドキュメントは、Effect プロジェクトの戦略的 DDD 設計の現在の進捗状況と、今後の作業再開のためのガイドです。
 
 作成日: 2025-07-27  
-最終更新: 2025-07-31
+最終更新: 2025-07-31（マイクロサービスインフラ実装完了）
 
 ## プロジェクト背景
 
@@ -237,6 +237,42 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - アーキテクチャ学習が主目的なので、過度な事前設計は避ける
 - 実装時に必要になった場合に詳細化する方が実践的
 
+## 現在の実装状況（2025-07-31）
+
+### 完了した実装
+
+1. **マイクロサービスインフラストラクチャ**
+
+   - 9 つのサービス（8 ビジネスサービス + API Gateway）
+   - 完全分離型データベース構成
+   - Docker Compose による統合開発環境
+   - 基本的なサービス構造（main.rs、config.rs など）
+
+2. **開発環境**
+   - Makefile による開発コマンド
+   - ローカル開発環境の整備
+   - モニタリングツールの設定
+
+### 未実装の重要項目
+
+1. **共有ライブラリ（shared/）**
+
+   - common-types（UserId、ItemId などの強型）
+   - domain-events（イベント定義とトレイト）
+   - infrastructure（DB 接続、Redis クライアントなど）
+
+2. **ビジネスロジック**
+
+   - 各サービスのドメイン層
+   - リポジトリ実装
+   - イベントハンドラー
+   - gRPC サービス定義
+
+3. **API Gateway**
+   - GraphQL スキーマ定義
+   - 各サービスとの gRPC 通信
+   - 認証・認可の統合
+
 ## 今後の作業
 
 ### Phase 5: Implementation - 技術選定 ✅ 決定済み（2025-07-31）
@@ -262,29 +298,27 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - 非同期処理: Tokio
    - Saga 実行: saga-executor サービス（Orchestration パターン）
 
-### Phase 5: Implementation - プロジェクト構造設計 ✅ 決定済み（2025-07-31）
+### Phase 5: Implementation - プロジェクト構造設計 ✅ 実装済み（2025-07-31）
 
-1. **cargo workspace 構成**
+1. **マイクロサービス構成（実装済み）**
 
    ```
    effect/
    ├── Cargo.toml (workspace)
-   ├── contexts/
-   │   ├── learning/
-   │   ├── learning-algorithm/
-   │   ├── vocabulary/
-   │   ├── user/
-   │   ├── progress/
-   │   └── ai-integration/
-   ├── applications/
-   │   ├── api-gateway/      # GraphQL API
-   │   └── event-processor/  # イベント処理
-   ├── services/
-   │   └── saga-executor/    # Saga パターン実装
-   └── shared/
-       ├── common-types/     # UserId, ItemId 等の共通型
-       ├── domain-events/    # DomainEvent と基本実装
-       └── infrastructure/   # DB 接続、イベントバス実装等
+   ├── services/                   # マイクロサービス
+   │   ├── learning-service/       # Learning Context
+   │   ├── algorithm-service/      # Learning Algorithm Context
+   │   ├── vocabulary-service/     # Vocabulary Context
+   │   ├── user-service/           # User Context
+   │   ├── progress-service/       # Progress Context
+   │   ├── ai-service/             # AI Integration Context
+   │   ├── api-gateway/            # GraphQL API Gateway
+   │   ├── event-processor/        # イベント処理
+   │   └── saga-orchestrator/      # Saga パターン実装
+   └── shared/                     # 共有ライブラリ（未実装）
+       ├── common-types/          # 共通型定義
+       ├── domain-events/         # ドメインイベント
+       └── infrastructure/        # インフラ実装
    ```
 
 2. **共通ライブラリ設計**
@@ -292,13 +326,34 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - 共通型（UserId, ItemId 等）
    - インフラストラクチャ抽象化
 
-### 実装フェーズの優先順位
+### Phase 5: Implementation - インフラストラクチャ ✅ 実装済み（2025-07-31）
 
-1. **Phase 1: 基盤構築**
+1. **Docker Compose による開発環境**
 
-   - プロジェクト構造のセットアップ
-   - 共通ライブラリの実装
-   - CI/CD パイプライン
+   - 8 個の PostgreSQL インスタンス（各サービス専用）
+   - Event Store 専用 PostgreSQL
+   - Redis（キャッシュ + Redis Streams イベントバス）
+   - 開発支援ツール（pgAdmin、RedisInsight）
+   - モニタリング（Prometheus、Grafana、Jaeger）設定済み
+
+2. **各サービスの基本構造実装**
+
+   - Dockerfile 作成済み
+   - 基本的な main.rs、config.rs、server.rs 実装
+   - ヘキサゴナルアーキテクチャの骨格準備完了
+
+3. **開発支援**
+   - Makefile による開発コマンド整備
+   - docker-compose.yml による統合環境
+
+### 実装フェーズの優先順位（更新）
+
+1. **Phase 1: 基盤構築** ✅ 一部完了
+
+   - ✅ プロジェクト構造のセットアップ
+   - ✅ マイクロサービスインフラストラクチャ
+   - 📋 共通ライブラリの実装（shared/ ディレクトリ）
+   - 📋 CI/CD パイプライン（GitHub Actions）
 
 2. **Phase 2: Core Domain 実装**
 
@@ -448,32 +503,3 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - 「話を勝手に進めないでね」という要望あり
 - 段階的アプローチは嫌い → フル機能を最初から設計
 - 「覚えた感」が最重要価値
-
-## ドキュメント整理の必要性
-
-### 現状の問題
-
-1. **重複したドキュメント**
-
-   - 例：`bounded-context-contracts.md` と `strategic/bounded-contexts.md`
-   - 同じ内容が複数箇所に存在し、どれが最新か不明
-
-2. **古い設計と新しい設計の混在**
-
-   - 最初の 5 コンテキスト設計 → 対話で 6 コンテキストに更新
-   - 古いドキュメントが残っていて混乱の原因に
-
-3. **フォルダ構造の不整合**
-   - `tactical/` フォルダは現在使用していない
-   - `architecture/` と `features/` は古い設計
-
-### 整理案
-
-- `docs/ddd/archive/` フォルダを作成し、古いドキュメントを移動
-- 現在有効なドキュメントのみを残す
-- README.md で現在の構成を明確化
-
-### 対象ファイル
-
-- アーカイブ対象：`architecture/`, `features/`, `tactical/`, 古い catalog 系ファイル
-- 維持：今回の対話で作成/更新したドキュメント

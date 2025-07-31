@@ -78,8 +78,8 @@ Effect は、英語語彙学習プラットフォームです（試験対策：I
 graph TD
     A[Align - 調整 ✅] --> B[Discover - 発見 ✅]
     B --> C[Decompose - 分解 ✅]
-    C --> D[Design - 設計 ⚡進行中]
-    D --> E[Implement - 実装]
+    C --> D[Design - 設計 ✅]
+    D --> E[Implement - 実装 ⚡進行中]
     E --> F[Evolve - 進化]
     F --> B
 ```
@@ -96,9 +96,10 @@ graph TD
 
 ### 現在の作業
 
-- ⚡ Phase 4: Design - Bounded Context Canvas（Learning Context 完了、残り 5 コンテキスト）
-- 📋 Phase 4: Design - ドメインサービスの設計（必要に応じて）
-- 📋 Phase 5: Implementation - 技術選定と設計
+- ✅ Phase 4: Design - 設計フェーズ完了
+- ✅ Phase 5: Implementation - 技術選定完了
+- ✅ Phase 5: Implementation - マイクロサービスインフラストラクチャ実装完了
+- ⚡ Phase 5: Implementation - 各サービスのビジネスロジック実装中
 
 ## 重要な決定事項
 
