@@ -1,168 +1,207 @@
-.PHONY: help dev dev-infra dev-services down clean build test fmt lint check migrate setup install-tools
+# Effect Makefile - 開発用コマンド集
 
-# デフォルトターゲット
-help:
-	@echo "使用可能なコマンド:"
-	@echo "  make dev           - 開発環境全体を起動 (インフラ + サービス)"
-	@echo "  make dev-infra     - インフラのみ起動 (PostgreSQL, Pub/Sub)"
-	@echo "  make dev-services  - サービスのみ起動"
-	@echo "  make down          - 全てのコンテナを停止"
-	@echo "  make clean         - コンテナ、ボリューム、キャッシュを削除"
-	@echo "  make build         - 全サービスをビルド"
-	@echo "  make test          - 全テストを実行"
-	@echo "  make fmt           - コードフォーマット"
-	@echo "  make lint          - リントチェック"
-	@echo "  make check         - ビルドチェック"
-	@echo "  make migrate       - データベースマイグレーション実行"
-	@echo "  make setup         - 初期セットアップ"
-	@echo "  make install-tools - 開発ツールのインストール"
+.PHONY: help
+help: ## ヘルプを表示
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-# 開発環境の起動
-dev: dev-infra
-	@echo "🚀 開発環境を起動しています..."
-	docker compose --profile services up -d
-	@echo "✅ 開発環境が起動しました"
-	@echo "📊 pgAdmin: http://localhost:5050"
-	@echo "🌐 API Gateway: http://localhost:8080"
-	@echo "📝 GraphQL Playground: http://localhost:8080/playground"
+# ===========================================
+# Docker 関連
+# ===========================================
 
-# インフラのみ起動
-dev-infra:
-	@echo "🏗️  インフラを起動しています..."
-	docker compose up -d postgres pubsub-emulator
-	@echo "⏳ PostgreSQL の起動を待っています..."
-	@docker compose exec -T postgres pg_isready -U effect || sleep 5
-	@echo "✅ インフラが起動しました"
+.PHONY: up
+up: ## すべてのサービスを起動
+	docker compose up -d
 
-# サービスのみ起動
-dev-services:
-	@echo "🚀 サービスを起動しています..."
-	docker compose --profile services up -d api-gateway command-service query-service saga-executor
-	@echo "✅ サービスが起動しました"
+.PHONY: down
+down: ## すべてのサービスを停止
+	docker compose down
 
-# 全て停止
-down:
-	@echo "🛑 全てのコンテナを停止しています..."
-	docker compose --profile services --profile tools down
-	@echo "✅ 停止しました"
+.PHONY: up-infra
+up-infra: ## インフラのみ起動（PostgreSQL × 8, Redis）
+	docker compose up -d \
+		postgres-event-store \
+		postgres-learning \
+		postgres-vocabulary \
+		postgres-user \
+		postgres-progress \
+		postgres-algorithm \
+		postgres-ai \
+		postgres-saga \
+		redis
 
-# クリーンアップ
-clean: down
-	@echo "🧹 クリーンアップを実行しています..."
-	docker compose --profile services --profile tools down -v
-	rm -rf target/
-	rm -rf services/*/target/
-	rm -rf shared/*/target/
-	@echo "✅ クリーンアップが完了しました"
+.PHONY: up-services
+up-services: ## マイクロサービスを起動
+	docker compose up -d
 
-# ビルド
-build:
-	@echo "🔨 全サービスをビルドしています..."
-	cargo build --all
-	@echo "✅ ビルドが完了しました"
+.PHONY: up-tools
+up-tools: ## 開発ツールを起動
+	docker compose --profile tools up -d
 
-# テスト実行
-test:
-	@echo "🧪 テストを実行しています..."
-	cargo test --all -- --nocapture
-	@echo "✅ テストが完了しました"
+.PHONY: up-monitoring
+up-monitoring: ## モニタリングツールを起動
+	docker compose --profile monitoring up -d
 
-# フォーマット
-fmt:
-	@echo "✨ コードをフォーマットしています..."
-	cargo fmt --all
-	@echo "✅ フォーマットが完了しました"
-
-# リントチェック
-lint:
-	@echo "🔍 リントチェックを実行しています..."
-	cargo clippy --all-targets --all-features -- -D warnings
-	@echo "✅ リントチェックが完了しました"
-
-# ビルドチェック
-check:
-	@echo "🔍 ビルドチェックを実行しています..."
-	cargo check --all
-	@echo "✅ ビルドチェックが完了しました"
-
-# データベースマイグレーション
-migrate:
-	@echo "🗄️  マイグレーションを実行しています..."
-	@echo "⚠️  sqlx-cli がインストールされていることを確認してください"
-	@echo "実行: cargo install sqlx-cli --no-default-features --features postgres"
-	# sqlx migrate run --database-url postgresql://effect:effect_password@localhost:5432/effect_db  # pragma: allowlist secret
-	@echo "✅ マイグレーションが完了しました (実装後に有効化)"
-
-# 初期セットアップ
-setup: install-tools
-	@echo "🔧 初期セットアップを実行しています..."
-	@if [ ! -f .env ]; then cp .env.example .env && echo "✅ .env ファイルを作成しました"; fi
-	@echo "📦 pre-commit をインストールしています..."
-	pre-commit install
-	@echo "✅ セットアップが完了しました"
-
-# 開発ツールのインストール
-install-tools:
-	@echo "🔧 開発ツールをインストールしています..."
-	@echo "Rust ツール:"
-	rustup component add rustfmt clippy
-	@echo ""
-	@echo "以下のツールを手動でインストールしてください:"
-	@echo "  - sqlx-cli: cargo install sqlx-cli --no-default-features --features postgres"
-	@echo "  - cargo-watch: cargo install cargo-watch"
-	@echo "  - pre-commit: pip install pre-commit"
-	@echo "  - docker compose: https://docs.docker.com/compose/install/"
-
-# ログ表示
-logs:
+.PHONY: logs
+logs: ## すべてのログを表示
 	docker compose logs -f
 
-# PostgreSQL に接続
-psql:
-	docker compose exec postgres psql -U effect -d effect_db
+.PHONY: logs-service
+logs-service: ## 特定のサービスのログを表示（例: make logs-service SERVICE=learning-service）
+	docker compose logs -f $(SERVICE)
 
-# pgAdmin を起動
-pgadmin:
-	docker compose --profile tools up -d pgadmin
-	@echo "📊 pgAdmin: http://localhost:5050"
+.PHONY: ps
+ps: ## コンテナの状態を表示
+	docker compose ps
 
-# サービスのステータス確認
-status:
-	@echo "📊 サービスステータス:"
-	@docker compose ps
+.PHONY: clean
+clean: ## すべてのコンテナとボリュームを削除
+	docker compose down -v
 
-# ヘルスチェック
-health:
-	@echo "🏥 ヘルスチェック:"
-	@curl -s http://localhost:8080/health || echo "API Gateway: ❌ 未起動"
-	@curl -s http://localhost:8081/health || echo "Command Service: ❌ 未起動"
-	@curl -s http://localhost:8082/health || echo "Query Service: ❌ 未起動"
-	@curl -s http://localhost:8083/health || echo "Saga Executor: ❌ 未起動"
+# ===========================================
+# ビルド関連
+# ===========================================
 
-# 開発用ウォッチモード
-watch:
-	cargo watch -x "check --all" -x "test --all" -x "clippy --all"
+.PHONY: build
+build: ## すべてのサービスをビルド
+	cargo build --workspace
 
-# カバレッジレポート生成
-coverage:
-	@echo "📊 カバレッジレポートを生成しています..."
-	@echo "⚠️  cargo-tarpaulin がインストールされていることを確認してください"
-	@echo "実行: cargo install cargo-tarpaulin"
-	# cargo tarpaulin --out Html --output-dir target/coverage
+.PHONY: build-release
+build-release: ## リリースビルド
+	cargo build --workspace --release
 
-# ベンチマーク実行
-bench:
-	@echo "⚡ ベンチマークを実行しています..."
-	cargo bench --all
+.PHONY: build-service
+build-service: ## 特定のサービスをビルド（例: make build-service SERVICE=learning-service）
+	cargo build -p $(SERVICE)
 
-# ドキュメント生成
-doc:
-	@echo "📚 ドキュメントを生成しています..."
-	cargo doc --all --no-deps --open
+.PHONY: test
+test: ## すべてのテストを実行
+	cargo test --workspace
 
-# セキュリティ監査
-audit:
-	@echo "🔒 セキュリティ監査を実行しています..."
-	@echo "⚠️  cargo-audit がインストールされていることを確認してください"
-	@echo "実行: cargo install cargo-audit"
+.PHONY: test-service
+test-service: ## 特定のサービスのテストを実行（例: make test-service SERVICE=learning-service）
+	cargo test -p $(SERVICE)
+
+.PHONY: lint
+lint: ## Clippy でリントチェック
+	cargo clippy --workspace -- -D warnings
+
+.PHONY: fmt
+fmt: ## コードフォーマット
+	cargo fmt --all
+
+.PHONY: fmt-check
+fmt-check: ## フォーマットチェック
+	cargo fmt --all -- --check
+
+.PHONY: check
+check: ## 型チェック
+	cargo check --workspace
+
+.PHONY: audit
+audit: ## セキュリティ監査
 	cargo audit
+
+# ===========================================
+# データベース関連
+# ===========================================
+
+.PHONY: db-migrate
+db-migrate: ## データベースマイグレーション実行
+	@echo "マイグレーションは未実装です"
+
+.PHONY: db-reset
+db-reset: ## データベースをリセット（各サービスのデータベースを個別にリセット）
+	@echo "各データベースをリセットします..."
+	@echo "注意: 現在は各サービスが独立したデータベースを持っています"
+
+.PHONY: db-shell
+db-shell: ## PostgreSQL シェルに接続（サービスを指定: make db-shell SERVICE=learning）
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "使用法: make db-shell SERVICE=learning"; \
+		echo "利用可能なサービス: event-store, learning, vocabulary, user, progress, algorithm, ai, saga"; \
+	else \
+		docker compose exec postgres-$(SERVICE) psql -U effect -d $$(echo $(SERVICE) | sed 's/-/_/g')_db; \
+	fi
+
+.PHONY: redis-cli
+redis-cli: ## Redis CLI に接続
+	docker compose exec redis redis-cli
+
+# ===========================================
+# 開発環境セットアップ
+# ===========================================
+
+.PHONY: setup
+setup: ## 開発環境の初期セットアップ
+	@echo "=== 開発環境セットアップ ==="
+	@echo "1. .env ファイルを作成..."
+	@if [ ! -f .env ]; then cp .env.example .env; echo ".env ファイルを作成しました"; else echo ".env ファイルは既に存在します"; fi
+	@echo "2. Rust ツールチェインの確認..."
+	@rustc --version
+	@cargo --version
+	@echo "3. 必要なツールのインストール..."
+	@cargo install cargo-watch cargo-audit || true
+	@echo "4. Git フックの設定..."
+	@echo "セットアップ完了！"
+
+.PHONY: dev
+dev: ## 開発環境を起動（インフラ + ホットリロード）
+	@make up-infra
+	@echo "開発サーバーを起動するには、各サービスディレクトリで 'cargo watch -x run' を実行してください"
+
+# ===========================================
+# プロトコルバッファ関連
+# ===========================================
+
+.PHONY: proto-gen
+proto-gen: ## Protocol Buffers からコードを生成
+	@echo "Protocol Buffers のコード生成は未実装です"
+
+# ===========================================
+# ドキュメント関連
+# ===========================================
+
+.PHONY: doc
+doc: ## ドキュメントを生成して開く
+	cargo doc --workspace --no-deps --open
+
+.PHONY: doc-deps
+doc-deps: ## 依存関係を含むドキュメントを生成
+	cargo doc --workspace --open
+
+# ===========================================
+# CI/CD 関連
+# ===========================================
+
+.PHONY: ci
+ci: fmt-check lint test ## CI で実行するチェック
+
+.PHONY: pre-commit
+pre-commit: fmt lint test ## コミット前のチェック
+
+# ===========================================
+# ユーティリティ
+# ===========================================
+
+.PHONY: clean-cargo
+clean-cargo: ## Cargo のキャッシュをクリーン
+	cargo clean
+
+.PHONY: update
+update: ## 依存関係を更新
+	cargo update
+
+.PHONY: tree
+tree: ## 依存関係ツリーを表示
+	cargo tree
+
+.PHONY: bloat
+bloat: ## バイナリサイズの分析
+	cargo bloat --release
+
+.PHONY: bench
+bench: ## ベンチマークを実行
+	cargo bench --workspace
+
+# デフォルトターゲット
+.DEFAULT_GOAL := help

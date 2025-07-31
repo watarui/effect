@@ -1,19 +1,22 @@
+version: '3.9'
 
 services:
-  # PostgreSQL データベース
-  postgres:
-    image: postgres:18beta2-alpine
-    container_name: effect-postgres
+  # ========================================
+  # データベース層（完全分離型）
+  # ========================================
+
+  # Event Store 専用 PostgreSQL
+  postgres-event-store:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-event-store
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-effect}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
-      POSTGRES_DB: ${POSTGRES_DB:-effect_db}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=ja_JP.UTF-8"
+      POSTGRES_DB: event_store_db
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_EVENT_STORE_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-multiple-databases.sql:/docker-entrypoint-initdb.d/init-multiple-databases.sql
+      - postgres_event_store_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
       interval: 10s
@@ -22,46 +25,172 @@ services:
     networks:
       - effect-network
 
-  # Google Cloud Pub/Sub エミュレータ
-  pubsub-emulator:
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:latest
-    container_name: effect-pubsub-emulator
-    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085 --project=${GCP_PROJECT_ID:-effect-local}
-    ports:
-      - "${PUBSUB_EMULATOR_PORT:-8085}:8085"
+  # Learning Service 専用 PostgreSQL
+  postgres-learning:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-learning
     environment:
-      PUBSUB_EMULATOR_HOST: "pubsub-emulator:8085"
-      PUBSUB_PROJECT_ID: ${GCP_PROJECT_ID:-effect-local}
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: learning_db
+    ports:
+      - "${POSTGRES_LEARNING_PORT:-5433}:5432"
+    volumes:
+      - postgres_learning_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8085"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - effect-network
 
-  # pgAdmin (オプション - データベース管理ツール)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: effect-pgadmin
+  # Vocabulary Service 専用 PostgreSQL
+  postgres-vocabulary:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-vocabulary
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@effect.local}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}  # pragma: allowlist secret
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'  # pragma: allowlist secret
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: vocabulary_db
     ports:
-      - "${PGADMIN_PORT:-5050}:80"
+      - "${POSTGRES_VOCABULARY_PORT:-5434}:5432"
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres_vocabulary_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - effect-network
-    profiles:
-      - tools
 
-  # API Gateway サービス
+  # User Service 専用 PostgreSQL
+  postgres-user:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-user
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: user_db
+    ports:
+      - "${POSTGRES_USER_PORT:-5435}:5432"
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # Progress Service 専用 PostgreSQL
+  postgres-progress:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-progress
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: progress_db
+    ports:
+      - "${POSTGRES_PROGRESS_PORT:-5436}:5432"
+    volumes:
+      - postgres_progress_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # Algorithm Service 専用 PostgreSQL
+  postgres-algorithm:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-algorithm
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: algorithm_db
+    ports:
+      - "${POSTGRES_ALGORITHM_PORT:-5437}:5432"
+    volumes:
+      - postgres_algorithm_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # AI Service 専用 PostgreSQL
+  postgres-ai:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-ai
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: ai_db
+    ports:
+      - "${POSTGRES_AI_PORT:-5438}:5432"
+    volumes:
+      - postgres_ai_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # Saga Orchestrator 専用 PostgreSQL
+  postgres-saga:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-saga
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: saga_db
+    ports:
+      - "${POSTGRES_SAGA_PORT:-5439}:5432"
+    volumes:
+      - postgres_saga_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # ========================================
+  # 共通インフラストラクチャ
+  # ========================================
+
+  # Redis - キャッシュ + イベントバス (Redis Streams)
+  redis:
+    image: redis:8.2-rc1-alpine3.22
+    container_name: effect-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # ========================================
+  # マイクロサービス層
+  # ========================================
+
+  # API Gateway - GraphQL エンドポイント
   api-gateway:
     build:
       context: .
@@ -69,129 +198,402 @@ services:
       target: development
     container_name: effect-api-gateway
     environment:
-      RUST_LOG: ${RUST_LOG:-debug}
-      # API Gateway は各サービスに gRPC で接続するため、直接データベースに接続しない
-      COMMAND_SERVICE_URL: command-service:50051
-      QUERY_SERVICE_URL: query-service:50052
-      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
-      SERVICE_PORT: 8080
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 8000
+      # gRPC サービスエンドポイント
+      LEARNING_SERVICE_URL: learning-service:50051
+      VOCABULARY_SERVICE_URL: vocabulary-service:50052
+      USER_SERVICE_URL: user-service:50053
+      PROGRESS_SERVICE_URL: progress-service:50054
+      ALGORITHM_SERVICE_URL: algorithm-service:50055
+      AI_SERVICE_URL: ai-service:50056
     ports:
-      - "${API_GATEWAY_PORT:-8080}:8080"
+      - "${API_GATEWAY_PORT:-8000}:8000"
     volumes:
       - ./services/api-gateway:/app/services/api-gateway
       - ./shared:/app/shared
-      - cargo_cache:/usr/local/cargo
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
       - target_cache:/app/target
     depends_on:
-      postgres:
-        condition: service_healthy
-      pubsub-emulator:
-        condition: service_healthy
+      - learning-service
+      - vocabulary-service
+      - user-service
+      - progress-service
+      - algorithm-service
+      - ai-service
     networks:
       - effect-network
-    profiles:
-      - services
 
-  # Command Service
-  command-service:
+  # Learning Service - 学習セッション管理
+  learning-service:
     build:
       context: .
-      dockerfile: services/command-service/Dockerfile
+      dockerfile: services/learning-service/Dockerfile
       target: development
-    container_name: effect-command-service
+    container_name: effect-learning-service
     environment:
-      RUST_LOG: ${RUST_LOG:-debug}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/command_db
-      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/event_store_db
-      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
-      SERVICE_PORT: 8081
-      GRPC_PORT: 50051
-    ports:
-      - "${COMMAND_SERVICE_PORT:-8081}:8081"
-      - "${COMMAND_SERVICE_GRPC_PORT:-50051}:50051"
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50051
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-learning:5432/learning_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
     volumes:
-      - ./services/command-service:/app/services/command-service
+      - ./services/learning-service:/app/services/learning-service
       - ./shared:/app/shared
-      - cargo_cache:/usr/local/cargo
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
       - target_cache:/app/target
     depends_on:
-      postgres:
+      postgres-learning:
         condition: service_healthy
-      pubsub-emulator:
+      postgres-event-store:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - effect-network
-    profiles:
-      - services
 
-  # Query Service
-  query-service:
+  # Vocabulary Service - 語彙管理
+  vocabulary-service:
     build:
       context: .
-      dockerfile: services/query-service/Dockerfile
+      dockerfile: services/vocabulary-service/Dockerfile
       target: development
-    container_name: effect-query-service
+    container_name: effect-vocabulary-service
     environment:
-      RUST_LOG: ${RUST_LOG:-debug}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/query_db
-      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/event_store_db
-      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
-      SERVICE_PORT: 8082
-      GRPC_PORT: 50052
-    ports:
-      - "${QUERY_SERVICE_PORT:-8082}:8082"
-      - "${QUERY_SERVICE_GRPC_PORT:-50052}:50052"
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50052
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary:5432/vocabulary_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
     volumes:
-      - ./services/query-service:/app/services/query-service
+      - ./services/vocabulary-service:/app/services/vocabulary-service
       - ./shared:/app/shared
-      - cargo_cache:/usr/local/cargo
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
       - target_cache:/app/target
     depends_on:
-      postgres:
+      postgres-vocabulary:
         condition: service_healthy
-      pubsub-emulator:
+      postgres-event-store:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - effect-network
-    profiles:
-      - services
 
-  # Saga Executor
-  saga-executor:
+  # User Service - ユーザー管理
+  user-service:
     build:
       context: .
-      dockerfile: services/saga-executor/Dockerfile
+      dockerfile: services/user-service/Dockerfile
       target: development
-    container_name: effect-saga-executor
+    container_name: effect-user-service
     environment:
-      RUST_LOG: ${RUST_LOG:-debug}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/saga_db
-      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres:5432/event_store_db
-      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
-      SERVICE_PORT: 8083
-    ports:
-      - "${SAGA_EXECUTOR_PORT:-8083}:8083"
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50053
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-user:5432/user_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
     volumes:
-      - ./services/saga-executor:/app/services/saga-executor
+      - ./services/user-service:/app/services/user-service
       - ./shared:/app/shared
-      - cargo_cache:/usr/local/cargo
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
       - target_cache:/app/target
     depends_on:
-      postgres:
+      postgres-user:
         condition: service_healthy
-      pubsub-emulator:
+      postgres-event-store:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # Progress Service - 進捗管理（CQRS読み取り側）
+  progress-service:
+    build:
+      context: .
+      dockerfile: services/progress-service/Dockerfile
+      target: development
+    container_name: effect-progress-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50054
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-progress:5432/progress_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
+    volumes:
+      - ./services/progress-service:/app/services/progress-service
+      - ./shared:/app/shared
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      postgres-progress:
+        condition: service_healthy
+      postgres-event-store:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      event-processor:
+        condition: service_started
+    networks:
+      - effect-network
+
+  # Algorithm Service - 学習アルゴリズム
+  algorithm-service:
+    build:
+      context: .
+      dockerfile: services/algorithm-service/Dockerfile
+      target: development
+    container_name: effect-algorithm-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50055
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-algorithm:5432/algorithm_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
+    volumes:
+      - ./services/algorithm-service:/app/services/algorithm-service
+      - ./shared:/app/shared
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      postgres-algorithm:
+        condition: service_healthy
+      postgres-event-store:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # AI Service - AI 統合
+  ai-service:
+    build:
+      context: .
+      dockerfile: services/ai-service/Dockerfile
+      target: development
+    container_name: effect-ai-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50056
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-ai:5432/ai_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
+      # Gemini API Key は .env ファイルで管理
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      - ./services/ai-service:/app/services/ai-service
+      - ./shared:/app/shared
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      postgres-ai:
+        condition: service_healthy
+      postgres-event-store:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # Event Processor - イベント処理
+  event-processor:
+    build:
+      context: .
+      dockerfile: services/event-processor/Dockerfile
+      target: development
+    container_name: effect-event-processor
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
+    volumes:
+      - ./services/event-processor:/app/services/event-processor
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      postgres-event-store:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # Saga Orchestrator - 分散トランザクション管理
+  saga-orchestrator:
+    build:
+      context: .
+      dockerfile: services/saga-orchestrator/Dockerfile
+      target: development
+    container_name: effect-saga-orchestrator
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50057
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-saga:5432/saga_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
+      # gRPC サービスエンドポイント（補償トランザクション用）
+      LEARNING_SERVICE_URL: learning-service:50051
+      VOCABULARY_SERVICE_URL: vocabulary-service:50052
+      USER_SERVICE_URL: user-service:50053
+      PROGRESS_SERVICE_URL: progress-service:50054
+      ALGORITHM_SERVICE_URL: algorithm-service:50055
+      AI_SERVICE_URL: ai-service:50056
+    volumes:
+      - ./services/saga-orchestrator:/app/services/saga-orchestrator
+      - ./shared:/app/shared
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      postgres-saga:
+        condition: service_healthy
+      postgres-event-store:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # ========================================
+  # 開発ツール（オプション）
+  # ========================================
+
+  # pgAdmin - PostgreSQL 管理ツール
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: effect-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@effect.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./scripts/pgadmin-servers.json:/pgadmin4/servers.json
+    depends_on:
+      - postgres-event-store
+      - postgres-learning
+      - postgres-vocabulary
+      - postgres-user
+      - postgres-progress
+      - postgres-algorithm
+      - postgres-ai
+      - postgres-saga
+    networks:
+      - effect-network
+    profiles:
+      - tools
+
+  # RedisInsight - Redis 管理ツール
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: effect-redis-insight
+    ports:
+      - "${REDIS_INSIGHT_PORT:-8001}:8001"
+    volumes:
+      - redis_insight_data:/db
+    depends_on:
+      redis:
         condition: service_healthy
     networks:
       - effect-network
     profiles:
-      - services
+      - tools
+
+  # Prometheus - メトリクス収集
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: effect-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - effect-network
+    profiles:
+      - monitoring
+
+  # Grafana - メトリクス可視化
+  grafana:
+    image: grafana/grafana:latest
+    container_name: effect-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: false
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - effect-network
+    profiles:
+      - monitoring
+
+  # Jaeger - 分散トレーシング
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: effect-jaeger
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: :9411
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"
+      - "${JAEGER_COLLECTOR_PORT:-14268}:14268"
+      - "${JAEGER_AGENT_PORT:-6831}:6831/udp"
+    networks:
+      - effect-network
+    profiles:
+      - monitoring
 
 networks:
   effect-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
-  postgres_data:
+  # PostgreSQL データボリューム（各サービスごと）
+  postgres_event_store_data:
+  postgres_learning_data:
+  postgres_vocabulary_data:
+  postgres_user_data:
+  postgres_progress_data:
+  postgres_algorithm_data:
+  postgres_ai_data:
+  postgres_saga_data:
+
+  # その他のボリューム
+  redis_data:
   pgadmin_data:
+  redis_insight_data:
+  prometheus_data:
+  grafana_data:
   cargo_cache:
   target_cache:

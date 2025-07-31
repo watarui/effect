@@ -1,0 +1,76 @@
+{
+	"Servers": {
+		"1": {
+			"Name": "Event Store DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-event-store",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		},
+		"2": {
+			"Name": "Learning DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-learning",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		},
+		"3": {
+			"Name": "Vocabulary DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-vocabulary",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		},
+		"4": {
+			"Name": "User DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-user",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		},
+		"5": {
+			"Name": "Progress DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-progress",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		},
+		"6": {
+			"Name": "Algorithm DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-algorithm",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		},
+		"7": {
+			"Name": "AI DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-ai",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		},
+		"8": {
+			"Name": "Saga DB",
+			"Group": "Effect Databases",
+			"Host": "postgres-saga",
+			"Port": 5432,
+			"MaintenanceDB": "postgres",
+			"Username": "effect",
+			"SSLMode": "prefer"
+		}
+	}
+}

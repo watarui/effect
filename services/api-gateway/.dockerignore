@@ -1,0 +1,45 @@
+# API Gateway 用 .dockerignore
+# Docker ビルド時に除外するファイル
+
+# Rust ビルド成果物
+target/
+**/*.rs.bk
+*.pdb
+
+# 開発環境固有のファイル
+.env
+.env.local
+.env.*.local
+
+# IDE 設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS 固有のファイル
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# ドキュメント
+*.md
+docs/
+
+# テスト関連
+tests/
+benches/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# その他の不要なファイル
+*.log
+*.pid
+*.seed
+*.pid.lock
