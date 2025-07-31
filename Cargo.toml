@@ -68,6 +68,13 @@ dotenvy = "0.15"
 google-cloud-pubsub = "0.30"
 google-cloud-googleapis = "0.16.1"
 
+# Redis
+redis = { version = "0.32.4", features = [
+  "aio",
+  "tokio-comp",
+  "connection-manager",
+] }
+
 [workspace.lints.clippy]
 # エラーレベルのリント
 unwrap_used = "deny"
