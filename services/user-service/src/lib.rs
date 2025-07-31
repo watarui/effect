@@ -6,6 +6,7 @@
 //! - ユーザー関連イベントの発行
 
 pub mod adapters;
+pub mod application;
 pub mod config;
 pub mod domain;
 pub mod ports;
