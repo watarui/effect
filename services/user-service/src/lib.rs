@@ -1,67 +1,23 @@
-//! User Context
+//! User Service
 //!
-//! ユーザー管理と認証を担当するコンテキスト
+//! ユーザー管理を担当するマイクロサービス
+//! - 認証・認可
+//! - ユーザープロフィール管理
+//! - ユーザー関連イベントの発行
 
-// 一時的に警告を抑制
-#![allow(missing_docs)]
-#![allow(unused)]
+pub mod domain;
 
-pub mod domain {
-    //! ドメイン層
-
-    pub mod aggregates {
-        //! 集約
-    }
-
-    pub mod events {
-        //! ドメインイベント
-    }
-
-    pub mod commands {
-        //! コマンド
-    }
-
-    pub mod value_objects {
-        //! 値オブジェクト
-    }
-}
-
-pub mod application {
-    //! アプリケーション層
-
-    pub mod command_handlers {
-        //! コマンドハンドラー
-    }
-
-    pub mod query_handlers {
-        //! クエリハンドラー
-    }
-
-    pub mod services {
-        //! アプリケーションサービス
-    }
-}
-
-pub mod infrastructure {
-    //! インフラストラクチャ層
-
-    pub mod repositories {
-        //! リポジトリ実装
-    }
-
-    pub mod auth {
-        //! 認証実装
-    }
-}
-
-pub mod ports {
-    //! ポート定義
-
-    pub mod inbound {
-        //! インバウンドポート
-    }
-
-    pub mod outbound {
-        //! アウトバウンドポート
-    }
-}
+// Re-export main types
+pub use domain::{
+    aggregates::user::User,
+    commands::{
+        ChangeUserRole,
+        CreateUser,
+        DeleteUser,
+        TargetLevelUpdate,
+        UpdateUserEmail,
+        UpdateUserProfile,
+    },
+    events::UserEventBuilder,
+    value_objects::{email::Email, user_profile::UserProfile, user_role::UserRole},
+};

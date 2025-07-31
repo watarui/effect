@@ -60,6 +60,7 @@ prost = "0.14"
 
 # Testing
 mockall = "0.13"
+tokio-test = "0.4.4"
 
 # Environment variables
 dotenvy = "0.15"
