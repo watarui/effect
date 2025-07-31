@@ -64,6 +64,10 @@ mockall = "0.13"
 # Environment variables
 dotenvy = "0.15"
 
+# Google Cloud
+google-cloud-pubsub = "0.30"
+google-cloud-googleapis = "0.16.1"
+
 [workspace.lints.clippy]
 # エラーレベルのリント
 unwrap_used = "deny"

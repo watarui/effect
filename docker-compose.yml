@@ -169,7 +169,7 @@ services:
   # 共通インフラストラクチャ
   # ========================================
 
-  # Redis - キャッシュ + イベントバス (Redis Streams)
+  # Redis - キャッシュ専用
   redis:
     image: redis:8.2-rc1-alpine3.22
     container_name: effect-redis
@@ -180,6 +180,23 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # Google Pub/Sub エミュレータ - イベントバス
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    container_name: effect-pubsub
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports:
+      - "${PUBSUB_EMULATOR_PORT:-8085}:8085"
+    environment:
+      PUBSUB_PROJECT_ID: ${PUBSUB_PROJECT_ID:-effect-local}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -238,6 +255,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-learning:5432/learning_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
       - ./services/learning-service:/app/services/learning-service
@@ -251,6 +270,8 @@ services:
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
     networks:
       - effect-network
@@ -268,6 +289,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary:5432/vocabulary_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
       - ./services/vocabulary-service:/app/services/vocabulary-service
@@ -281,6 +304,8 @@ services:
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
     networks:
       - effect-network
@@ -298,6 +323,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-user:5432/user_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
       - ./services/user-service:/app/services/user-service
@@ -311,6 +338,8 @@ services:
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
     networks:
       - effect-network
@@ -328,6 +357,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-progress:5432/progress_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
       - ./services/progress-service:/app/services/progress-service
@@ -341,6 +372,8 @@ services:
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
       event-processor:
         condition: service_started
@@ -360,6 +393,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-algorithm:5432/algorithm_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
       - ./services/algorithm-service:/app/services/algorithm-service
@@ -373,6 +408,8 @@ services:
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
     networks:
       - effect-network
@@ -390,6 +427,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-ai:5432/ai_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
       # Gemini API Key は .env ファイルで管理
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
@@ -406,6 +445,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pubsub:
+        condition: service_healthy
     networks:
       - effect-network
 
@@ -420,6 +461,8 @@ services:
       RUST_LOG: ${RUST_LOG:-info}
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
       - ./services/event-processor:/app/services/event-processor
@@ -430,6 +473,8 @@ services:
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
     networks:
       - effect-network
@@ -447,6 +492,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-saga:5432/saga_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
       # gRPC サービスエンドポイント（補償トランザクション用）
       LEARNING_SERVICE_URL: learning-service:50051
@@ -467,6 +514,8 @@ services:
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
     networks:
       - effect-network
@@ -512,6 +561,8 @@ services:
       - redis_insight_data:/db
     depends_on:
       redis:
+        condition: service_healthy
+      pubsub:
         condition: service_healthy
     networks:
       - effect-network

@@ -68,7 +68,7 @@
 8. **event-processor**
    - ドメインイベント処理
    - イベントストアへの永続化
-   - イベントバス（Redis Streams）との統合
+   - イベントバス（Google Pub/Sub）との統合
 
 9. **saga-orchestrator**
    - 分散トランザクション管理
@@ -89,7 +89,7 @@
 ### イベント駆動アーキテクチャ
 
 - **イベントストア**: PostgreSQL によるイベントソーシング
-- **イベントバス**: Redis Streams による非同期通信
+- **イベントバス**: Google Pub/Sub による非同期通信
 - **CQRS**: コマンドとクエリの責務分離
 
 ### 技術スタック
@@ -99,7 +99,8 @@
 - **GraphQL**: async-graphql
 - **gRPC**: Tonic
 - **データベース**: PostgreSQL 18
-- **キャッシュ/イベントバス**: Redis 8.2
+- **キャッシュ**: Redis 8.2
+- **イベントバス**: Google Pub/Sub（エミュレータ）
 - **認証**: Firebase Auth + Google OAuth
 - **AI**: Gemini API
 

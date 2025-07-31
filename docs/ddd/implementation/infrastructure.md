@@ -56,17 +56,35 @@ volumes:
 
 ### 用途
 
-Redis は 2 つの主要な役割を担います：
+Redis はキャッシュレイヤーとして使用されます：
 
-1. **キャッシュレイヤー**
-   - セッションストア
-   - 一時的なデータキャッシュ
-   - レート制限カウンター
+- セッションストア
+- 一時的なデータキャッシュ
+- レート制限カウンター
 
-2. **イベントバス（Redis Streams）**
-   - ドメインイベントの配信
-   - 非同期メッセージング
-   - イベント駆動アーキテクチャの基盤
+## Google Pub/Sub 構成
+
+### 用途
+
+Google Pub/Sub はイベントバスとして使用されます：
+
+- ドメインイベントの配信
+- 非同期メッセージング
+- イベント駆動アーキテクチャの基盤
+
+### ローカル開発
+
+ローカル開発では Google Pub/Sub エミュレータを使用：
+
+```yaml
+pubsub:
+  image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+  command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+  ports:
+    - "8085:8085"
+  environment:
+    PUBSUB_PROJECT_ID: effect-local
+```
 
 ### 設定
 

@@ -3,26 +3,7 @@
 //! This crate contains database connections, message bus, and other
 //! infrastructure.
 
-/// Adds two unsigned 64-bit integers.
-///
-/// # Examples
-///
-/// ```
-/// use infrastructure::add;
-/// assert_eq!(add(2, 2), 4);
-/// ```
-#[must_use]
-pub const fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod event_bus;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+// Re-export commonly used types
+pub use event_bus::PubSubEventBus;

@@ -291,10 +291,11 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - キャッシュ: Redis
 
 3. **メッセージング**
-   - イベントバス: **Redis Streams**
-     - 永続化により学習・デバッグが容易
-     - 実践的なイベント駆動アーキテクチャ
-     - シンプルな実装で本質を学習可能
+   - イベントバス: **Google Pub/Sub**
+     - クラウドネイティブなイベント駆動アーキテクチャ
+     - ローカル開発用エミュレータ利用可能
+     - 本番環境への移行が容易（無料枠あり）
+     - マネージドサービスで運用負荷軽減
    - 非同期処理: Tokio
    - Saga 実行: saga-executor サービス（Orchestration パターン）
 
@@ -332,7 +333,8 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
    - 8 個の PostgreSQL インスタンス（各サービス専用）
    - Event Store 専用 PostgreSQL
-   - Redis（キャッシュ + Redis Streams イベントバス）
+   - Redis（キャッシュ用）
+   - Google Pub/Sub エミュレータ（ローカル開発用）
    - 開発支援ツール（pgAdmin、RedisInsight）
    - モニタリング（Prometheus、Grafana、Jaeger）設定済み
 
@@ -377,7 +379,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
    - [x] Web フレームワーク: Axum（高性能、Tokio エコシステム）
    - [x] イベントストア: PostgreSQL + カスタム実装（シンプル、学習価値）
-   - [x] イベントバス: Redis Streams（実践的で学習価値が高い）
+   - [x] イベントバス: Google Pub/Sub（クラウドネイティブで実践的）
 
 2. **環境構築の準備**
    - [ ] Rust の最新版インストール

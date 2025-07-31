@@ -9,6 +9,24 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-07-31: イベントバスを Redis Streams から Google Pub/Sub へ変更
+
+- **変更内容**: イベントバスの実装を Redis Streams から Google Pub/Sub に変更
+- **決定事項**:
+  - Google Pub/Sub エミュレータをローカル開発で使用
+  - 本番環境では Google Cloud の無料枠を活用
+  - Redis はキャッシュ専用として継続使用
+- **理由**:
+  - よりクラウドネイティブなアーキテクチャの学習
+  - 本番環境への移行が容易（コード変更不要）
+  - マネージドサービスで運用負荷軽減
+  - Redis Streams の実装がまだ開始されていないため、今が最適なタイミング
+- **影響範囲**:
+  - infrastructure.md: Redis と Pub/Sub の役割を明確化
+  - docker-compose.yml: Pub/Sub エミュレータコンテナ追加
+  - 環境変数: PUBSUB_EMULATOR_HOST、GOOGLE_CLOUD_PROJECT 追加
+  - Cargo.toml: google-cloud-pubsub クレート追加（予定）
+
 ### 2025-07-31: 学習セッションを 1 問刻みの問題数ベースに統一
 
 - **変更内容**: 学習セッションを純粋な問題数ベースに変更、ポモドーロへの言及を削除
