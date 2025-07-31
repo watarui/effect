@@ -26,6 +26,7 @@ tracing-subscriber = { workspace = true }
 tonic = { workspace = true }
 prost = { workspace = true }
 sqlx = { workspace = true }
+config = { workspace = true }
 
 # Service specific dependencies
 validator = { version = "0.20.0", features = ["derive"] }

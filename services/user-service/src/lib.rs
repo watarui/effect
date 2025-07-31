@@ -5,7 +5,10 @@
 //! - ユーザープロフィール管理
 //! - ユーザー関連イベントの発行
 
+pub mod adapters;
+pub mod config;
 pub mod domain;
+pub mod ports;
 
 // Re-export main types
 pub use domain::{

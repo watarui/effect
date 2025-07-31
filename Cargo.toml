@@ -64,6 +64,7 @@ tokio-test = "0.4.4"
 
 # Environment variables
 dotenvy = "0.15"
+config = { version = "0.15.13", features = ["toml"] }
 
 # Google Cloud
 google-cloud-pubsub = "0.30"
