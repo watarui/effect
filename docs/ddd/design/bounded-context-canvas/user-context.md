@@ -6,7 +6,7 @@ User Context
 
 ## 2. Purpose
 
-Firebase Authentication による Google OAuth 認証を提供し、ユーザープロファイルと学習設定を管理する。
+Firebase Auth + Google OAuth による認証を提供し、ユーザープロファイルと学習設定を管理する。
 シンプルな権限管理（Admin/User）により、システム全体のアクセス制御を実現する。
 
 ## 3. Strategic Classification

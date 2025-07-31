@@ -8,7 +8,7 @@ Effect プロジェクトは、6 つの境界づけられたコンテキスト�
 
 ### 1. User Context（ユーザーコンテキスト）
 
-ユーザー認証とプロファイル管理を担当。Firebase Auth を利用した Google OAuth 認証を提供し、学習設定（コース選択、目標設定）を管理します。
+ユーザー認証とプロファイル管理を担当。Firebase Auth + Google OAuth による認証を提供し、学習設定（コース選択、目標設定）を管理します。
 
 ### 2. Vocabulary Context（語彙コンテキスト）
 

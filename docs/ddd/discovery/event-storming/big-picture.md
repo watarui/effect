@@ -169,7 +169,7 @@
 
 ### 📥 入力
 
-- Firebase Auth (Google認証)
+- Firebase Auth + Google OAuth
 - OpenAI API / Gemini API（項目情報生成、深掘り、スコア推定）
 
 ### 📤 出力

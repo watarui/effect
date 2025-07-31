@@ -290,11 +290,12 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     - 注記: 調査の結果、CreatedBy は Vocabulary Context 固有の概念で、他のコンテキストでは UserId を使用。
     これは境界づけられたコンテキストの原則に合致した適切な設計
 
-17. **認証方式の表記**
+~~17. **認証方式の表記**~~ （2025-07-31 完了）
 
-- User Context：Firebase/Google OAuth（複数箇所）
-- 一部：Firebase Auth + Google OAuth
-- 内容：表記を統一
+    ~~- User Context：Firebase/Google OAuth（複数箇所）~~
+    ~~- 一部：Firebase Auth + Google OAuth~~
+    ~~- 内容：表記を統一~~
+    - 統一表記：「Firebase Auth + Google OAuth」に統一完了
 
 18. **ドメインイベントのグルーピング**
 

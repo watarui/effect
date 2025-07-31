@@ -164,7 +164,7 @@ package "User Context\nユーザーコンテキスト" {
     settings: UserSettings
     created_at: DateTime
     --
-    Firebase Auth連携
+    Firebase Auth + Google OAuth
     全コンテキストから参照
   }
 }
