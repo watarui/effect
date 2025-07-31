@@ -282,11 +282,13 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ### 低優先度
 
-16. **CreatedBy の型定義不整合**
+~~16. **CreatedBy の型定義不整合**~~ （2025-07-31 確認済み）
 
-- ubiquitous-language.md：概念のみ（line 44）
-- vocabulary-context.md：詳細な enum 定義（line 77-81）
-- 内容：実装詳細をどこまで設計文書に含めるか統一
+    ~~- ubiquitous-language.md：概念のみ（line 44）~~
+    ~~- vocabulary-context.md：詳細な enum 定義（line 77-81）~~
+    ~~- 内容：実装詳細をどこまで設計文書に含めるか統一~~
+    - 注記: 調査の結果、CreatedBy は Vocabulary Context 固有の概念で、他のコンテキストでは UserId を使用。
+    これは境界づけられたコンテキストの原則に合致した適切な設計
 
 17. **認証方式の表記**
 
