@@ -15,3 +15,6 @@ vec-box-size-threshold = 4096
 
 # ドキュメント関連
 missing-docs-in-crate-items = true
+
+# テスト関連
+allow-unwrap-in-tests = true
