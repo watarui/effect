@@ -5,7 +5,7 @@
 このドキュメントは、Effect プロジェクトの戦略的 DDD 設計の現在の進捗状況と、今後の作業再開のためのガイドです。
 
 作成日: 2025-07-27  
-最終更新: 2025-07-29
+最終更新: 2025-07-31
 
 ## プロジェクト背景
 
@@ -127,7 +127,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
 ## 現在の状態
 
-### 直近の作業内容（2025-07-27 〜 2025-07-29）
+### 直近の作業内容（2025-07-27 〜 2025-07-31）
 
 1. **ドキュメント整理**
    - 古いファイルを `docs/archive/` フォルダに移動
@@ -160,6 +160,15 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - 使用機会の分析と文書化（`/docs/ddd/design/saga-pattern-opportunities.md`）
    - AI 生成タスクの補償処理を最優先実装候補として選定
 
+8. **設計変更管理**（2025-07-31）
+   - design-changes-log.md で設計の不整合を管理
+   - 学習セッションを1問刻みの問題数ベースに統一
+   - ポモドーロ方式への言及を削除
+
+9. **Bounded Context Canvas 完成**（2025-07-30）
+   - 全 6 コンテキストの Canvas 作成完了
+   - 各コンテキストの責務と境界を明確化
+
 ## 今後の作業
 
 ### Phase 4: Design - 既存成果の改善 ✅ 完了
@@ -176,38 +185,42 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - `/docs/ddd/design/progress-context-projection-mapping.md` で GraphQL との対応を文書化
    - 各プロジェクションの責務とクエリマッピングを明確化
 
-### Phase 4: Design - Bounded Context Canvas（作業中）
+### Phase 4: Design - Bounded Context Canvas ✅ 完了
 
 1. **各コンテキストの責務と境界の明確化**
    - ✅ Canvas テンプレート作成完了
-   - ✅ Learning Context Canvas 作成完了
-   - 残りのコンテキスト：
-     - Learning Algorithm Context
-     - Vocabulary Context
-     - User Context
-     - Progress Context
-     - AI Integration Context
+   - ✅ Learning Context Canvas 作成完了（2025-07-29）
+   - ✅ Learning Algorithm Context Canvas 作成完了（2025-07-29）
+   - ✅ Progress Context Canvas 作成完了（2025-07-30）
+   - ✅ AI Integration Context Canvas 作成完了（2025-07-30）
+   - ✅ Vocabulary Context Canvas 作成完了（2025-07-30）
+   - ✅ User Context Canvas 作成完了（2025-07-30）
 
 2. **Canvas 作成での決定事項**
    - ItemsSelected を非同期から同期に変更（Learning Context）
    - アーキテクチャの適材適所を重視
+   - AI Integration Context の完全非同期化（イベント駆動）
+   - IELTS スコア推定の除外（Progress Context）
 
-### Phase 4: Design - ドメインサービス設計（必要に応じて）
+### Phase 4: Design - ドメインサービス設計 ✅ 完了
 
-1. **既に識別されているドメインサービス**
+1. **識別・設計済みのドメインサービス**
    - Learning Algorithm Context: `SM2Calculator`, `PerformanceAnalyzer`
    - AI Integration Context: `AIServiceAdapter`
 
-2. **他のコンテキストでの検討**
-   - 各コンテキストで必要なドメインサービスを特定
-   - インターフェース設計
+2. **設計状況**
+   - event-storming-design-level で必要なドメインサービスは定義済み
+   - 追加の設計作業は不要
 
-### Phase 4: Design - Aggregate Design Canvas（必要に応じて）
+### Phase 4: Design - Aggregate Design Canvas ❌ 未実施
 
 1. **重要な集約の詳細設計**
    - `LearningSession`（Learning Context）
    - `VocabularyEntry`（Vocabulary Context）
    - State Transitions、Invariants の文書化
+
+**注記**: 基本的な集約設計は aggregate-identification.md と event-storming-design-level で完了。
+詳細な状態遷移図や Invariants の文書化は今後必要に応じて実施。
 
 ### Phase 5: Implementation - 技術選定
 
@@ -300,12 +313,13 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - 認証: Firebase Auth + Google OAuth のみ
 - 通知機能: 実装しない
 - UI: 日本語固定、タイムゾーン JST 固定
-- テスト: 1 セッション最大 100 問（設定可能）、約 25 分
 - 対応試験: IELTS、TOEFL 等（IELTS だけに特化しない）
 - ItemsSelected: 同期通信（UX 優先の設計判断）
 - AI Integration Context: 完全非同期化（タスクキュー方式）
 - イベント名: DomainEvent wrapper パターンで統一
 - IELTS スコア推定: 除外決定（CEFR レベルと進捗スコアで代替）
+- 学習セッション: 1-100問（1問単位で設定可能）、デフォルト50問
+- ポモドーロ方式: 廃止（問題数ベースに統一）
 
 ## 再開時のチェックリスト
 
@@ -321,7 +335,9 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - `/docs/ddd/design/bounded-context-canvas/learning-context.md` - 作成済み Canvas
 6. Saga パターンの使用機会を確認:
    - `/docs/ddd/design/saga-pattern-opportunities.md` - 実装機会の分析
-7. 次のステップ（残りの Bounded Context Canvas 作成）を継続
+7. 設計変更記録を確認:
+   - `/docs/ddd/design/design-changes-log.md` - 設計変更と不整合管理
+8. 次のステップ（Phase 5: Implementation への移行準備）を開始
 
 ## 関連ドキュメント
 
@@ -344,6 +360,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - `/docs/ddd/design/projections/progress-context-projection-mapping.md`
 - `/docs/ddd/design/bounded-context-canvas/`（Canvas 設計）
 - `/docs/ddd/design/saga-pattern-opportunities.md`（Saga パターン分析）
+- `/docs/ddd/design/design-changes-log.md`（設計変更記録）
 
 ## メモ
 
