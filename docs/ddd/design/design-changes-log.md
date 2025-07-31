@@ -297,11 +297,14 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     ~~- 内容：表記を統一~~
     - 統一表記：「Firebase Auth + Google OAuth」に統一完了
 
-18. **ドメインイベントのグルーピング**
+~~18. **ドメインイベントのグルーピング**~~ （2025-07-31 確認済み）
 
-- ubiquitous-language.md：ドメインごとにグループ化（line 231-256）
-- context-map.md：コンテキストごとにグループ化（line 225-267）
-- 内容：イベントの整理方法を統一
+    ~~- ubiquitous-language.md：ドメインごとにグループ化（line 231-256）~~
+    ~~- context-map.md：コンテキストごとにグループ化（line 225-267）~~
+    ~~- 内容：イベントの整理方法を統一~~
+    - 注記: 調査の結果、現状が適切に整理されている。
+    ubiquitous-language.md は概念レベル、event-storming は実装レベルで、DomainEvent wrapper パターンで統一されている。
+    context-map.md の line 225-267 は存在しない（誤記）
 
 19. **更新履歴の記載方法**
 
