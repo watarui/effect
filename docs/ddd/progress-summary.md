@@ -239,27 +239,29 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
 ## 今後の作業
 
-### Phase 5: Implementation - 技術選定
+### Phase 5: Implementation - 技術選定 ✅ 決定済み（2025-07-31）
 
 1. **基本技術スタック**
 
    - 言語: Rust
-   - Web フレームワーク: 検討中（Axum, Actix-web 等）
+   - Web フレームワーク: **Axum**（高性能、Tokio エコシステム）
    - GraphQL: async-graphql
    - 認証: Firebase Auth
 
 2. **データ永続化**
 
    - RDB: PostgreSQL（Vocabulary, User Context）
-   - イベントストア: 検討中（EventStore, PostgreSQL + カスタム実装）
+   - イベントストア: **PostgreSQL + カスタム実装**（シンプル、学習価値）
    - キャッシュ: Redis
 
 3. **メッセージング**
-   - イベントバス: 検討中（NATS, RabbitMQ, カスタム実装）
+   - イベントバス: **カスタム実装**（段階的アプローチ）
+     - Phase 1: インメモリ実装（Tokio channels）
+     - Phase 2: Redis Streams（必要に応じて）
    - 非同期処理: Tokio
    - Saga 実行: saga-executor サービス（Orchestration パターン）
 
-### Phase 5: Implementation - プロジェクト構造設計
+### Phase 5: Implementation - プロジェクト構造設計 ✅ 決定済み（2025-07-31）
 
 1. **cargo workspace 構成**
 
@@ -273,15 +275,15 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    │   ├── user/
    │   ├── progress/
    │   └── ai-integration/
-   ├── shared/
-   │   ├── domain-events/
-   │   ├── common-types/
-   │   └── infrastructure/
    ├── applications/
-   │   ├── api-gateway/
-   │   └── event-processor/
-   └── services/
-       └── saga-executor/
+   │   ├── api-gateway/      # GraphQL API
+   │   └── event-processor/  # イベント処理
+   ├── services/
+   │   └── saga-executor/    # Saga パターン実装
+   └── shared/
+       ├── common-types/     # UserId, ItemId 等の共通型
+       ├── domain-events/    # DomainEvent と基本実装
+       └── infrastructure/   # DB 接続、イベントバス実装等
    ```
 
 2. **共通ライブラリ設計**
@@ -317,9 +319,9 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 
 1. **技術選定の最終決定**
 
-   - [ ] Web フレームワーク: Axum（推奨: 高性能、Tokio エコシステム）
-   - [ ] イベントストア: PostgreSQL + カスタム実装（推奨: シンプル、学習価値）
-   - [ ] イベントバス: カスタム実装（推奨: アーキテクチャ学習に最適）
+   - [x] Web フレームワーク: Axum（高性能、Tokio エコシステム）
+   - [x] イベントストア: PostgreSQL + カスタム実装（シンプル、学習価値）
+   - [x] イベントバス: カスタム実装（アーキテクチャ学習に最適）
 
 2. **環境構築の準備**
    - [ ] Rust の最新版インストール
