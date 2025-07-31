@@ -177,8 +177,6 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - 全 6 コンテキストの Canvas 作成完了
    - 各コンテキストの責務と境界を明確化
 
-## 今後の作業
-
 ### Phase 4: Design - 既存成果の改善 ✅ 完了
 
 1. **戦略的分類の詳細化**
@@ -238,6 +236,8 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - 集約がシンプルで複雑な状態遷移がない（YAGNI 原則）
 - アーキテクチャ学習が主目的なので、過度な事前設計は避ける
 - 実装時に必要になった場合に詳細化する方が実践的
+
+## 今後の作業
 
 ### Phase 5: Implementation - 技術選定
 
@@ -316,6 +316,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ### Phase 5 開始前のチェックリスト
 
 1. **技術選定の最終決定**
+
    - [ ] Web フレームワーク: Axum（推奨: 高性能、Tokio エコシステム）
    - [ ] イベントストア: PostgreSQL + カスタム実装（推奨: シンプル、学習価値）
    - [ ] イベントバス: カスタム実装（推奨: アーキテクチャ学習に最適）
@@ -346,10 +347,12 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    ```
 
 3. **共通型の定義**
+
    - UserId, ItemId, SessionId などの強型付け
    - タイムスタンプ、UUID の標準化
 
 4. **DomainEvent の基本実装**
+
    - Event trait の定義
    - EventStore trait の定義
    - EventBus trait の定義
