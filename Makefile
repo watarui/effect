@@ -17,7 +17,7 @@ down: ## すべてのサービスを停止
 	docker compose down
 
 .PHONY: up-infra
-up-infra: ## インフラのみ起動（PostgreSQL × 8, Redis）
+up-infra: ## インフラのみ起動（PostgreSQL × 8, Redis, Pub/Sub）
 	docker compose up -d \
 		postgres-event-store \
 		postgres-learning \
@@ -27,7 +27,8 @@ up-infra: ## インフラのみ起動（PostgreSQL × 8, Redis）
 		postgres-algorithm \
 		postgres-ai \
 		postgres-saga \
-		redis
+		redis \
+		pubsub
 
 .PHONY: up-services
 up-services: ## マイクロサービスを起動
