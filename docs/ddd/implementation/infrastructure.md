@@ -296,6 +296,188 @@ services:
 - 最大接続数: 20
 - アイドルタイムアウト: 60秒
 
+## 本番環境構成
+
+### 概要
+
+本番環境では、コスト効率とスケーラビリティを重視し、Google Cloud とサードパーティサービスを組み合わせた構成を採用します。
+
+### インフラストラクチャ構成
+
+| コンポーネント | 開発環境 | 本番環境 | 理由 |
+|-------------|---------|---------|-----|
+| API | Docker Compose | Google Cloud Run | gRPC サポート、自動スケーリング |
+| データベース | PostgreSQL × 8 | Neon PostgreSQL × 1 | コスト削減、スキーマ分離で論理的境界を維持 |
+| イベントバス | Pub/Sub エミュレータ | Google Pub/Sub | ネイティブ統合、無料枠 10GB/月 |
+| キャッシュ | Redis コンテナ | Cloud Run 内メモリ | シンプル化、コスト削減 |
+
+### Neon PostgreSQL 設定
+
+#### 接続情報
+
+```rust
+// 環境変数
+DATABASE_URL=postgresql://[user]:[password]@[host]/[database]?sslmode=require
+
+// 接続プール設定
+let pool = PgPoolOptions::new()
+    .max_connections(5)  // 無料枠の接続数制限を考慮
+    .connect_timeout(Duration::from_secs(10))
+    .connect(&database_url)
+    .await?;
+```
+
+#### スキーマ分離戦略
+
+開発環境の 8 つのデータベースを、本番環境では単一データベース内のスキーマで分離：
+
+```sql
+-- スキーマ作成
+CREATE SCHEMA event_store;
+CREATE SCHEMA learning;
+CREATE SCHEMA vocabulary;
+CREATE SCHEMA users;
+CREATE SCHEMA progress;
+CREATE SCHEMA algorithm;
+CREATE SCHEMA ai;
+CREATE SCHEMA saga;
+
+-- 各サービスは専用スキーマを使用
+SET search_path TO learning;
+```
+
+### Google Cloud Run 設定
+
+#### サービス設定
+
+```yaml
+# service.yaml
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: effect-api-gateway
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      containers:
+      - image: gcr.io/PROJECT_ID/effect-api-gateway
+        ports:
+        - name: h2c  # HTTP/2 for gRPC
+          containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: neon-db
+              key: url
+```
+
+#### gRPC 設定
+
+```yaml
+# Cloud Run は HTTP/2 と gRPC をネイティブサポート
+annotations:
+  run.googleapis.com/use-http2: "true"
+```
+
+### 環境変数管理
+
+#### 開発環境と本番環境の切り替え
+
+```bash
+# .env.development
+DATABASE_URL=postgresql://effect:effect_password@localhost:5432/learning_db
+REDIS_URL=redis://localhost:6379
+PUBSUB_EMULATOR_HOST=localhost:8085
+ENVIRONMENT=development
+
+# .env.production
+DATABASE_URL=${NEON_DATABASE_URL}  # Secret Manager から取得
+PUBSUB_PROJECT_ID=your-gcp-project
+ENVIRONMENT=production
+```
+
+#### Secret Manager 統合
+
+```rust
+// Google Secret Manager を使用
+use google_cloud_secretmanager::client::Client;
+
+async fn get_database_url() -> Result<String> {
+    let client = Client::new().await?;
+    let secret = client
+        .access_secret_version("projects/*/secrets/neon-database-url/versions/latest")
+        .await?;
+    Ok(String::from_utf8(secret.payload)?)
+}
+```
+
+### デプロイメント戦略
+
+#### GitHub Actions ワークフロー
+
+```yaml
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      
+    - name: Build and Push
+      run: |
+        gcloud builds submit --tag gcr.io/$PROJECT_ID/effect-api-gateway
+        
+    - name: Deploy
+      run: |
+        gcloud run deploy effect-api-gateway \
+          --image gcr.io/$PROJECT_ID/effect-api-gateway \
+          --platform managed \
+          --region us-central1 \
+          --allow-unauthenticated
+```
+
+### コスト見積もり
+
+| サービス | 無料枠 | 想定使用量 | 月額費用 |
+|---------|-------|----------|---------|
+| Cloud Run | 200万リクエスト/月 | 10万リクエスト | $0 |
+| Neon DB | 0.5GB, 191.9時間 | 0.3GB, 100時間 | $0 |
+| Pub/Sub | 10GB/月 | 1GB | $0 |
+| **合計** | - | - | **$0** |
+
+### フォールバック計画
+
+Neon で接続問題が発生した場合の移行手順：
+
+1. **判断基準**（1週間以内に評価）
+   - IPv4/IPv6 接続エラーが頻発
+   - レイテンシが 100ms を超える
+   - SSL/TLS 設定が複雑すぎる
+
+2. **Cloud SQL への移行**
+   - 最小構成：db-f1-micro（$9.37/月）
+   - 移行時間：約 2-3 時間
+   - データ移行：pg_dump/pg_restore
+
+3. **接続文字列の更新**
+
+   ```rust
+   // Neon から Cloud SQL へ
+   DATABASE_URL=postgresql://user:pass@/dbname?host=/cloudsql/INSTANCE_CONNECTION_NAME
+   ```
+
 ## 今後の拡張予定
 
 1. **Kubernetes 対応**
@@ -306,6 +488,6 @@ services:
    - GitHub Actions との統合
    - 自動テスト環境の構築
 
-3. **本番環境対応**
-   - Cloud Run へのデプロイ設定
-   - マネージドサービスとの統合
+3. **監視・アラート**
+   - Cloud Monitoring 設定
+   - エラー通知の自動化
