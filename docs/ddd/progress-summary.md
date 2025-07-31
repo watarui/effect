@@ -130,39 +130,47 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ### 直近の作業内容（2025-07-27 〜 2025-07-31）
 
 1. **ドキュメント整理**
+
    - 古いファイルを `docs/archive/` フォルダに移動
    - README.md を更新して現在の構成を明確化
 
 2. **集約の可視化**
+
    - 3 つの PlantUML 図を作成（overview、relationships、event-flow）
    - 集約間の関係性を明確化
 
 3. **設計上の課題解決**
+
    - UserItemRecord と ItemLearningRecord の責務分析
    - 現状維持（責務分離）を推奨する結論
 
 4. **リポジトリ設計完了**
+
    - 設計原則の文書化
    - 全コンテキストのリポジトリインターフェース定義
    - Progress Context のプロジェクション簡素化（ストリーク追跡の統合）
 
 5. **既存成果の改善**
+
    - 戦略的分類の詳細化（各コンテキストの分類理由を明確化）
    - イベント整合性分析（命名規則の統一案を提示）
    - Progress Context プロジェクション設計の詳細化（GraphQL マッピング）
 
 6. **Bounded Context Canvas 作成開始**（2025-07-29）
+
    - Canvas テンプレート作成（DDD-Crew ベース、日本語説明付き）
    - Learning Context Canvas 作成
    - ItemsSelected を非同期から同期に変更（UX 優先の設計判断）
 
 7. **Saga パターン分析**
+
    - 使用機会の分析と文書化（`/docs/ddd/design/saga-pattern-opportunities.md`）
    - AI 生成タスクの補償処理を最優先実装候補として選定
 
 8. **設計変更管理**（2025-07-31）
+
    - design-changes-log.md で設計の不整合を管理
-   - 学習セッションを1問刻みの問題数ベースに統一
+   - 学習セッションを 1 問刻みの問題数ベースに統一
    - ポモドーロ方式への言及を削除
 
 9. **Bounded Context Canvas 完成**（2025-07-30）
@@ -174,10 +182,12 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ### Phase 4: Design - 既存成果の改善 ✅ 完了
 
 1. **戦略的分類の詳細化**
+
    - `/docs/ddd/strategic/context-map.md` に各コンテキストの分類理由を追記
    - Core Domain の判定基準と差別化要因を明確化
 
 2. **イベント整合性の確認**
+
    - `/docs/ddd/design/event-consistency-analysis.md` でイベント一覧と命名規則を分析
    - 命名規則の統一案を提示
 
@@ -188,6 +198,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ### Phase 4: Design - Bounded Context Canvas ✅ 完了
 
 1. **各コンテキストの責務と境界の明確化**
+
    - ✅ Canvas テンプレート作成完了
    - ✅ Learning Context Canvas 作成完了（2025-07-29）
    - ✅ Learning Algorithm Context Canvas 作成完了（2025-07-29）
@@ -205,6 +216,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ### Phase 4: Design - ドメインサービス設計 ✅ 完了
 
 1. **識別・設計済みのドメインサービス**
+
    - Learning Algorithm Context: `SM2Calculator`, `PerformanceAnalyzer`
    - AI Integration Context: `AIServiceAdapter`
 
@@ -219,18 +231,25 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - `VocabularyEntry`（Vocabulary Context）
    - State Transitions、Invariants の文書化
 
-**注記**: 基本的な集約設計は aggregate-identification.md と event-storming-design-level で完了。
-詳細な状態遷移図や Invariants の文書化は今後必要に応じて実施。
+**実施しない理由**:
+
+- aggregate-identification.md で各集約の不変条件が明確に定義済み
+- event-storming-design-level でコマンド/イベントを通じた状態変化が明確
+- 集約がシンプルで複雑な状態遷移がない（YAGNI 原則）
+- アーキテクチャ学習が主目的なので、過度な事前設計は避ける
+- 実装時に必要になった場合に詳細化する方が実践的
 
 ### Phase 5: Implementation - 技術選定
 
 1. **基本技術スタック**
+
    - 言語: Rust
    - Web フレームワーク: 検討中（Axum, Actix-web 等）
    - GraphQL: async-graphql
    - 認証: Firebase Auth
 
 2. **データ永続化**
+
    - RDB: PostgreSQL（Vocabulary, User Context）
    - イベントストア: 検討中（EventStore, PostgreSQL + カスタム実装）
    - キャッシュ: Redis
@@ -273,16 +292,19 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 ### 実装フェーズの優先順位
 
 1. **Phase 1: 基盤構築**
+
    - プロジェクト構造のセットアップ
    - 共通ライブラリの実装
    - CI/CD パイプライン
 
 2. **Phase 2: Core Domain 実装**
+
    - Learning Context
    - Vocabulary Context
    - 基本的な GraphQL API
 
 3. **Phase 3: アルゴリズムと分析**
+
    - Learning Algorithm Context
    - Progress Context（イベントソーシング）
 
@@ -290,6 +312,58 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - AI Integration Context
    - Saga パターン実装（AI 生成タスクから開始）
    - 全体統合テスト
+
+### Phase 5 開始前のチェックリスト
+
+1. **技術選定の最終決定**
+   - [ ] Web フレームワーク: Axum（推奨: 高性能、Tokio エコシステム）
+   - [ ] イベントストア: PostgreSQL + カスタム実装（推奨: シンプル、学習価値）
+   - [ ] イベントバス: カスタム実装（推奨: アーキテクチャ学習に最適）
+
+2. **環境構築の準備**
+   - [ ] Rust の最新版インストール
+   - [ ] Docker と Docker Compose のセットアップ
+   - [ ] PostgreSQL ローカル環境
+   - [ ] Redis ローカル環境
+
+### Phase 1: 基盤構築の詳細タスク
+
+1. **cargo workspace の初期化**
+
+   ```bash
+   cargo new effect --name effect
+   cd effect
+   # Cargo.toml を workspace 設定に変更
+   ```
+
+2. **基本的なディレクトリ構造の作成**
+
+   ```bash
+   mkdir -p contexts/{learning,learning-algorithm,vocabulary,user,progress,ai-integration}
+   mkdir -p shared/{domain-events,common-types,infrastructure}
+   mkdir -p applications/{api-gateway,event-processor}
+   mkdir -p services/saga-executor
+   ```
+
+3. **共通型の定義**
+   - UserId, ItemId, SessionId などの強型付け
+   - タイムスタンプ、UUID の標準化
+
+4. **DomainEvent の基本実装**
+   - Event trait の定義
+   - EventStore trait の定義
+   - EventBus trait の定義
+
+5. **GitHub Actions CI 設定**
+   - cargo test, cargo fmt, cargo clippy
+   - 各コンテキストの独立ビルド確認
+
+### 実装時の注意事項
+
+- **最初からマイクロサービスアーキテクチャ**: cargo workspace monorepo で各コンテキストを独立サービスとして開発
+- **テスト駆動開発（TDD）**: ドメインロジックからテストを書く
+- **ドキュメント駆動開発**: 既存の設計を忠実に実装に反映
+- **インクリメンタルな進行**: 小さな動くものから始める
 
 ## 会話・設計方針
 
@@ -318,7 +392,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - AI Integration Context: 完全非同期化（タスクキュー方式）
 - イベント名: DomainEvent wrapper パターンで統一
 - IELTS スコア推定: 除外決定（CEFR レベルと進捗スコアで代替）
-- 学習セッション: 1-100問（1問単位で設定可能）、デフォルト50問
+- 学習セッション: 1-100 問（1 問単位で設定可能）、デフォルト 50 問
 - ポモドーロ方式: 廃止（問題数ベースに統一）
 
 ## 再開時のチェックリスト
@@ -337,7 +411,7 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
    - `/docs/ddd/design/saga-pattern-opportunities.md` - 実装機会の分析
 7. 設計変更記録を確認:
    - `/docs/ddd/design/design-changes-log.md` - 設計変更と不整合管理
-8. 次のステップ（Phase 5: Implementation への移行準備）を開始
+8. 次のステップ: Phase 5: Implementation の「Phase 1: 基盤構築」から開始
 
 ## 関連ドキュメント
 
