@@ -1,12 +1,24 @@
 [workspace]
 members = [
-  "services/api-gateway",
-  "services/command-service",
-  "services/query-service",
-  "services/saga-executor",
-  "shared/cqrs",
-  "shared/domain",
+  # Shared libraries
+  "shared/common-types",
+  "shared/domain-events",
   "shared/infrastructure",
+
+  # Bounded Contexts
+  "contexts/learning",
+  "contexts/learning-algorithm",
+  "contexts/vocabulary",
+  "contexts/user",
+  "contexts/progress",
+  "contexts/ai-integration",
+
+  # Applications
+  "applications/api-gateway",
+  "applications/event-processor",
+
+  # Services
+  "services/saga-executor",
 ]
 resolver = "2"
 
@@ -87,6 +99,10 @@ missing_errors_doc = "warn"
 missing_panics_doc = "warn"
 # パッケージメタデータは後で追加
 cargo_common_metadata = "allow"
+# 依存関係の複数バージョンは許可（workspace で管理）
+# tracing-subscriber の env-filter が古い regex-automata を使用するため
+# 上流の更新を待つ（実害なし）
+multiple_crate_versions = "allow"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
