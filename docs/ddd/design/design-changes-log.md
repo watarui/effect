@@ -271,11 +271,14 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     - 注記: 調査の結果、shared-kernel.md が適切に存在し、context-map.md の L85 から参照されている。
     現状の構成が DDD の原則に合致しているため、変更不要と判断
 
-15. **統合パターンの表記不統一**
+~~15. **統合パターンの表記不統一**~~ （2025-07-31 確認済み）
 
-- context-map.md：Customer-Supplier、Publisher-Subscriber など
-- Canvas：同期/非同期の観点も含む
-- 内容：統合パターンの表記方法を統一
+    ~~- context-map.md：Customer-Supplier、Publisher-Subscriber など~~
+    ~~- Canvas：同期/非同期の観点も含む~~
+    ~~- 内容：統合パターンの表記方法を統一~~
+    - 注記: 調査の結果、それぞれの文書の目的が異なるため現状維持が適切。
+    context-map.md は全体像の俯瞰（簡潔性重視）、Canvas は詳細設計（理解しやすさ重視）で、
+    読者にとって有益な使い分けとなっている
 
 ### 低優先度
 
