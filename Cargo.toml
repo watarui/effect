@@ -5,20 +5,16 @@ members = [
   "shared/domain-events",
   "shared/infrastructure",
 
-  # Bounded Contexts
-  "contexts/learning",
-  "contexts/learning-algorithm",
-  "contexts/vocabulary",
-  "contexts/user",
-  "contexts/progress",
-  "contexts/ai-integration",
-
-  # Applications
-  "applications/api-gateway",
-  "applications/event-processor",
-
-  # Services
-  "services/saga-executor",
+  # Microservices
+  "services/learning-service",
+  "services/algorithm-service",
+  "services/vocabulary-service",
+  "services/user-service",
+  "services/progress-service",
+  "services/ai-service",
+  "services/api-gateway",
+  "services/event-processor",
+  "services/saga-orchestrator",
 ]
 resolver = "2"
 
