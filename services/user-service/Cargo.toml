@@ -24,7 +24,9 @@ uuid = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tonic = { workspace = true }
+tonic-prost = { workspace = true }
 prost = { workspace = true }
+prost-types = { workspace = true }
 sqlx = { workspace = true }
 config = { workspace = true }
 
@@ -34,6 +36,9 @@ validator = { version = "0.20.0", features = ["derive"] }
 [dev-dependencies]
 mockall = { workspace = true }
 tokio-test = { workspace = true }
+
+[build-dependencies]
+tonic-prost-build = { workspace = true }
 
 [lints]
 workspace = true

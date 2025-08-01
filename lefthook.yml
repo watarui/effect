@@ -39,6 +39,11 @@ pre-commit:
       glob: "*.sh"
       run: shfmt -w {staged_files}
       stage_fixed: true
+    buf-format:
+      priority: 1
+      glob: "*.proto"
+      run: buf format -w {staged_files}
+      stage_fixed: true
     # === グループ2: Rust 固有の修正 ===
     clippy-fix:
       priority: 2

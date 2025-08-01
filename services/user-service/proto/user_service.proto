@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package user_service;
+
+import "google/protobuf/timestamp.proto";
+
+// ユーザーサービス
+service UserService {
+  // ユーザーを作成
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // ユーザーを取得
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Email でユーザーを取得
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (GetUserByEmailResponse);
+
+  // プロフィールを更新
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+  // ロールを変更
+  rpc ChangeRole(ChangeRoleRequest) returns (ChangeRoleResponse);
+
+  // Email を更新
+  rpc UpdateEmail(UpdateEmailRequest) returns (UpdateEmailResponse);
+
+  // ユーザーを削除
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+// ユーザーロール
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_USER = 1;
+  USER_ROLE_ADMIN = 2;
+}
+
+// CEFR レベル
+enum CefrLevel {
+  CEFR_LEVEL_UNSPECIFIED = 0;
+  CEFR_LEVEL_A1 = 1;
+  CEFR_LEVEL_A2 = 2;
+  CEFR_LEVEL_B1 = 3;
+  CEFR_LEVEL_B2 = 4;
+  CEFR_LEVEL_C1 = 5;
+  CEFR_LEVEL_C2 = 6;
+}
+
+// ユーザープロフィール
+message UserProfile {
+  string display_name = 1;
+  CefrLevel current_level = 2;
+  optional CefrLevel target_level = 3;
+  uint32 questions_per_session = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// ユーザー
+message User {
+  string id = 1;
+  string email = 2;
+  UserProfile profile = 3;
+  UserRole role = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// ユーザー作成リクエスト
+message CreateUserRequest {
+  string email = 1;
+  string display_name = 2;
+  bool is_first_user = 3;
+}
+
+// ユーザー作成レスポンス
+message CreateUserResponse {
+  User user = 1;
+}
+
+// ユーザー取得リクエスト
+message GetUserRequest {
+  string user_id = 1;
+}
+
+// ユーザー取得レスポンス
+message GetUserResponse {
+  User user = 1;
+}
+
+// Email でユーザー取得リクエスト
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+// Email でユーザー取得レスポンス
+message GetUserByEmailResponse {
+  User user = 1;
+}
+
+// 目標レベル更新
+message TargetLevelUpdate {
+  oneof update {
+    bool no_change = 1;
+    CefrLevel set_level = 2;
+    bool clear = 3;
+  }
+}
+
+// プロフィール更新リクエスト
+message UpdateProfileRequest {
+  string user_id = 1;
+  optional string display_name = 2;
+  optional CefrLevel current_level = 3;
+  TargetLevelUpdate target_level = 4;
+  optional uint32 questions_per_session = 5;
+}
+
+// プロフィール更新レスポンス
+message UpdateProfileResponse {
+  User user = 1;
+}
+
+// ロール変更リクエスト
+message ChangeRoleRequest {
+  string user_id = 1;
+  UserRole new_role = 2;
+  string executed_by = 3;
+}
+
+// ロール変更レスポンス
+message ChangeRoleResponse {
+  User user = 1;
+}
+
+// Email 更新リクエスト
+message UpdateEmailRequest {
+  string user_id = 1;
+  string new_email = 2;
+}
+
+// Email 更新レスポンス
+message UpdateEmailResponse {
+  User user = 1;
+}
+
+// ユーザー削除リクエスト
+message DeleteUserRequest {
+  string user_id = 1;
+  string executed_by = 2;
+}
+
+// ユーザー削除レスポンス
+message DeleteUserResponse {
+  // 空のレスポンス
+}
