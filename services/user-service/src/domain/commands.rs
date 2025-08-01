@@ -3,7 +3,11 @@
 use common_types::UserId;
 use serde::{Deserialize, Serialize};
 
-use crate::domain::value_objects::{user_profile::CefrLevel, user_role::UserRole};
+use crate::domain::value_objects::{
+    learning_goal::LearningGoal,
+    user_profile::CefrLevel,
+    user_role::UserRole,
+};
 
 /// ユーザー作成コマンド
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -16,17 +20,6 @@ pub struct CreateUser {
     pub is_first_user: bool,
 }
 
-/// 目標レベルの更新オプション
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TargetLevelUpdate {
-    /// 変更なし
-    NoChange,
-    /// 新しい目標レベルを設定
-    Set(CefrLevel),
-    /// 目標レベルをクリア
-    Clear,
-}
-
 /// プロフィール更新コマンド
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UpdateUserProfile {
@@ -36,8 +29,6 @@ pub struct UpdateUserProfile {
     pub display_name:          Option<String>,
     /// 新しい現在レベル（None の場合は変更なし）
     pub current_level:         Option<CefrLevel>,
-    /// 新しい目標レベル
-    pub target_level:          TargetLevelUpdate,
     /// 1セッションあたりの問題数（None の場合は変更なし）
     pub questions_per_session: Option<u8>,
 }
@@ -71,6 +62,15 @@ pub struct DeleteUser {
     pub executed_by: UserId,
 }
 
+/// 学習目標設定コマンド
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SetLearningGoal {
+    /// 対象ユーザー ID
+    pub user_id: UserId,
+    /// 学習目標
+    pub goal:    Option<LearningGoal>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,7 +100,6 @@ mod tests {
             user_id,
             display_name: Some("New Name".to_string()),
             current_level: None,
-            target_level: TargetLevelUpdate::NoChange,
             questions_per_session: Some(25),
         };
 

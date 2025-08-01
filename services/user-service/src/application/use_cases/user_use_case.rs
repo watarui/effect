@@ -13,7 +13,7 @@ use crate::{
             ChangeUserRole,
             CreateUser,
             DeleteUser,
-            TargetLevelUpdate,
+            SetLearningGoal,
             UpdateUserEmail,
             UpdateUserProfile,
         },
@@ -131,20 +131,8 @@ where
                 profile.update_display_name(display_name)?;
             }
 
-            // レベル設定の更新が必要な場合
-            let needs_level_update = command.current_level.is_some()
-                || !matches!(command.target_level, TargetLevelUpdate::NoChange);
-
-            if needs_level_update {
-                let current = command
-                    .current_level
-                    .unwrap_or_else(|| profile.current_level());
-                let target = match command.target_level {
-                    TargetLevelUpdate::NoChange => profile.target_level(),
-                    TargetLevelUpdate::Set(level) => Some(level),
-                    TargetLevelUpdate::Clear => None,
-                };
-                profile.update_levels(current, target)?;
+            if let Some(current_level) = command.current_level {
+                profile.update_current_level(current_level);
             }
 
             if let Some(questions) = command.questions_per_session {
@@ -161,6 +149,27 @@ where
             .map_err(|e| ApplicationError::Repository(e.to_string()))?;
 
         // TODO: プロフィール更新イベントを発行（domain-events に追加後）
+
+        Ok(user)
+    }
+
+    async fn set_learning_goal(&self, command: SetLearningGoal) -> Result<User, Self::Error> {
+        // ユーザーを取得
+        let mut user = self.get_user(&command.user_id).await?;
+
+        // 学習目標を設定
+        user.update_profile(|profile| {
+            profile.set_learning_goal(command.goal.clone());
+            Ok(())
+        })?;
+
+        // リポジトリに保存
+        self.repository
+            .save(&user)
+            .await
+            .map_err(|e| ApplicationError::Repository(e.to_string()))?;
+
+        // TODO: 学習目標設定イベントを発行（domain-events に追加後）
 
         Ok(user)
     }

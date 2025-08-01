@@ -9,7 +9,7 @@ use tracing_subscriber::FmtSubscriber;
 use user_service::{
     adapters::{
         inbound::grpc::{
-            converters::proto::user_service_server::UserServiceServer,
+            converters::proto::services::user::user_service_server::UserServiceServer,
             user_service::UserServiceImpl,
         },
         outbound::{

@@ -4,10 +4,15 @@ use chrono::{DateTime, Utc};
 use common_types::UserId;
 use serde::{Deserialize, Serialize};
 
-use crate::domain::value_objects::{email::Email, user_profile::UserProfile, user_role::UserRole};
+use crate::domain::value_objects::{
+    account_status::AccountStatus,
+    email::Email,
+    user_profile::UserProfile,
+    user_role::UserRole,
+};
 
 /// User 集約ルート
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct User {
     /// ユーザー ID
     id:         UserId,
@@ -17,10 +22,14 @@ pub struct User {
     profile:    UserProfile,
     /// ユーザーロール
     role:       UserRole,
+    /// アカウント状態
+    status:     AccountStatus,
     /// アカウント作成日時
     created_at: DateTime<Utc>,
     /// アカウント更新日時
     updated_at: DateTime<Utc>,
+    /// 楽観的ロック用バージョン
+    version:    u64,
 }
 
 impl User {
@@ -56,8 +65,10 @@ impl User {
             email,
             profile,
             role,
+            status: AccountStatus::default(),
             created_at: now,
             updated_at: now,
+            version: 0,
         })
     }
 
@@ -77,6 +88,7 @@ impl User {
     {
         update_fn(&mut self.profile)?;
         self.updated_at = Utc::now();
+        self.version += 1;
         Ok(())
     }
 
@@ -85,6 +97,7 @@ impl User {
         if self.role != new_role {
             self.role = new_role;
             self.updated_at = Utc::now();
+            self.version += 1;
         }
     }
 
@@ -93,6 +106,7 @@ impl User {
         if self.email != new_email {
             self.email = new_email;
             self.updated_at = Utc::now();
+            self.version += 1;
         }
     }
 
@@ -130,6 +144,18 @@ impl User {
     #[must_use]
     pub const fn updated_at(&self) -> DateTime<Utc> {
         self.updated_at
+    }
+
+    /// アカウント状態を取得
+    #[must_use]
+    pub const fn status(&self) -> AccountStatus {
+        self.status
+    }
+
+    /// バージョンを取得
+    #[must_use]
+    pub const fn version(&self) -> u64 {
+        self.version
     }
 
     /// 管理者権限を持っているか

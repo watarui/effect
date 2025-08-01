@@ -5,7 +5,14 @@ use common_types::UserId;
 
 use crate::domain::{
     aggregates::user::User,
-    commands::{ChangeUserRole, CreateUser, DeleteUser, UpdateUserEmail, UpdateUserProfile},
+    commands::{
+        ChangeUserRole,
+        CreateUser,
+        DeleteUser,
+        SetLearningGoal,
+        UpdateUserEmail,
+        UpdateUserProfile,
+    },
 };
 
 /// ユーザーサービスのユースケースインターフェース
@@ -41,6 +48,13 @@ pub trait UserUseCase: Send + Sync {
     ///
     /// * 更新に失敗した場合
     async fn update_profile(&self, command: UpdateUserProfile) -> Result<User, Self::Error>;
+
+    /// 学習目標を設定する
+    ///
+    /// # Errors
+    ///
+    /// * 設定に失敗した場合
+    async fn set_learning_goal(&self, command: SetLearningGoal) -> Result<User, Self::Error>;
 
     /// ユーザーのロールを変更する
     ///

@@ -15,27 +15,77 @@ use crate::{
             ChangeUserRole,
             CreateUser,
             DeleteUser,
-            TargetLevelUpdate,
+            SetLearningGoal,
             UpdateUserEmail,
             UpdateUserProfile,
         },
-        value_objects::{user_profile::CefrLevel, user_role::UserRole},
+        value_objects::{
+            account_status::AccountStatus,
+            learning_goal::{EikenLevel, IeltsScore, LearningGoal, ToeflScore, ToeicScore},
+            user_profile::CefrLevel,
+            user_role::UserRole,
+        },
     },
 };
 
 // Proto 定義を含むモジュール（build.rs で生成される）
+/// Proto 定義のモジュール
 pub mod proto {
-    #![allow(missing_docs)]
-    #![allow(clippy::pedantic)]
-    #![allow(clippy::nursery)]
-    #![allow(clippy::clone_on_ref_ptr)]
-    tonic::include_proto!("user_service");
+    /// 共通型定義
+    pub mod common {
+        #![allow(missing_docs)]
+        #![allow(clippy::pedantic)]
+        #![allow(clippy::nursery)]
+        #![allow(clippy::clone_on_ref_ptr)]
+        tonic::include_proto!("effect.common");
+    }
+
+    /// サービス定義
+    pub mod services {
+        /// ユーザーサービス
+        pub mod user {
+            #![allow(missing_docs)]
+            #![allow(clippy::pedantic)]
+            #![allow(clippy::nursery)]
+            #![allow(clippy::clone_on_ref_ptr)]
+            tonic::include_proto!("effect.services.user");
+        }
+    }
+
+    /// イベント定義
+    pub mod events {
+        /// ユーザーイベント
+        pub mod user {
+            #![allow(missing_docs)]
+            #![allow(clippy::pedantic)]
+            #![allow(clippy::nursery)]
+            #![allow(clippy::clone_on_ref_ptr)]
+            tonic::include_proto!("effect.events.user");
+        }
+    }
 }
 
 use proto::{
-    CefrLevel as ProtoCefrLevel,
-    TargetLevelUpdate as ProtoTargetLevelUpdate,
-    UserRole as ProtoUserRole,
+    common::{
+        AccountStatus as ProtoAccountStatus,
+        CefrLevel as ProtoCefrLevel,
+        UserRole as ProtoUserRole,
+    },
+    services::user::{
+        ChangeRoleRequest,
+        CreateUserRequest,
+        DeleteUserRequest,
+        EikenLevel as ProtoEikenLevel,
+        IeltsScore as ProtoIeltsScore,
+        LearningGoal as ProtoLearningGoal,
+        SetLearningGoalRequest,
+        ToeflScore as ProtoToeflScore,
+        ToeicScore as ProtoToeicScore,
+        UpdateEmailRequest,
+        UpdateProfileRequest,
+        User as ProtoUser,
+        UserProfile as ProtoUserProfile,
+    },
 };
 
 /// ドメインの `UserRole` から Proto への変換
@@ -96,6 +146,170 @@ impl TryFrom<ProtoCefrLevel> for CefrLevel {
     }
 }
 
+/// ドメインの `AccountStatus` から Proto への変換
+impl From<AccountStatus> for ProtoAccountStatus {
+    fn from(status: AccountStatus) -> Self {
+        match status {
+            AccountStatus::Active => Self::Active,
+            AccountStatus::Deleted => Self::Deleted,
+        }
+    }
+}
+
+/// Proto の `AccountStatus` からドメインへの変換
+impl TryFrom<ProtoAccountStatus> for AccountStatus {
+    type Error = Status;
+
+    fn try_from(status: ProtoAccountStatus) -> Result<Self, Self::Error> {
+        match status {
+            ProtoAccountStatus::Unspecified => {
+                Err(Status::invalid_argument("Account status must be specified"))
+            },
+            ProtoAccountStatus::Active => Ok(Self::Active),
+            ProtoAccountStatus::Deleted => Ok(Self::Deleted),
+        }
+    }
+}
+
+/// ドメインの `EikenLevel` から Proto への変換
+impl From<EikenLevel> for ProtoEikenLevel {
+    fn from(level: EikenLevel) -> Self {
+        match level {
+            EikenLevel::Level5 => Self::EikenLevel5,
+            EikenLevel::Level4 => Self::EikenLevel4,
+            EikenLevel::Level3 => Self::EikenLevel3,
+            EikenLevel::PreLevel2 => Self::Pre2,
+            EikenLevel::Level2 => Self::EikenLevel2,
+            EikenLevel::PreLevel1 => Self::Pre1,
+            EikenLevel::Level1 => Self::EikenLevel1,
+        }
+    }
+}
+
+/// Proto の `EikenLevel` からドメインへの変換
+impl TryFrom<ProtoEikenLevel> for EikenLevel {
+    type Error = Status;
+
+    fn try_from(level: ProtoEikenLevel) -> Result<Self, Self::Error> {
+        match level {
+            ProtoEikenLevel::Unspecified => {
+                Err(Status::invalid_argument("Eiken level must be specified"))
+            },
+            ProtoEikenLevel::EikenLevel5 => Ok(Self::Level5),
+            ProtoEikenLevel::EikenLevel4 => Ok(Self::Level4),
+            ProtoEikenLevel::EikenLevel3 => Ok(Self::Level3),
+            ProtoEikenLevel::Pre2 => Ok(Self::PreLevel2),
+            ProtoEikenLevel::EikenLevel2 => Ok(Self::Level2),
+            ProtoEikenLevel::Pre1 => Ok(Self::PreLevel1),
+            ProtoEikenLevel::EikenLevel1 => Ok(Self::Level1),
+        }
+    }
+}
+
+/// ドメインの `LearningGoal` から Proto への変換
+fn learning_goal_to_proto(goal: &LearningGoal) -> ProtoLearningGoal {
+    use proto::services::user::learning_goal::Goal;
+
+    let goal = match goal {
+        LearningGoal::IeltsScore(score) => Goal::IeltsScore(ProtoIeltsScore {
+            overall:   score.overall,
+            reading:   score.reading,
+            listening: score.listening,
+            writing:   score.writing,
+            speaking:  score.speaking,
+        }),
+        LearningGoal::ToeflScore(score) => Goal::ToeflScore(ProtoToeflScore {
+            total:     u32::from(score.total),
+            reading:   score.reading.map(u32::from),
+            listening: score.listening.map(u32::from),
+            speaking:  score.speaking.map(u32::from),
+            writing:   score.writing.map(u32::from),
+        }),
+        LearningGoal::ToeicScore(score) => Goal::ToeicScore(ProtoToeicScore {
+            total:     u32::from(score.total),
+            listening: score.listening.map(u32::from),
+            reading:   score.reading.map(u32::from),
+        }),
+        LearningGoal::EikenLevel(level) => Goal::EikenLevel(ProtoEikenLevel::from(*level) as i32),
+        LearningGoal::GeneralLevel(level) => {
+            Goal::GeneralLevel(ProtoCefrLevel::from(*level) as i32)
+        },
+        LearningGoal::NoSpecificGoal => Goal::NoSpecificGoal(true),
+    };
+
+    ProtoLearningGoal { goal: Some(goal) }
+}
+
+/// Proto の `LearningGoal` からドメインへの変換
+///
+/// # Errors
+///
+/// 無効な学習目標の場合は `Status::invalid_argument` を返します
+fn proto_learning_goal_to_domain(
+    goal: Option<ProtoLearningGoal>,
+) -> Result<Option<LearningGoal>, Status> {
+    use proto::services::user::learning_goal::Goal;
+
+    let Some(goal) = goal else {
+        return Ok(None);
+    };
+
+    let Some(goal_type) = goal.goal else {
+        return Ok(None);
+    };
+
+    let domain_goal = match goal_type {
+        Goal::IeltsScore(score) => {
+            let ielts = IeltsScore::new(
+                score.overall,
+                score.reading,
+                score.listening,
+                score.writing,
+                score.speaking,
+            )
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+            LearningGoal::IeltsScore(ielts)
+        },
+        Goal::ToeflScore(score) => {
+            let toefl = ToeflScore::new(
+                u8::try_from(score.total)
+                    .map_err(|_| Status::invalid_argument("Invalid TOEFL total score"))?,
+                score.reading.map(|s| u8::try_from(s).unwrap_or(0)),
+                score.listening.map(|s| u8::try_from(s).unwrap_or(0)),
+                score.speaking.map(|s| u8::try_from(s).unwrap_or(0)),
+                score.writing.map(|s| u8::try_from(s).unwrap_or(0)),
+            )
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+            LearningGoal::ToeflScore(toefl)
+        },
+        Goal::ToeicScore(score) => {
+            let toeic = ToeicScore::new(
+                u16::try_from(score.total)
+                    .map_err(|_| Status::invalid_argument("Invalid TOEIC total score"))?,
+                score.listening.map(|s| u16::try_from(s).unwrap_or(0)),
+                score.reading.map(|s| u16::try_from(s).unwrap_or(0)),
+            )
+            .map_err(|e| Status::invalid_argument(e.to_string()))?;
+            LearningGoal::ToeicScore(toeic)
+        },
+        Goal::EikenLevel(level) => {
+            let eiken = ProtoEikenLevel::try_from(level)
+                .map_err(|_| Status::invalid_argument("Invalid Eiken level"))?
+                .try_into()?;
+            LearningGoal::EikenLevel(eiken)
+        },
+        Goal::GeneralLevel(level) => {
+            let cefr = ProtoCefrLevel::try_from(level)
+                .map_err(|_| Status::invalid_argument("Invalid CEFR level"))?
+                .try_into()?;
+            LearningGoal::GeneralLevel(cefr)
+        },
+        Goal::NoSpecificGoal(_) => LearningGoal::NoSpecificGoal,
+    };
+
+    Ok(Some(domain_goal))
+}
+
 /// `DateTime` から Proto Timestamp への変換
 #[must_use]
 #[allow(clippy::cast_possible_wrap)]
@@ -119,60 +333,33 @@ pub fn timestamp_to_datetime(ts: &Timestamp) -> Result<DateTime<Utc>, Status> {
 
 /// ドメインの User から Proto への変換
 #[must_use]
-pub fn user_to_proto(user: &User) -> proto::User {
-    proto::User {
+pub fn user_to_proto(user: &User) -> ProtoUser {
+    ProtoUser {
         id:         user.id().to_string(),
         email:      user.email().to_string(),
-        profile:    Some(proto::UserProfile {
+        profile:    Some(ProtoUserProfile {
             display_name:          user.profile().display_name().to_string(),
             current_level:         ProtoCefrLevel::from(user.profile().current_level()) as i32,
-            target_level:          user
-                .profile()
-                .target_level()
-                .map(|l| ProtoCefrLevel::from(l) as i32),
+            learning_goal:         user.profile().learning_goal().map(learning_goal_to_proto),
             questions_per_session: u32::from(user.profile().questions_per_session()),
             created_at:            Some(datetime_to_timestamp(user.profile().created_at())),
             updated_at:            Some(datetime_to_timestamp(user.profile().updated_at())),
         }),
         role:       ProtoUserRole::from(user.role()) as i32,
+        status:     ProtoAccountStatus::from(user.status()) as i32,
         created_at: Some(datetime_to_timestamp(user.created_at())),
         updated_at: Some(datetime_to_timestamp(user.updated_at())),
+        version:    user.version(),
     }
 }
 
 /// Proto リクエストからドメインコマンドへの変換
 #[must_use]
-pub fn create_user_request_to_command(req: proto::CreateUserRequest) -> CreateUser {
+pub fn create_user_request_to_command(req: CreateUserRequest) -> CreateUser {
     CreateUser {
         email:         req.email,
         display_name:  req.display_name,
         is_first_user: req.is_first_user,
-    }
-}
-
-/// Proto の `TargetLevelUpdate` からドメインへの変換
-///
-/// # Errors
-///
-/// CEFR レベルが無効な場合は `Status::invalid_argument` を返します
-pub fn proto_target_level_update_to_domain(
-    update: Option<ProtoTargetLevelUpdate>,
-) -> Result<TargetLevelUpdate, Status> {
-    match update {
-        None => Ok(TargetLevelUpdate::NoChange),
-        Some(proto_update) => match proto_update.update {
-            None => Ok(TargetLevelUpdate::NoChange),
-            Some(proto::target_level_update::Update::NoChange(_)) => {
-                Ok(TargetLevelUpdate::NoChange)
-            },
-            Some(proto::target_level_update::Update::SetLevel(level)) => {
-                let cefr_level = ProtoCefrLevel::try_from(level)
-                    .map_err(|_| Status::invalid_argument("Invalid CEFR level"))?
-                    .try_into()?;
-                Ok(TargetLevelUpdate::Set(cefr_level))
-            },
-            Some(proto::target_level_update::Update::Clear(_)) => Ok(TargetLevelUpdate::Clear),
-        },
     }
 }
 
@@ -183,7 +370,7 @@ pub fn proto_target_level_update_to_domain(
 /// ユーザー ID や CEFR レベルが無効な場合は `Status::invalid_argument`
 /// を返します
 pub fn update_profile_request_to_command(
-    req: proto::UpdateProfileRequest,
+    req: UpdateProfileRequest,
 ) -> Result<UpdateUserProfile, Status> {
     let user_id =
         UserId::from_str(&req.user_id).map_err(|_| Status::invalid_argument("Invalid user ID"))?;
@@ -197,13 +384,10 @@ pub fn update_profile_request_to_command(
         },
     };
 
-    let target_level = proto_target_level_update_to_domain(req.target_level)?;
-
     Ok(UpdateUserProfile {
         user_id,
         display_name: req.display_name,
         current_level,
-        target_level,
         questions_per_session: req
             .questions_per_session
             .map(|q| u8::try_from(q).unwrap_or(10)),
@@ -216,9 +400,7 @@ pub fn update_profile_request_to_command(
 ///
 /// ユーザー ID、実行者 ID、またはロールが無効な場合は
 /// `Status::invalid_argument` を返します
-pub fn change_role_request_to_command(
-    req: &proto::ChangeRoleRequest,
-) -> Result<ChangeUserRole, Status> {
+pub fn change_role_request_to_command(req: &ChangeRoleRequest) -> Result<ChangeUserRole, Status> {
     let user_id =
         UserId::from_str(&req.user_id).map_err(|_| Status::invalid_argument("Invalid user ID"))?;
     let executed_by = UserId::from_str(&req.executed_by)
@@ -239,9 +421,7 @@ pub fn change_role_request_to_command(
 /// # Errors
 ///
 /// ユーザー ID が無効な場合は `Status::invalid_argument` を返します
-pub fn update_email_request_to_command(
-    req: proto::UpdateEmailRequest,
-) -> Result<UpdateUserEmail, Status> {
+pub fn update_email_request_to_command(req: UpdateEmailRequest) -> Result<UpdateUserEmail, Status> {
     let user_id =
         UserId::from_str(&req.user_id).map_err(|_| Status::invalid_argument("Invalid user ID"))?;
 
@@ -255,11 +435,26 @@ pub fn update_email_request_to_command(
 ///
 /// # Errors
 ///
+/// ユーザー ID が無効な場合、または学習目標が無効な場合は
+/// `Status::invalid_argument` を返します
+pub fn set_learning_goal_request_to_command(
+    req: &SetLearningGoalRequest,
+) -> Result<SetLearningGoal, Status> {
+    let user_id =
+        UserId::from_str(&req.user_id).map_err(|_| Status::invalid_argument("Invalid user ID"))?;
+
+    let goal = proto_learning_goal_to_domain(req.goal)?;
+
+    Ok(SetLearningGoal { user_id, goal })
+}
+
+/// Proto リクエストからドメインコマンドへの変換
+///
+/// # Errors
+///
 /// ユーザー ID または実行者 ID が無効な場合は `Status::invalid_argument`
 /// を返します
-pub fn delete_user_request_to_command(
-    req: &proto::DeleteUserRequest,
-) -> Result<DeleteUser, Status> {
+pub fn delete_user_request_to_command(req: &DeleteUserRequest) -> Result<DeleteUser, Status> {
     let user_id =
         UserId::from_str(&req.user_id).map_err(|_| Status::invalid_argument("Invalid user ID"))?;
     let executed_by = UserId::from_str(&req.executed_by)

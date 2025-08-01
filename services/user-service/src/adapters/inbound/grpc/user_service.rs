@@ -9,7 +9,7 @@ use super::converters::{
     change_role_request_to_command,
     create_user_request_to_command,
     delete_user_request_to_command,
-    proto::{
+    proto::services::user::{
         ChangeRoleRequest,
         ChangeRoleResponse,
         CreateUserRequest,
@@ -20,12 +20,15 @@ use super::converters::{
         GetUserByEmailResponse,
         GetUserRequest,
         GetUserResponse,
+        SetLearningGoalRequest,
+        SetLearningGoalResponse,
         UpdateEmailRequest,
         UpdateEmailResponse,
         UpdateProfileRequest,
         UpdateProfileResponse,
         user_service_server::UserService,
     },
+    set_learning_goal_request_to_command,
     update_email_request_to_command,
     update_profile_request_to_command,
     user_to_proto,
@@ -116,6 +119,23 @@ where
         }))
     }
 
+    async fn set_learning_goal(
+        &self,
+        request: Request<SetLearningGoalRequest>,
+    ) -> Result<Response<SetLearningGoalResponse>, Status> {
+        let command = set_learning_goal_request_to_command(&request.into_inner())?;
+
+        let user = self
+            .use_case
+            .set_learning_goal(command)
+            .await
+            .map_err(Into::into)?;
+
+        Ok(Response::new(SetLearningGoalResponse {
+            user: Some(user_to_proto(&user)),
+        }))
+    }
+
     async fn change_role(
         &self,
         request: Request<ChangeRoleRequest>,
@@ -194,6 +214,7 @@ mod tests {
         let request = Request::new(CreateUserRequest {
             email:         "test@example.com".to_string(),
             display_name:  "Test User".to_string(),
+            photo_url:     None,
             is_first_user: true,
         });
 

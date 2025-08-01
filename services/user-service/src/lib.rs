@@ -5,6 +5,9 @@
 //! - ユーザープロフィール管理
 //! - ユーザー関連イベントの発行
 
+// Proto 生成コードの clippy 警告を抑制
+#![allow(clippy::module_name_repetitions)]
+
 pub mod adapters;
 pub mod application;
 pub mod config;
@@ -18,7 +21,7 @@ pub use domain::{
         ChangeUserRole,
         CreateUser,
         DeleteUser,
-        TargetLevelUpdate,
+        SetLearningGoal,
         UpdateUserEmail,
         UpdateUserProfile,
     },

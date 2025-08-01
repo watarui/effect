@@ -4,6 +4,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use super::learning_goal::LearningGoal;
+
 /// CEFR レベル（ヨーロッパ言語共通参照枠）
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CefrLevel {
@@ -49,14 +51,14 @@ impl std::fmt::Display for CefrLevel {
 }
 
 /// ユーザープロフィール
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UserProfile {
     /// 表示名
     display_name:          String,
     /// 現在の英語レベル
     current_level:         CefrLevel,
-    /// 目標レベル
-    target_level:          Option<CefrLevel>,
+    /// 学習目標
+    learning_goal:         Option<LearningGoal>,
     /// 1セッションあたりの問題数
     questions_per_session: u8,
     /// プロフィール作成日時
@@ -79,15 +81,6 @@ pub enum ProfileError {
     /// 1セッションあたりの問題数が不正
     #[error("Questions per session must be between 1 and 100, got: {0}")]
     InvalidQuestionsPerSession(u8),
-
-    /// 目標レベルが現在のレベル以下
-    #[error("Target level ({target}) must be higher than current level ({current})")]
-    InvalidTargetLevel {
-        /// 現在のレベル
-        current: CefrLevel,
-        /// 目標レベル
-        target:  CefrLevel,
-    },
 }
 
 impl UserProfile {
@@ -113,7 +106,7 @@ impl UserProfile {
         Ok(Self {
             display_name,
             current_level: CefrLevel::default(),
-            target_level: None,
+            learning_goal: None,
             questions_per_session: 50, // デフォルト値
             created_at: now,
             updated_at: now,
@@ -142,31 +135,16 @@ impl UserProfile {
         Ok(())
     }
 
-    /// レベル設定を更新
-    ///
-    /// # Errors
-    ///
-    /// * `ProfileError::InvalidTargetLevel` -
-    ///   目標レベルが現在のレベル以下の場合
-    pub fn update_levels(
-        &mut self,
-        current: CefrLevel,
-        target: Option<CefrLevel>,
-    ) -> Result<(), ProfileError> {
-        if let Some(target_level) = target {
-            // 目標レベルは現在レベルより高い必要がある
-            if target_level as u8 <= current as u8 {
-                return Err(ProfileError::InvalidTargetLevel {
-                    current,
-                    target: target_level,
-                });
-            }
-        }
-
-        self.current_level = current;
-        self.target_level = target;
+    /// 現在のレベルを更新
+    pub fn update_current_level(&mut self, level: CefrLevel) {
+        self.current_level = level;
         self.updated_at = Utc::now();
-        Ok(())
+    }
+
+    /// 学習目標を設定
+    pub fn set_learning_goal(&mut self, goal: Option<LearningGoal>) {
+        self.learning_goal = goal;
+        self.updated_at = Utc::now();
     }
 
     /// 1セッションあたりの問題数を更新
@@ -197,10 +175,10 @@ impl UserProfile {
         self.current_level
     }
 
-    /// 目標レベルを取得
+    /// 学習目標を取得
     #[must_use]
-    pub const fn target_level(&self) -> Option<CefrLevel> {
-        self.target_level
+    pub const fn learning_goal(&self) -> Option<&LearningGoal> {
+        self.learning_goal.as_ref()
     }
 
     /// 1セッションあたりの問題数を取得
@@ -239,7 +217,7 @@ mod tests {
         let profile = result.unwrap();
         assert_eq!(profile.display_name(), "Test User");
         assert_eq!(profile.current_level(), CefrLevel::B1);
-        assert_eq!(profile.target_level(), None);
+        assert!(profile.learning_goal().is_none());
         assert_eq!(profile.questions_per_session(), 50);
     }
 
@@ -267,24 +245,6 @@ mod tests {
         // Then
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), ProfileError::EmptyDisplayName);
-    }
-
-    #[test]
-    fn user_profile_update_levels_should_validate_target() {
-        // Given
-        let mut profile = UserProfile::new("Test").unwrap();
-
-        // When - Valid target
-        let result = profile.update_levels(CefrLevel::B1, Some(CefrLevel::C1));
-        assert!(result.is_ok());
-
-        // When - Invalid target (same level)
-        let result = profile.update_levels(CefrLevel::B1, Some(CefrLevel::B1));
-        assert!(result.is_err());
-
-        // When - Invalid target (lower level)
-        let result = profile.update_levels(CefrLevel::B2, Some(CefrLevel::A2));
-        assert!(result.is_err());
     }
 
     #[test]
