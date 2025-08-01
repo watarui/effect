@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package effect.common;
+
+// CEFR レベル（Common European Framework of Reference for Languages）
+// 言語能力を表す国際基準
+enum CefrLevel {
+  CEFR_LEVEL_UNSPECIFIED = 0;
+  CEFR_LEVEL_A1 = 1; // 初級前半
+  CEFR_LEVEL_A2 = 2; // 初級後半
+  CEFR_LEVEL_B1 = 3; // 中級前半
+  CEFR_LEVEL_B2 = 4; // 中級後半
+  CEFR_LEVEL_C1 = 5; // 上級前半
+  CEFR_LEVEL_C2 = 6; // 上級後半
+}
+
+// ユーザーロール
+// シンプルな 2 ロール構成（RBAC の最小実装）
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_USER = 1; // 通常のユーザー（自分のデータのみアクセス可能）
+  USER_ROLE_ADMIN = 2; // 管理者（全ユーザーのデータ閲覧、権限変更可能）
+}
+
+// アカウント状態
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_ACTIVE = 1; // アクティブ
+  ACCOUNT_STATUS_DELETED = 2; // 削除済み（論理削除）
+}
+
+// 試験コース種別
+// 将来的に対応予定の各種英語試験
+enum CourseType {
+  COURSE_TYPE_UNSPECIFIED = 0;
+  COURSE_TYPE_IELTS = 1; // IELTS (International English Language Testing System)
+  COURSE_TYPE_TOEFL = 2; // TOEFL (Test of English as a Foreign Language)
+  COURSE_TYPE_TOEIC = 3; // TOEIC (Test of English for International Communication)
+  COURSE_TYPE_EIKEN = 4; // 英検（実用英語技能検定）
+  COURSE_TYPE_GENERAL_ENGLISH = 5; // 一般英語学習
+}
+
+// 学習セッション状態
+enum SessionStatus {
+  SESSION_STATUS_UNSPECIFIED = 0;
+  SESSION_STATUS_ACTIVE = 1; // 進行中
+  SESSION_STATUS_COMPLETED = 2; // 完了
+  SESSION_STATUS_ABANDONED = 3; // 中断
+}
+
+// 解答結果
+enum AnswerResult {
+  ANSWER_RESULT_UNSPECIFIED = 0;
+  ANSWER_RESULT_CORRECT = 1; // 正解
+  ANSWER_RESULT_INCORRECT = 2; // 不正解
+  ANSWER_RESULT_SKIPPED = 3; // スキップ
+}

@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package effect.services.user;
+
+import "common/types.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// ユーザーサービス
+// Firebase Auth + Google OAuth による認証を提供し、
+// ユーザープロファイルと学習設定を管理する
+service UserService {
+  // ユーザーを作成
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // ユーザーを取得
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Email でユーザーを取得
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (GetUserByEmailResponse);
+
+  // プロフィールを更新
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+  // 学習目標を設定
+  rpc SetLearningGoal(SetLearningGoalRequest) returns (SetLearningGoalResponse);
+
+  // ロールを変更（Admin のみ実行可能）
+  rpc ChangeRole(ChangeRoleRequest) returns (ChangeRoleResponse);
+
+  // Email を更新
+  rpc UpdateEmail(UpdateEmailRequest) returns (UpdateEmailResponse);
+
+  // ユーザーを削除
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+// 学習目標
+// 設計ドキュメントに基づき、IELTS スコアや CEFR レベルなど
+// 様々な形式の目標設定をサポート
+message LearningGoal {
+  oneof goal {
+    IeltsScore ielts_score = 1;
+    ToeflScore toefl_score = 2;
+    ToeicScore toeic_score = 3;
+    EikenLevel eiken_level = 4;
+    effect.common.CefrLevel general_level = 5;
+    bool no_specific_goal = 6;
+  }
+}
+
+// IELTS スコア目標
+message IeltsScore {
+  float overall = 1; // 1.0 - 9.0 (0.5 刻み)
+  optional float reading = 2; // 各セクション 1.0 - 9.0 (0.5 刻み)
+  optional float listening = 3;
+  optional float writing = 4;
+  optional float speaking = 5;
+}
+
+// TOEFL スコア目標
+message ToeflScore {
+  uint32 total = 1; // 0 - 120
+  optional uint32 reading = 2; // 各セクション 0 - 30
+  optional uint32 listening = 3; // 各セクション 0 - 30
+  optional uint32 speaking = 4; // 各セクション 0 - 30
+  optional uint32 writing = 5; // 各セクション 0 - 30
+}
+
+// TOEIC スコア目標
+message ToeicScore {
+  uint32 total = 1; // 10 - 990
+  optional uint32 listening = 2; // リスニング 5 - 495
+  optional uint32 reading = 3; // リーディング 5 - 495
+}
+
+// 英検レベル
+enum EikenLevel {
+  EIKEN_LEVEL_UNSPECIFIED = 0;
+  EIKEN_LEVEL_5 = 1; // 5級
+  EIKEN_LEVEL_4 = 2; // 4級
+  EIKEN_LEVEL_3 = 3; // 3級
+  EIKEN_LEVEL_PRE_2 = 4; // 準2級
+  EIKEN_LEVEL_2 = 5; // 2級
+  EIKEN_LEVEL_PRE_1 = 6; // 準1級
+  EIKEN_LEVEL_1 = 7; // 1級
+}
+
+// ユーザープロフィール
+message UserProfile {
+  string display_name = 1;
+  effect.common.CefrLevel current_level = 2; // 現在のレベル
+  LearningGoal learning_goal = 3; // 学習目標
+  uint32 questions_per_session = 4; // セッションあたりの問題数（1-100）
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// ユーザー
+message User {
+  string id = 1;
+  string email = 2;
+  UserProfile profile = 3;
+  effect.common.UserRole role = 4;
+  effect.common.AccountStatus status = 5; // アカウント状態
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  uint64 version = 8; // 楽観的ロック用バージョン
+}
+
+// ユーザー作成リクエスト
+message CreateUserRequest {
+  string email = 1;
+  string display_name = 2;
+  optional string photo_url = 3; // Google アカウントのプロフィール画像
+  bool is_first_user = 4; // 最初のユーザーの場合 Admin 権限を付与
+}
+
+// ユーザー作成レスポンス
+message CreateUserResponse {
+  User user = 1;
+}
+
+// ユーザー取得リクエスト
+message GetUserRequest {
+  string user_id = 1;
+}
+
+// ユーザー取得レスポンス
+message GetUserResponse {
+  User user = 1;
+}
+
+// Email でユーザー取得リクエスト
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+// Email でユーザー取得レスポンス
+message GetUserByEmailResponse {
+  User user = 1;
+}
+
+// プロフィール更新リクエスト
+message UpdateProfileRequest {
+  string user_id = 1;
+  optional string display_name = 2;
+  optional effect.common.CefrLevel current_level = 3;
+  optional uint32 questions_per_session = 4;
+}
+
+// プロフィール更新レスポンス
+message UpdateProfileResponse {
+  User user = 1;
+}
+
+// 学習目標設定リクエスト
+message SetLearningGoalRequest {
+  string user_id = 1;
+  LearningGoal goal = 2;
+}
+
+// 学習目標設定レスポンス
+message SetLearningGoalResponse {
+  User user = 1;
+}
+
+// ロール変更リクエスト
+message ChangeRoleRequest {
+  string user_id = 1;
+  effect.common.UserRole new_role = 2;
+  string executed_by = 3; // 実行者（Admin である必要がある）
+}
+
+// ロール変更レスポンス
+message ChangeRoleResponse {
+  User user = 1;
+}
+
+// Email 更新リクエスト
+message UpdateEmailRequest {
+  string user_id = 1;
+  string new_email = 2;
+}
+
+// Email 更新レスポンス
+message UpdateEmailResponse {
+  User user = 1;
+}
+
+// ユーザー削除リクエスト
+message DeleteUserRequest {
+  string user_id = 1;
+  string executed_by = 2; // 実行者（本人または Admin）
+}
+
+// ユーザー削除レスポンス
+message DeleteUserResponse {
+  // 空のレスポンス
+}

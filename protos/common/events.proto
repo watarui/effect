@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package effect.common;
+
+import "google/protobuf/timestamp.proto";
+
+// イベントメタデータ
+// すべてのドメインイベントに共通するメタデータ情報
+message EventMetadata {
+  // イベントの一意識別子（UUID v4）
+  string event_id = 1;
+
+  // イベントが発生した集約の識別子
+  string aggregate_id = 2;
+
+  // イベントの発生時刻
+  google.protobuf.Timestamp occurred_at = 3;
+
+  // イベントのバージョン（集約ごとの連番）
+  uint64 version = 4;
+
+  // イベントを発生させたユーザーのID（オプション）
+  optional string caused_by_user_id = 5;
+
+  // 相関ID（一連の処理を追跡するため）
+  optional string correlation_id = 6;
+}
+
+// イベントタイプ
+// システム全体で使用されるイベントの種類
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+
+  // User Context
+  EVENT_TYPE_USER_SIGNED_UP = 100;
+  EVENT_TYPE_USER_PROFILE_UPDATED = 101;
+  EVENT_TYPE_USER_LEARNING_GOAL_SET = 102;
+  EVENT_TYPE_USER_ROLE_CHANGED = 103;
+  EVENT_TYPE_USER_DELETED = 104;
+  EVENT_TYPE_USER_EMAIL_UPDATED = 105;
+
+  // Vocabulary Context (200番台)
+  EVENT_TYPE_VOCABULARY_ITEM_CREATED = 200;
+  EVENT_TYPE_VOCABULARY_ITEM_UPDATED = 201;
+  EVENT_TYPE_VOCABULARY_ITEM_DELETED = 202;
+
+  // Learning Context (300番台)
+  EVENT_TYPE_LEARNING_SESSION_STARTED = 300;
+  EVENT_TYPE_LEARNING_QUESTION_ANSWERED = 301;
+  EVENT_TYPE_LEARNING_SESSION_COMPLETED = 302;
+  EVENT_TYPE_LEARNING_SESSION_ABANDONED = 303;
+
+  // Learning Algorithm Context (400番台)
+  EVENT_TYPE_ALGORITHM_ITEM_SCHEDULED = 400;
+  EVENT_TYPE_ALGORITHM_DIFFICULTY_ADJUSTED = 401;
+
+  // Progress Context (500番台) - 読み取り専用のため基本的にイベント発行なし
+
+  // AI Integration Context (600番台)
+  EVENT_TYPE_AI_GENERATION_REQUESTED = 600;
+  EVENT_TYPE_AI_GENERATION_COMPLETED = 601;
+  EVENT_TYPE_AI_GENERATION_FAILED = 602;
+}
+
+// イベントエンベロープ
+// イベントバスで送信される際の共通フォーマット
+message EventEnvelope {
+  // イベントメタデータ
+  EventMetadata metadata = 1;
+
+  // イベントタイプ
+  EventType event_type = 2;
+
+  // イベントペイロード（JSON 形式）
+  // 実際のイベントデータは各コンテキストで定義される
+  bytes payload = 3;
+
+  // イベントのソース（どのサービスから発行されたか）
+  string source = 4;
+}

@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package effect.events.user;
+
+import "common/events.proto";
+import "common/types.proto";
+import "google/protobuf/timestamp.proto";
+import "services/user_service.proto";
+
+// ユーザー登録イベント
+message UserSignedUp {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  string email = 3;
+  string display_name = 4;
+  optional string photo_url = 5;
+  effect.common.UserRole initial_role = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// プロフィール更新イベント
+message ProfileUpdated {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+
+  // 更新されたフィールドのみ含む
+  optional string display_name = 3;
+  optional effect.common.CefrLevel current_level = 4;
+  optional uint32 questions_per_session = 5;
+
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// 学習目標設定イベント
+message LearningGoalSet {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  effect.services.user.LearningGoal new_goal = 3;
+  optional effect.services.user.LearningGoal previous_goal = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// ロール変更イベント
+message UserRoleChanged {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  effect.common.UserRole old_role = 3;
+  effect.common.UserRole new_role = 4;
+  string changed_by_user_id = 5;
+  google.protobuf.Timestamp changed_at = 6;
+}
+
+// Email 更新イベント
+message UserEmailUpdated {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  string old_email = 3;
+  string new_email = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// ユーザー削除イベント
+message UserDeleted {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  string email = 3; // 削除後の参照用に保持
+  string deleted_by_user_id = 4;
+  google.protobuf.Timestamp deleted_at = 5;
+}
+
+// ユーザーサインインイベント（Progress Context での統計用）
+message UserSignedIn {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  optional string ip_address = 3;
+  optional string user_agent = 4;
+  google.protobuf.Timestamp signed_in_at = 5;
+}
+
+// ユーザーサインアウトイベント
+message UserSignedOut {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  google.protobuf.Timestamp signed_out_at = 3;
+}
+
+// セッションリフレッシュイベント
+message SessionRefreshed {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2;
+  google.protobuf.Timestamp new_expiry = 3;
+}
