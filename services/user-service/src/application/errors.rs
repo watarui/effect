@@ -37,6 +37,10 @@ pub enum ApplicationError {
     #[error("Event publishing error: {0}")]
     EventPublishing(String),
 
+    /// ドメインロジックエラー
+    #[error("Domain logic error: {0}")]
+    DomainLogic(String),
+
     /// 内部エラー
     #[error("Internal error: {0}")]
     Internal(String),

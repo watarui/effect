@@ -1,8 +1,11 @@
 //! インメモリイベントパブリッシャー（開発環境用）
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use domain_events::DomainEvent;
 use thiserror::Error;
+use tokio::sync::Mutex;
 use tracing::{debug, info};
 
 use crate::ports::outbound::EventPublisher;
@@ -18,15 +21,38 @@ pub enum Error {
 /// インメモリイベントパブリッシャー
 ///
 /// 開発環境用のイベントパブリッシャー実装。
-/// イベントをログに出力するだけで、実際の永続化や配信は行わない。
-#[derive(Debug, Clone, Default)]
-pub struct InMemoryPublisher;
+/// イベントをログに出力し、テスト用に発行されたイベントを保存する。
+#[derive(Debug, Clone)]
+pub struct InMemoryPublisher {
+    /// 発行されたイベントを保存するストレージ（テスト用）
+    events: Arc<Mutex<Vec<DomainEvent>>>,
+}
+
+impl Default for InMemoryPublisher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl InMemoryPublisher {
     /// 新しいインメモリパブリッシャーを作成
     #[must_use]
-    pub const fn new() -> Self {
-        Self
+    pub fn new() -> Self {
+        Self {
+            events: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    /// 発行されたイベントの一覧を取得（テスト用）
+    pub async fn get_published_events(&self) -> Vec<DomainEvent> {
+        let events = self.events.lock().await;
+        events.clone()
+    }
+
+    /// 発行されたイベントをクリア（テスト用）
+    pub async fn clear_events(&self) {
+        let mut events = self.events.lock().await;
+        events.clear();
     }
 }
 
@@ -65,6 +91,12 @@ impl EventPublisher for InMemoryPublisher {
             },
         }
 
+        // テスト用にイベントを保存
+        {
+            let mut events = self.events.lock().await;
+            events.push(event.clone());
+        }
+
         // 開発環境では常に成功を返す
         Ok(())
     }
@@ -84,7 +116,7 @@ mod tests {
         let event = DomainEvent::User(UserEvent::AccountCreated {
             metadata: EventMetadata::new(),
             user_id:  UserId::new(),
-            email:    "test@example.com".to_string(),
+            email:    String::from("test@example.com"),
         });
 
         // When

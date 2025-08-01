@@ -2,7 +2,6 @@
 
 use std::sync::Arc;
 
-use config::Config;
 use tonic::transport::Server;
 use tracing::{Level, info};
 use tracing_subscriber::FmtSubscriber;
@@ -19,6 +18,7 @@ use user_service::{
         },
     },
     application::use_cases::UseCaseImpl,
+    config::Config,
 };
 
 #[tokio::main]
@@ -31,12 +31,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("Failed to set default subscriber: {e}"))?;
 
     // 設定読み込み
-    let config = Config::builder()
-        .add_source(config::Environment::with_prefix("USER_SERVICE"))
-        .set_default("grpc_port", 50051)?
-        .build()?;
+    let config = Config::load().map_err(|e| format!("Failed to load configuration: {e}"))?;
 
-    let grpc_port: u16 = config.get("grpc_port")?;
+    let grpc_port = config.server.port;
 
     // 依存関係の初期化
     let repository = Arc::new(InMemoryRepository::new());

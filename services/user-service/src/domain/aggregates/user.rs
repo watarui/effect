@@ -72,6 +72,32 @@ impl User {
         })
     }
 
+    /// 指定されたロールで新しいユーザーを作成
+    ///
+    /// # Errors
+    ///
+    /// * `ProfileError` - プロフィールの検証に失敗した場合
+    pub fn new_with_role(
+        id: UserId,
+        email: Email,
+        display_name: &str,
+        role: UserRole,
+    ) -> Result<Self, crate::domain::value_objects::user_profile::ProfileError> {
+        let profile = UserProfile::new(display_name)?;
+        let now = Utc::now();
+
+        Ok(Self {
+            id,
+            email,
+            profile,
+            role,
+            status: AccountStatus::default(),
+            created_at: now,
+            updated_at: now,
+            version: 0,
+        })
+    }
+
     /// プロフィールを更新
     ///
     /// # Errors

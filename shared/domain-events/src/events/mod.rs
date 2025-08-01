@@ -12,7 +12,7 @@ pub use ai::AIIntegrationEvent;
 pub use algorithm::LearningAlgorithmEvent;
 pub use learning::{CorrectnessJudgment, LearningEvent};
 use serde::{Deserialize, Serialize};
-pub use user::UserEvent;
+pub use user::{CefrLevel, LearningGoal, UserEvent};
 pub use vocabulary::VocabularyEvent;
 
 use crate::EventMetadata;
@@ -73,7 +73,8 @@ impl DomainEvent {
             },
             Self::User(e) => match e {
                 UserEvent::AccountCreated { metadata, .. }
-                | UserEvent::AccountDeleted { metadata, .. } => metadata,
+                | UserEvent::AccountDeleted { metadata, .. }
+                | UserEvent::ProfileUpdated { metadata, .. } => metadata,
             },
         }
     }
@@ -126,6 +127,49 @@ mod tests {
                 assert_eq!(email, "test@example.com");
             },
             _ => unreachable!("Expected User AccountCreated event"),
+        }
+    }
+
+    #[test]
+    fn profile_updated_event_should_work_in_domain_event() {
+        use chrono::Utc;
+
+        use super::user::{CefrLevel, LearningGoal};
+
+        // Given
+        let event = DomainEvent::User(UserEvent::ProfileUpdated {
+            metadata:              EventMetadata::new(),
+            user_id:               UserId::new(),
+            display_name:          Some("Test User".to_string()),
+            current_level:         Some(CefrLevel::B2),
+            learning_goal:         Some(LearningGoal::GeneralLevel(CefrLevel::C1)),
+            questions_per_session: Some(25),
+            occurred_at:           Utc::now(),
+        });
+
+        // When
+        let json = serde_json::to_string(&event).unwrap();
+        let deserialized: DomainEvent = serde_json::from_str(&json).unwrap();
+
+        // Then
+        assert_eq!(event.event_type(), "User");
+        match deserialized {
+            DomainEvent::User(UserEvent::ProfileUpdated {
+                display_name,
+                current_level,
+                learning_goal,
+                questions_per_session,
+                ..
+            }) => {
+                assert_eq!(display_name, Some("Test User".to_string()));
+                assert_eq!(current_level, Some(CefrLevel::B2));
+                assert_eq!(
+                    learning_goal,
+                    Some(LearningGoal::GeneralLevel(CefrLevel::C1))
+                );
+                assert_eq!(questions_per_session, Some(25));
+            },
+            _ => unreachable!("Expected User ProfileUpdated event"),
         }
     }
 

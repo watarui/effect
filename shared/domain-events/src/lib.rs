@@ -12,10 +12,12 @@ mod traits;
 pub use error::EventError;
 pub use events::{
     AIIntegrationEvent,
+    CefrLevel,
     CorrectnessJudgment,
     DomainEvent,
     LearningAlgorithmEvent,
     LearningEvent,
+    LearningGoal,
     UserEvent,
     VocabularyEvent,
 };

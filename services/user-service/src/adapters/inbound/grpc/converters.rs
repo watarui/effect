@@ -481,6 +481,9 @@ impl From<ApplicationError> for Status {
                 Self::internal(format!("Event publishing error: {msg}"))
             },
             ApplicationError::Internal(msg) => Self::internal(msg),
+            ApplicationError::DomainLogic(msg) => {
+                Self::internal(format!("Domain logic error: {msg}"))
+            },
         }
     }
 }

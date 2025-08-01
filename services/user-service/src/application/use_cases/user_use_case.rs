@@ -18,6 +18,7 @@ use crate::{
             UpdateUserProfile,
         },
         events::UserEventBuilder,
+        services::{UserDomainService, UserDomainServiceImpl},
         value_objects::email::Email,
     },
     ports::{
@@ -36,6 +37,7 @@ where
     repository:      Arc<R>,
     event_publisher: Arc<E>,
     _auth_provider:  Arc<A>, // 将来の認証機能拡張用
+    domain_service:  Arc<UserDomainServiceImpl<R>>,
 }
 
 impl<R, E, A> UseCaseImpl<R, E, A>
@@ -45,11 +47,13 @@ where
     A: AuthProvider,
 {
     /// 新しいユーザーユースケースを作成
-    pub const fn new(repository: Arc<R>, event_publisher: Arc<E>, auth_provider: Arc<A>) -> Self {
+    pub fn new(repository: Arc<R>, event_publisher: Arc<E>, auth_provider: Arc<A>) -> Self {
+        let domain_service = Arc::new(UserDomainServiceImpl::new(Arc::clone(&repository)));
         Self {
             repository,
             event_publisher,
             _auth_provider: auth_provider,
+            domain_service,
         }
     }
 }
@@ -78,16 +82,15 @@ where
             return Err(ApplicationError::EmailAlreadyExists);
         }
 
-        // 最初のユーザーかどうかを確認
-        let is_first_user = command.is_first_user
-            || self
-                .repository
-                .is_first_user()
-                .await
-                .map_err(|e| ApplicationError::Repository(e.to_string()))?;
+        // ドメインサービスを使用して初期ロールを決定
+        let initial_role = self
+            .domain_service
+            .determine_initial_role(command.is_first_user)
+            .await
+            .map_err(|e| ApplicationError::DomainLogic(e.to_string()))?;
 
         // ユーザーを作成
-        let user = User::create(UserId::new(), email, &command.display_name, is_first_user)?;
+        let user = User::new_with_role(UserId::new(), email, &command.display_name, initial_role)?;
 
         // リポジトリに保存
         self.repository
@@ -148,7 +151,12 @@ where
             .await
             .map_err(|e| ApplicationError::Repository(e.to_string()))?;
 
-        // TODO: プロフィール更新イベントを発行（domain-events に追加後）
+        // プロフィール更新イベントを発行
+        let event = UserEventBuilder::profile_updated(&user);
+        self.event_publisher
+            .publish(&event)
+            .await
+            .map_err(|e| ApplicationError::EventPublishing(e.to_string()))?;
 
         Ok(user)
     }
@@ -397,5 +405,62 @@ mod tests {
             get_result.unwrap_err(),
             ApplicationError::UserNotFound
         ));
+    }
+
+    #[tokio::test]
+    async fn update_profile_should_publish_profile_updated_event() {
+        // Given
+        let use_case = create_use_case();
+        let user = use_case
+            .create_user(CreateUser {
+                email:         "user@example.com".to_string(),
+                display_name:  "Original Name".to_string(),
+                is_first_user: false,
+            })
+            .await
+            .unwrap();
+
+        let command = UpdateUserProfile {
+            user_id:               *user.id(),
+            display_name:          Some("Updated Name".to_string()),
+            current_level:         Some(crate::domain::value_objects::user_profile::CefrLevel::B2),
+            questions_per_session: Some(30),
+        };
+
+        // When
+        let result = use_case.update_profile(command).await;
+
+        // Then
+        assert!(result.is_ok());
+
+        let updated_user = result.unwrap();
+        assert_eq!(updated_user.profile().display_name(), "Updated Name");
+        assert_eq!(
+            updated_user.profile().current_level(),
+            crate::domain::value_objects::user_profile::CefrLevel::B2
+        );
+        assert_eq!(updated_user.profile().questions_per_session(), 30);
+
+        // イベントが発行されたことを確認
+        let events = use_case.event_publisher.get_published_events().await;
+        assert_eq!(events.len(), 2); // AccountCreated + ProfileUpdated
+
+        // ProfileUpdated イベントの内容を確認
+        let profile_updated_event = &events[1];
+        match profile_updated_event {
+            domain_events::DomainEvent::User(domain_events::UserEvent::ProfileUpdated {
+                user_id,
+                display_name,
+                current_level,
+                questions_per_session,
+                ..
+            }) => {
+                assert_eq!(*user_id, *updated_user.id());
+                assert_eq!(display_name, &Some("Updated Name".to_string()));
+                assert_eq!(*current_level, Some(domain_events::CefrLevel::B2));
+                assert_eq!(*questions_per_session, Some(30));
+            },
+            _ => unreachable!("Should be ProfileUpdated event"),
+        }
     }
 }
