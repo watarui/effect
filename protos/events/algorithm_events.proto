@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package effect.events.algorithm;
+
+import "common/events.proto";
+import "google/protobuf/timestamp.proto";
+
+// 復習スケジュール更新イベント
+message ReviewScheduleUpdated {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2; // UUID
+  string item_id = 3; // UUID
+  google.protobuf.Timestamp next_review_date = 4; // 次回復習予定日
+  uint32 interval_days = 5; // 復習間隔（日数）
+}
+
+// 学習統計更新イベント
+message StatisticsUpdated {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2; // UUID
+  uint32 total_items = 3; // 総項目数
+  uint32 mastered_items = 4; // 習得済み項目数
+}
+
+// 学習アルゴリズムコンテキストのイベント
+message LearningAlgorithmEvent {
+  oneof event {
+    ReviewScheduleUpdated review_schedule_updated = 1;
+    StatisticsUpdated statistics_updated = 2;
+  }
+}

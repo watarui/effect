@@ -26,9 +26,10 @@ message ProfileUpdated {
   // 更新されたフィールドのみ含む
   optional string display_name = 3;
   optional effect.common.CefrLevel current_level = 4;
-  optional uint32 questions_per_session = 5;
+  optional effect.services.user.LearningGoal learning_goal = 5;
+  optional uint32 questions_per_session = 6;
 
-  google.protobuf.Timestamp updated_at = 6;
+  google.protobuf.Timestamp occurred_at = 7;
 }
 
 // 学習目標設定イベント
@@ -89,4 +90,19 @@ message SessionRefreshed {
   effect.common.EventMetadata metadata = 1;
   string user_id = 2;
   google.protobuf.Timestamp new_expiry = 3;
+}
+
+// ユーザーコンテキストのイベント
+message UserEvent {
+  oneof event {
+    UserSignedUp user_signed_up = 1;
+    ProfileUpdated profile_updated = 2;
+    LearningGoalSet learning_goal_set = 3;
+    UserRoleChanged user_role_changed = 4;
+    UserEmailUpdated user_email_updated = 5;
+    UserDeleted user_deleted = 6;
+    UserSignedIn user_signed_in = 7;
+    UserSignedOut user_signed_out = 8;
+    SessionRefreshed session_refreshed = 9;
+  }
 }

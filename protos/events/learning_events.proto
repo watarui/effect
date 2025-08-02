@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package effect.events.learning;
+
+import "common/events.proto";
+import "common/learning_types.proto";
+
+// 学習セッション開始イベント
+message SessionStarted {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  string user_id = 3; // UUID
+  uint32 item_count = 4; // セッションで学習する項目数
+}
+
+// 正誤判定イベント
+message CorrectnessJudged {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  string item_id = 3; // UUID
+  effect.common.CorrectnessJudgment judgment = 4;
+  uint32 response_time_ms = 5; // 応答時間（ミリ秒）
+}
+
+// 学習セッション完了イベント
+message SessionCompleted {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  string user_id = 3; // UUID
+  uint32 completed_count = 4; // 完了した項目数
+  uint32 correct_count = 5; // 正解数
+}
+
+// 学習コンテキストのイベント
+message LearningEvent {
+  oneof event {
+    SessionStarted session_started = 1;
+    CorrectnessJudged correctness_judged = 2;
+    SessionCompleted session_completed = 3;
+  }
+}

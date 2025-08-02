@@ -62,15 +62,23 @@ impl EventPublisher for InMemoryPublisher {
 
     async fn publish(&self, event: &DomainEvent) -> Result<(), Self::Error> {
         // イベントタイプとメタデータをログ出力
-        let metadata = event.metadata();
-
-        info!(
-            event_type = event.event_type(),
-            event_id = %metadata.event_id,
-            occurred_at = %metadata.occurred_at,
-            version = %metadata.version,
-            "Publishing domain event"
-        );
+        match event.metadata() {
+            Some(metadata) => {
+                info!(
+                    event_type = event.event_type(),
+                    event_id = %metadata.event_id,
+                    occurred_at = ?metadata.occurred_at,
+                    version = metadata.version,
+                    "Publishing domain event"
+                );
+            },
+            None => {
+                info!(
+                    event_type = event.event_type(),
+                    "Publishing domain event (no metadata)"
+                );
+            },
+        }
 
         // イベントの詳細をデバッグログに出力
         match event {
@@ -113,10 +121,19 @@ mod tests {
     async fn publish_user_event_should_succeed() {
         // Given
         let publisher = InMemoryPublisher::new();
-        let event = DomainEvent::User(UserEvent::AccountCreated {
-            metadata: EventMetadata::new(),
-            user_id:  UserId::new(),
-            email:    String::from("test@example.com"),
+        let user_id = UserId::new();
+        let event = DomainEvent::User(UserEvent {
+            event: Some(domain_events::user_event::Event::UserSignedUp(
+                domain_events::UserSignedUp {
+                    metadata:     Some(EventMetadata::new(user_id.to_string())),
+                    user_id:      user_id.to_string(),
+                    email:        String::from("test@example.com"),
+                    display_name: String::from("Test User"),
+                    photo_url:    None,
+                    initial_role: domain_events::UserRole::User as i32,
+                    created_at:   Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+                },
+            )),
         });
 
         // When
@@ -130,11 +147,16 @@ mod tests {
     async fn publish_learning_event_should_succeed() {
         // Given
         let publisher = InMemoryPublisher::new();
-        let event = DomainEvent::Learning(domain_events::LearningEvent::SessionStarted {
-            metadata:   EventMetadata::new(),
-            session_id: common_types::SessionId::new(),
-            user_id:    UserId::new(),
-            item_count: 0,
+        let user_id = UserId::new();
+        let event = DomainEvent::Learning(domain_events::LearningEvent {
+            event: Some(domain_events::learning_event::Event::SessionStarted(
+                domain_events::SessionStarted {
+                    metadata:   Some(EventMetadata::new(user_id.to_string())),
+                    session_id: common_types::SessionId::new().to_string(),
+                    user_id:    user_id.to_string(),
+                    item_count: 0,
+                },
+            )),
         });
 
         // When

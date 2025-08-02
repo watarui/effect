@@ -81,13 +81,31 @@ impl EventStore for PostgresEventStore {
         for event in events {
             sequence_number += 1;
 
-            let event_id = event.metadata().event_id.as_uuid();
+            // メタデータを取得（イベントストアでは必須）
+            let meta = event
+                .metadata()
+                .ok_or_else(|| EventError::Store("Event metadata is required".to_string()))?;
+
+            let event_id = uuid::Uuid::parse_str(&meta.event_id)
+                .map_err(|e| EventError::Store(format!("Invalid event ID: {e}")))?;
             let event_type = event.event_type();
             let event_data = serde_json::to_value(&event)
                 .map_err(|e| EventError::Store(format!("Failed to serialize event: {e}")))?;
-            let metadata = serde_json::to_value(event.metadata())
+            let metadata = serde_json::to_value(meta)
                 .map_err(|e| EventError::Store(format!("Failed to serialize metadata: {e}")))?;
-            let occurred_at = event.metadata().occurred_at;
+
+            // Timestamp を chrono::DateTime に変換
+            let occurred_at = meta
+                .occurred_at
+                .as_ref()
+                .and_then(|ts| {
+                    u32::try_from(ts.nanos).ok().and_then(|nanos| {
+                        chrono::DateTime::<chrono::Utc>::from_timestamp(ts.seconds, nanos)
+                    })
+                })
+                .ok_or_else(|| {
+                    EventError::Store("Invalid or missing occurred_at timestamp".to_string())
+                })?;
 
             sqlx::query(
                 r"

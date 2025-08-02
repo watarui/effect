@@ -24,6 +24,9 @@ message EventMetadata {
 
   // 相関ID（一連の処理を追跡するため）
   optional string correlation_id = 6;
+
+  // 因果関係ID（このイベントを引き起こしたイベントのID）
+  optional string causation_id = 7;
 }
 
 // イベントタイプ

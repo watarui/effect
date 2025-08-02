@@ -134,15 +134,23 @@ impl EventBus for PubSubEventBus {
         let event_data = serde_json::to_vec(&event)
             .map_err(|e| EventError::Deserialization(format!("Failed to serialize event: {e}")))?;
 
+        // タイムスタンプを取得（メタデータがない場合は現在時刻を使用）
+        let timestamp = event
+            .metadata()
+            .and_then(|meta| meta.occurred_at.as_ref())
+            .and_then(|ts| {
+                use chrono::{DateTime, Utc};
+                let nanos = u32::try_from(ts.nanos).ok()?;
+                DateTime::<Utc>::from_timestamp(ts.seconds, nanos)
+            })
+            .map_or_else(|| chrono::Utc::now().to_rfc3339(), |dt| dt.to_rfc3339());
+
         // Pub/Sub メッセージを作成
         let message = PubsubMessage {
             data: event_data,
             attributes: HashMap::from([
                 ("event_type".to_string(), event.event_type().to_string()),
-                (
-                    "timestamp".to_string(),
-                    event.metadata().occurred_at.to_rfc3339(),
-                ),
+                ("timestamp".to_string(), timestamp),
             ]),
             ..Default::default()
         };

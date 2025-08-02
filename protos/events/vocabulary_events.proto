@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package effect.events.vocabulary;
+
+import "common/events.proto";
+
+// 語彙エントリー作成イベント
+message EntryCreated {
+  effect.common.EventMetadata metadata = 1;
+  string entry_id = 2; // UUID（ItemId）
+  string spelling = 3;
+}
+
+// 語彙項目作成イベント
+message ItemCreated {
+  effect.common.EventMetadata metadata = 1;
+  string item_id = 2; // UUID（ItemId）
+  string spelling = 3;
+  string created_by = 4; // UUID（UserId）
+}
+
+// AI 生成要求イベント
+message AIGenerationRequested {
+  effect.common.EventMetadata metadata = 1;
+  string item_id = 2; // UUID（ItemId）
+  string spelling = 3;
+}
+
+// AI 情報生成完了イベント
+message AIInfoGenerated {
+  effect.common.EventMetadata metadata = 1;
+  string item_id = 2; // UUID（ItemId）
+  string pronunciation = 3; // IPA 発音記号
+  repeated string definitions = 4; // 定義リスト
+}
+
+// 語彙コンテキストのイベント
+message VocabularyEvent {
+  oneof event {
+    EntryCreated entry_created = 1;
+    ItemCreated item_created = 2;
+    AIGenerationRequested ai_generation_requested = 3;
+    AIInfoGenerated ai_info_generated = 4;
+  }
+}

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package effect.common;
+
+// 正誤判定
+enum CorrectnessJudgment {
+  CORRECTNESS_JUDGMENT_UNSPECIFIED = 0;
+  CORRECTNESS_JUDGMENT_CORRECT = 1; // 正解
+  CORRECTNESS_JUDGMENT_INCORRECT = 2; // 不正解
+  CORRECTNESS_JUDGMENT_SKIPPED = 3; // スキップ
+}
+
+// 難易度
+enum Difficulty {
+  DIFFICULTY_UNSPECIFIED = 0;
+  DIFFICULTY_VERY_EASY = 1; // とても簡単
+  DIFFICULTY_EASY = 2; // 簡単
+  DIFFICULTY_MEDIUM = 3; // 普通
+  DIFFICULTY_HARD = 4; // 難しい
+  DIFFICULTY_VERY_HARD = 5; // とても難しい
+}
+
+// AI タスクの種類
+enum AITaskType {
+  AI_TASK_TYPE_UNSPECIFIED = 0;
+  AI_TASK_TYPE_DEFINITION_GENERATION = 1; // 定義生成
+  AI_TASK_TYPE_EXAMPLE_GENERATION = 2; // 例文生成
+  AI_TASK_TYPE_PRONUNCIATION_GENERATION = 3; // 発音生成
+  AI_TASK_TYPE_ETYMOLOGY_ANALYSIS = 4; // 語源分析
+  AI_TASK_TYPE_USAGE_NOTE_GENERATION = 5; // 使用法注記生成
+}
+
+// AI タスクステータス
+enum AITaskStatus {
+  AI_TASK_STATUS_UNSPECIFIED = 0;
+  AI_TASK_STATUS_PENDING = 1; // 保留中
+  AI_TASK_STATUS_PROCESSING = 2; // 処理中
+  AI_TASK_STATUS_COMPLETED = 3; // 完了
+  AI_TASK_STATUS_FAILED = 4; // 失敗
+  AI_TASK_STATUS_CANCELLED = 5; // キャンセル
+}

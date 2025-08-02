@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use common_types::UserId;
+use domain_events::{DomainEvent, EventMetadata, UserEvent};
 
 use crate::{
     application::errors::ApplicationError,
@@ -247,6 +248,10 @@ where
             return Err(ApplicationError::PermissionDenied);
         }
 
+        // 削除対象のユーザーを取得（イベント発行用）
+        let user_to_delete = self.get_user(&command.user_id).await?;
+        let user_email = user_to_delete.email().to_string();
+
         // ユーザーを削除
         self.repository
             .delete(&command.user_id)
@@ -254,7 +259,19 @@ where
             .map_err(|e| ApplicationError::Repository(e.to_string()))?;
 
         // イベントを発行
-        let event = UserEventBuilder::account_deleted(&command.user_id);
+        // UserDeleted イベントを手動で作成（email と deleted_by_user_id を正しく設定）
+        use domain_events::{UserDeleted, user_event};
+        let event = DomainEvent::User(UserEvent {
+            event: Some(user_event::Event::UserDeleted(UserDeleted {
+                metadata:           Some(EventMetadata::new(command.user_id.to_string())),
+                user_id:            command.user_id.to_string(),
+                email:              user_email,
+                deleted_by_user_id: command.executed_by.to_string(),
+                deleted_at:         Some(
+                    prost_types::Timestamp::from(std::time::SystemTime::now()),
+                ),
+            })),
+        });
         self.event_publisher
             .publish(&event)
             .await
@@ -443,24 +460,24 @@ mod tests {
 
         // イベントが発行されたことを確認
         let events = use_case.event_publisher.get_published_events().await;
-        assert_eq!(events.len(), 2); // AccountCreated + ProfileUpdated
+        assert_eq!(events.len(), 2); // UserSignedUp + ProfileUpdated
 
         // ProfileUpdated イベントの内容を確認
         let profile_updated_event = &events[1];
         match profile_updated_event {
-            domain_events::DomainEvent::User(domain_events::UserEvent::ProfileUpdated {
-                user_id,
-                display_name,
-                current_level,
-                questions_per_session,
-                ..
-            }) => {
-                assert_eq!(*user_id, *updated_user.id());
-                assert_eq!(display_name, &Some("Updated Name".to_string()));
-                assert_eq!(*current_level, Some(domain_events::CefrLevel::B2));
-                assert_eq!(*questions_per_session, Some(30));
+            domain_events::DomainEvent::User(user_event) => match &user_event.event {
+                Some(domain_events::user_event::Event::ProfileUpdated(updated)) => {
+                    assert_eq!(updated.user_id, updated_user.id().to_string());
+                    assert_eq!(updated.display_name, Some("Updated Name".to_string()));
+                    assert_eq!(
+                        updated.current_level,
+                        Some(domain_events::CefrLevel::B2 as i32)
+                    );
+                    assert_eq!(updated.questions_per_session, Some(30));
+                },
+                _ => unreachable!("Should be ProfileUpdated event"),
             },
-            _ => unreachable!("Should be ProfileUpdated event"),
+            _ => unreachable!("Should be User event"),
         }
     }
 }
