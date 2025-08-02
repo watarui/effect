@@ -75,7 +75,7 @@ macro_rules! update {
             r#"
             UPDATE {}
             SET {}
-            WHERE {} = ${} AND version = ${}
+            WHERE {} = ${} AND version = ${} AND deleted_at IS NULL
             RETURNING version
             "#,
             $table,
@@ -103,7 +103,7 @@ macro_rules! update {
                 // バージョン不一致または存在しない
                 // 実際のバージョンを確認
                 let actual_version: Option<i64> = sqlx::query_scalar(&format!(
-                    "SELECT version FROM {} WHERE {} = $1",
+                    "SELECT version FROM {} WHERE {} = $1 AND deleted_at IS NULL",
                     $table, $id_column
                 ))
                 .bind($entity.id())
@@ -130,7 +130,7 @@ macro_rules! update {
     }};
 }
 
-/// SELECT 文を生成するマクロ
+/// SELECT 文を生成するマクロ（削除済みを除外）
 #[macro_export]
 macro_rules! select_by_id {
     (
@@ -141,7 +141,10 @@ macro_rules! select_by_id {
         $pool:expr,mapper:
         $mapper:expr $(,)?
     ) => {{
-        let query = format!("SELECT * FROM {} WHERE {} = $1", $table, $id_column);
+        let query = format!(
+            "SELECT * FROM {} WHERE {} = $1 AND deleted_at IS NULL",
+            $table, $id_column
+        );
 
         sqlx::query(&query)
             .bind($id)
@@ -176,17 +179,223 @@ macro_rules! delete {
     }};
 }
 
-/// EXISTS クエリを生成するマクロ
+/// EXISTS クエリを生成するマクロ（削除済みを除外）
 #[macro_export]
 macro_rules! exists {
     (table: $table:expr,id_column: $id_column:expr,id: $id:expr,pool: $pool:expr $(,)?) => {{
         let query = format!(
-            "SELECT EXISTS(SELECT 1 FROM {} WHERE {} = $1)",
+            "SELECT EXISTS(SELECT 1 FROM {} WHERE {} = $1 AND deleted_at IS NULL)",
             $table, $id_column
         );
 
         sqlx::query_scalar::<_, bool>(&query)
             .bind($id)
+            .fetch_one($pool)
+            .await
+            .map_err($crate::repository::Error::from_sqlx)
+    }};
+}
+
+/// ソフトデリート文を生成するマクロ
+///
+/// `deleted_at` フィールドに現在時刻を設定する
+#[macro_export]
+macro_rules! soft_delete {
+    (table: $table:expr,id_column: $id_column:expr,id: $id:expr,pool: $pool:expr $(,)?) => {{
+        use chrono::Utc;
+
+        let now = Utc::now();
+        let query = format!(
+            "UPDATE {} SET deleted_at = $1, updated_at = $2 WHERE {} = $3 AND deleted_at IS NULL",
+            $table, $id_column
+        );
+
+        let result = sqlx::query(&query)
+            .bind(now)
+            .bind(now)
+            .bind($id)
+            .execute($pool)
+            .await
+            .map_err($crate::repository::Error::from_sqlx)?;
+
+        if result.rows_affected() == 0 {
+            // エンティティが存在しないか、既に削除済み
+            let exists_query = format!(
+                "SELECT EXISTS(SELECT 1 FROM {} WHERE {} = $1)",
+                $table, $id_column
+            );
+            let exists = sqlx::query_scalar::<_, bool>(&exists_query)
+                .bind($id)
+                .fetch_one($pool)
+                .await
+                .map_err($crate::repository::Error::from_sqlx)?;
+
+            if !exists {
+                Err($crate::repository::Error::not_found(
+                    $table,
+                    $id.to_string(),
+                ))
+            } else {
+                // 既に削除済み
+                Ok(())
+            }
+        } else {
+            Ok(())
+        }
+    }};
+}
+
+/// ソフトデリートを復元するマクロ
+///
+/// `deleted_at` フィールドを NULL に設定する
+#[macro_export]
+macro_rules! restore {
+    (table: $table:expr,id_column: $id_column:expr,id: $id:expr,pool: $pool:expr $(,)?) => {{
+        use chrono::Utc;
+
+        let now = Utc::now();
+        let query = format!(
+            "UPDATE {} SET deleted_at = NULL, updated_at = $1 WHERE {} = $2 AND deleted_at IS NOT \
+             NULL",
+            $table, $id_column
+        );
+
+        let result = sqlx::query(&query)
+            .bind(now)
+            .bind($id)
+            .execute($pool)
+            .await
+            .map_err($crate::repository::Error::from_sqlx)?;
+
+        if result.rows_affected() == 0 {
+            // エンティティが存在しないか、削除されていない
+            let exists_query = format!(
+                "SELECT EXISTS(SELECT 1 FROM {} WHERE {} = $1)",
+                $table, $id_column
+            );
+            let exists = sqlx::query_scalar::<_, bool>(&exists_query)
+                .bind($id)
+                .fetch_one($pool)
+                .await
+                .map_err($crate::repository::Error::from_sqlx)?;
+
+            if !exists {
+                Err($crate::repository::Error::not_found(
+                    $table,
+                    $id.to_string(),
+                ))
+            } else {
+                // 削除されていない
+                Ok(())
+            }
+        } else {
+            Ok(())
+        }
+    }};
+}
+
+/// SELECT 文を生成するマクロ（削除済みを含む）
+#[macro_export]
+macro_rules! select_by_id_with_deleted {
+    (
+        table:
+        $table:expr,id_column:
+        $id_column:expr,id:
+        $id:expr,pool:
+        $pool:expr,mapper:
+        $mapper:expr $(,)?
+    ) => {{
+        let query = format!("SELECT * FROM {} WHERE {} = $1", $table, $id_column);
+
+        sqlx::query(&query)
+            .bind($id)
+            .fetch_optional($pool)
+            .await
+            .map_err($crate::repository::Error::from_sqlx)?
+            .map($mapper)
+            .transpose()
+    }};
+}
+
+/// 削除済みのエンティティのみを取得するマクロ
+#[macro_export]
+macro_rules! select_deleted {
+    (table: $table:expr,pool: $pool:expr,mapper: $mapper:expr $(,)?) => {{
+        let query = format!("SELECT * FROM {} WHERE deleted_at IS NOT NULL", $table);
+
+        sqlx::query(&query)
+            .fetch_all($pool)
+            .await
+            .map_err($crate::repository::Error::from_sqlx)?
+            .into_iter()
+            .map($mapper)
+            .collect::<Result<Vec<_>, _>>()
+    }};
+}
+
+/// 複数の ID でエンティティを一括取得するマクロ（削除済みを除外）
+#[macro_export]
+macro_rules! select_by_ids {
+    (
+        table:
+        $table:expr,id_column:
+        $id_column:expr,ids:
+        $ids:expr,pool:
+        $pool:expr,mapper:
+        $mapper:expr $(,)?
+    ) => {{
+        if $ids.is_empty() {
+            Ok(vec![])
+        } else {
+            let placeholders = (1..=$ids.len())
+                .map(|i| format!("${}", i))
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            let query = format!(
+                "SELECT * FROM {} WHERE {} IN ({}) AND deleted_at IS NULL",
+                $table, $id_column, placeholders
+            );
+
+            let mut query_builder = sqlx::query(&query);
+            for id in $ids {
+                query_builder = query_builder.bind(id);
+            }
+
+            query_builder
+                .fetch_all($pool)
+                .await
+                .map_err($crate::repository::Error::from_sqlx)?
+                .into_iter()
+                .map($mapper)
+                .collect::<Result<Vec<_>, _>>()
+        }
+    }};
+}
+
+/// 全てのエンティティを取得するマクロ（削除済みを除外）
+#[macro_export]
+macro_rules! select_all {
+    (table: $table:expr,pool: $pool:expr,mapper: $mapper:expr $(,)?) => {{
+        let query = format!("SELECT * FROM {} WHERE deleted_at IS NULL", $table);
+
+        sqlx::query(&query)
+            .fetch_all($pool)
+            .await
+            .map_err($crate::repository::Error::from_sqlx)?
+            .into_iter()
+            .map($mapper)
+            .collect::<Result<Vec<_>, _>>()
+    }};
+}
+
+/// エンティティ数を取得するマクロ（削除済みを除外）
+#[macro_export]
+macro_rules! count {
+    (table: $table:expr,pool: $pool:expr $(,)?) => {{
+        let query = format!("SELECT COUNT(*) FROM {} WHERE deleted_at IS NULL", $table);
+
+        sqlx::query_scalar::<_, i64>(&query)
             .fetch_one($pool)
             .await
             .map_err($crate::repository::Error::from_sqlx)
