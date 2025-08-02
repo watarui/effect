@@ -2,15 +2,22 @@
 //!
 //! 語彙エントリーの管理を担当するコンテキスト
 
-// 一時的に警告を抑制
-#![allow(missing_docs)]
-#![allow(unused)]
-
 pub mod domain {
     //! ドメイン層
 
-    pub mod aggregates {
-        //! 集約
+    pub mod entities {
+        //! エンティティ
+        pub mod vocabulary_entry;
+        pub mod vocabulary_item;
+    }
+
+    pub mod value_objects {
+        //! 値オブジェクト
+        pub mod cefr_level;
+        pub mod definition;
+        pub mod domain;
+        pub mod part_of_speech;
+        pub mod register;
     }
 
     pub mod events {
@@ -19,10 +26,6 @@ pub mod domain {
 
     pub mod commands {
         //! コマンド
-    }
-
-    pub mod value_objects {
-        //! 値オブジェクト
     }
 }
 
@@ -42,11 +45,16 @@ pub mod application {
     }
 }
 
-pub mod infrastructure {
-    //! インフラストラクチャ層
+pub mod adapters {
+    //! アダプター層
 
-    pub mod repositories {
-        //! リポジトリ実装
+    pub mod outbound {
+        //! アウトバウンドアダプター
+
+        pub mod repository {
+            //! リポジトリ実装
+            pub mod postgres;
+        }
     }
 }
 
@@ -59,5 +67,6 @@ pub mod ports {
 
     pub mod outbound {
         //! アウトバウンドポート
+        pub mod repository;
     }
 }

@@ -9,5 +9,5 @@ mod timestamp;
 
 // Re-export all public types
 pub use error::{DomainError, DomainResult};
-pub use ids::{EventId, ItemId, SessionId, UserId};
+pub use ids::{EntryId, EventId, ItemId, SessionId, UserId};
 pub use timestamp::{JstExt, Timestamp, now};

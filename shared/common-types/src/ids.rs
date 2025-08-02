@@ -79,6 +79,18 @@ impl ItemId {
     pub const fn as_uuid(&self) -> &Uuid {
         &self.0
     }
+
+    /// バイト配列として取得
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
+    }
+}
+
+impl From<Uuid> for ItemId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
 }
 
 impl Default for ItemId {
@@ -140,6 +152,61 @@ impl FromStr for SessionId {
     type Err = uuid::Error;
 
     /// 文字列から `SessionId` を作成
+    ///
+    /// # Errors
+    ///
+    /// UUID として無効な文字列が渡された場合はエラーを返します
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(Uuid::parse_str(s)?))
+    }
+}
+
+/// 語彙エントリー ID 値オブジェクト
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct EntryId(Uuid);
+
+impl EntryId {
+    /// 新しい `EntryId` を作成
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+
+    /// 内部のUUIDを取得
+    #[must_use]
+    pub const fn as_uuid(&self) -> &Uuid {
+        &self.0
+    }
+
+    /// バイト配列として取得
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
+    }
+}
+
+impl From<Uuid> for EntryId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+}
+
+impl Default for EntryId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for EntryId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl FromStr for EntryId {
+    type Err = uuid::Error;
+
+    /// 文字列から `EntryId` を作成
     ///
     /// # Errors
     ///
@@ -246,9 +313,25 @@ mod tests {
     fn all_id_types_should_have_default() {
         let _user_id = UserId::default();
         let _item_id = ItemId::default();
+        let _entry_id = EntryId::default();
         let _session_id = SessionId::default();
         let _event_id = EventId::default();
         // デフォルトインスタンスが作成できることを確認
+    }
+
+    #[test]
+    fn entry_id_should_generate_unique_ids() {
+        let id1 = EntryId::new();
+        let id2 = EntryId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn entry_id_should_parse_from_string() -> Result<(), Box<dyn std::error::Error>> {
+        let uuid_str = "550e8400-e29b-41d4-a716-446655440000";
+        let entry_id = EntryId::from_str(uuid_str)?;
+        assert_eq!(entry_id.to_string(), uuid_str);
+        Ok(())
     }
 
     #[test]
