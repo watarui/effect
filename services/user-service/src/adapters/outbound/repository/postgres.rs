@@ -249,7 +249,6 @@ impl Repository<User> for PostgresUserRepository {
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )
-        .map_err(RepoError::from_sqlx)
     }
 
     async fn delete(&self, id: &UserId) -> Result<(), RepoError> {
@@ -279,7 +278,6 @@ impl Repository<User> for PostgresUserRepository {
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )
-        .map_err(RepoError::from_sqlx)
     }
 
     async fn find_all(&self) -> Result<Vec<User>, RepoError> {
@@ -288,7 +286,6 @@ impl Repository<User> for PostgresUserRepository {
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )
-        .map_err(RepoError::from_sqlx)
     }
 
     async fn count(&self) -> Result<i64, RepoError> {
@@ -324,7 +321,6 @@ impl SoftDeletable<User> for PostgresUserRepository {
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )
-        .map_err(RepoError::from_sqlx)
     }
 
     async fn find_deleted(&self) -> Result<Vec<User>, RepoError> {
@@ -333,7 +329,6 @@ impl SoftDeletable<User> for PostgresUserRepository {
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )
-        .map_err(RepoError::from_sqlx)
     }
 }
 

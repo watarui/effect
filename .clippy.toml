@@ -18,3 +18,4 @@ missing-docs-in-crate-items = true
 
 # テスト関連
 allow-unwrap-in-tests = true
+allow-expect-in-tests = true
