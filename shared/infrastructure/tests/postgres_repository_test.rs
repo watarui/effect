@@ -11,6 +11,7 @@ use infrastructure::{
     count,
     delete,
     exists,
+    insert,
     restore,
     select_all,
     select_by_id,
@@ -18,6 +19,7 @@ use infrastructure::{
     select_by_ids,
     select_deleted,
     soft_delete,
+    update,
 };
 use sqlx::{PgPool, Row, postgres::PgPoolOptions};
 use uuid::Uuid;
@@ -56,6 +58,10 @@ impl Entity for Product {
 
     fn id(&self) -> &Self::Id {
         &self.id
+    }
+
+    fn id_as_bytes(&self) -> Vec<u8> {
+        self.id.as_bytes().to_vec()
     }
 
     fn version(&self) -> u64 {
@@ -117,69 +123,20 @@ impl Repository<Product> for ProductRepository {
         )?;
 
         if exists {
-            // UPDATE も id のバイト配列変換を考慮
-            let query = r"
-                UPDATE products
-                SET name = $1, price = $2, stock = $3, updated_at = $4, version = version + 1
-                WHERE id = $5 AND version = $6 AND deleted_at IS NULL
-                RETURNING version
-            ";
-
-            let now = Utc::now();
-            #[allow(clippy::cast_possible_wrap)]
-            let version_i64 = entity.version as i64;
-
-            let new_version: Option<i64> = sqlx::query_scalar(query)
-                .bind(&entity.name)
-                .bind(entity.price)
-                .bind(entity.stock)
-                .bind(now)
-                .bind(entity.id.as_bytes().as_slice())
-                .bind(version_i64)
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(Error::from_sqlx)?;
-
-            if new_version.is_some() {
-                Ok(())
-            } else {
-                let check_query =
-                    "SELECT version FROM products WHERE id = $1 AND deleted_at IS NULL";
-                let actual_version: Option<i64> = sqlx::query_scalar(check_query)
-                    .bind(entity.id.as_bytes().as_slice())
-                    .fetch_optional(&self.pool)
-                    .await
-                    .map_err(Error::from_sqlx)?;
-
-                actual_version.map_or_else(
-                    || Err(Error::not_found("products", &format!("{:?}", entity.id))),
-                    |v| {
-                        #[allow(clippy::cast_sign_loss)]
-                        let actual = v as u64;
-                        Err(Error::optimistic_lock_failure(entity.version, actual))
-                    },
-                )
-            }
+            update!(
+                table: "products",
+                entity: entity,
+                id_column: "id",
+                columns: [name, price, stock],
+                pool: &self.pool
+            )
         } else {
-            // INSERT も id のバイト配列変換を考慮
-            let query = r"
-                INSERT INTO products (id, name, price, stock, created_at, updated_at, version)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ";
-
-            let now = Utc::now();
-            sqlx::query(query)
-                .bind(entity.id.as_bytes().as_slice())
-                .bind(&entity.name)
-                .bind(entity.price)
-                .bind(entity.stock)
-                .bind(now)
-                .bind(now)
-                .bind(1_i64)
-                .execute(&self.pool)
-                .await
-                .map(|_| ())
-                .map_err(Error::from_sqlx)
+            insert!(
+                table: "products",
+                entity: entity,
+                columns: [name, price, stock],
+                pool: &self.pool
+            )
         }
     }
 

@@ -11,6 +11,7 @@ use infrastructure::{
     count,
     delete,
     exists,
+    insert,
     restore,
     select_all,
     select_by_id,
@@ -18,6 +19,7 @@ use infrastructure::{
     select_by_ids,
     select_deleted,
     soft_delete,
+    update,
 };
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -54,6 +56,10 @@ impl Entity for User {
 
     fn id(&self) -> &Self::Id {
         self.id()
+    }
+
+    fn id_as_bytes(&self) -> Vec<u8> {
+        self.id().as_bytes().to_vec()
     }
 
     fn created_at(&self) -> DateTime<Utc> {
@@ -151,94 +157,86 @@ fn map_row_to_user(row: &sqlx::postgres::PgRow) -> Result<User, sqlx::Error> {
 #[async_trait]
 impl Repository<User> for PostgresUserRepository {
     async fn save(&self, entity: &User) -> Result<(), RepoError> {
-        // 新規作成か更新かを判定
+        // User エンティティ用のダミー実装を追加
+        // User の increment_version() と touch() が実際に動作しないため、
+        // 一時的な wrapper を作成
+        struct UserWrapper<'a> {
+            user:         &'a User,
+            email:        String,
+            display_name: String,
+            role:         String,
+            status:       String,
+        }
+
+        impl Entity for UserWrapper<'_> {
+            type Id = UserId;
+
+            fn id(&self) -> &Self::Id {
+                self.user.id()
+            }
+
+            fn id_as_bytes(&self) -> Vec<u8> {
+                self.user.id_as_bytes()
+            }
+
+            fn version(&self) -> u64 {
+                self.user.version()
+            }
+
+            fn created_at(&self) -> DateTime<Utc> {
+                self.user.created_at()
+            }
+
+            fn updated_at(&self) -> DateTime<Utc> {
+                self.user.updated_at()
+            }
+
+            fn increment_version(&mut self) {
+                // User の private フィールドのため実装不可
+            }
+
+            fn touch(&mut self) {
+                // User の private フィールドのため実装不可
+            }
+        }
+
+        let wrapper = UserWrapper {
+            user:         entity,
+            email:        entity.email().as_str().to_string(),
+            display_name: entity.profile().display_name().to_string(),
+            role:         match entity.role() {
+                UserRole::Admin => "admin".to_string(),
+                UserRole::User => "user".to_string(),
+            },
+            status:       match entity.status() {
+                AccountStatus::Active => "active".to_string(),
+                AccountStatus::Deleted => "deleted".to_string(),
+            },
+        };
+
         let exists = exists!(
             table: "users",
             id_column: "id",
-            id: entity.id().as_bytes(),
+            id: entity.id_as_bytes(),
             pool: &self.pool
         )?;
 
-        // 共通の値を先に計算
-        let role_str = match entity.role() {
-            UserRole::Admin => "admin",
-            UserRole::User => "user",
-        };
-        let status_str = match entity.status() {
-            AccountStatus::Active => "active",
-            AccountStatus::Deleted => "deleted",
-        };
-
         if exists {
-            // 更新
-
-            let query = r"
-                UPDATE users
-                SET email = $1, display_name = $2, role = $3, status = $4, updated_at = $5, version = version + 1
-                WHERE id = $6 AND version = $7 AND deleted_at IS NULL
-                RETURNING version
-            ";
-
-            let now = Utc::now();
-            #[allow(clippy::cast_possible_wrap)]
-            let version_i64 = entity.version() as i64;
-
-            let new_version: Option<i64> = sqlx::query_scalar(query)
-                .bind(entity.email().as_str())
-                .bind(entity.profile().display_name())
-                .bind(role_str)
-                .bind(status_str)
-                .bind(now)
-                .bind(entity.id().as_bytes())
-                .bind(version_i64)
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(RepoError::from_sqlx)?;
-
-            if new_version.is_some() {
-                return Ok(());
-            }
-
-            // バージョン不一致または存在しない
-            let check_query = "SELECT version FROM users WHERE id = $1 AND deleted_at IS NULL";
-            let actual_version: Option<i64> = sqlx::query_scalar(check_query)
-                .bind(entity.id().as_bytes())
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(RepoError::from_sqlx)?;
-
-            return actual_version.map_or_else(
-                || Err(RepoError::not_found("User", entity.id())),
-                |v| {
-                    #[allow(clippy::cast_sign_loss)]
-                    let actual = v as u64;
-                    Err(RepoError::optimistic_lock_failure(entity.version(), actual))
-                },
-            );
+            update!(
+                table: "users",
+                entity: wrapper,
+                id_column: "id",
+                columns: [email, display_name, role, status],
+                pool: &self.pool
+            )
+        } else {
+            insert!(
+                table: "users",
+                entity: wrapper,
+                columns: [email, display_name, role, status],
+                pool: &self.pool
+            )
         }
-
-        // 新規作成
-        let query = r"
-            INSERT INTO users (id, email, display_name, role, status, created_at, updated_at, version)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        ";
-
-        let now = Utc::now();
-
-        sqlx::query(query)
-            .bind(entity.id().as_bytes())
-            .bind(entity.email().as_str())
-            .bind(entity.profile().display_name())
-            .bind(role_str)
-            .bind(status_str)
-            .bind(now)
-            .bind(now)
-            .bind(1_i64)
-            .execute(&self.pool)
-            .await
-            .map_err(RepoError::from_sqlx)?;
-
-        Ok(())
     }
 
     async fn find_by_id(&self, id: &UserId) -> Result<Option<User>, RepoError> {

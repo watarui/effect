@@ -5,6 +5,7 @@
 /// INSERT 文を生成するマクロ
 ///
 /// タイムスタンプ（`created_at`, `updated_at`）を自動的に現在時刻に設定する
+/// `id` フィールドは自動的に `id_as_bytes()` を使用して変換される
 #[macro_export]
 macro_rules! insert {
     (
@@ -14,33 +15,52 @@ macro_rules! insert {
         pool: $pool:expr $(,)?
     ) => {{
         use chrono::Utc;
+        use $crate::repository::Entity;
 
         let now = Utc::now();
+
+        // id を含むカラムリストを作成
+        let column_names = format!("id, {}, created_at, updated_at, version", stringify!($($column),*));
 
         // VALUESプレースホルダーを生成
         let mut placeholders = Vec::new();
         let mut idx = 1;
+
+        // id のプレースホルダー
+        placeholders.push(format!("${}", idx));
+        idx += 1;
+
+        // その他のカラムのプレースホルダー
         $(
             placeholders.push(format!("${}", idx));
             idx += 1;
             let _ = stringify!($column); // 使用していることを示す
         )*
-        let values_clause = placeholders.join(", ");
+
+        // created_at, updated_at, version のプレースホルダー
+        let created_at_idx = idx;
+        let updated_at_idx = idx + 1;
+        let version_idx = idx + 2;
+
+        let values_clause = format!("{}, ${}, ${}, ${}",
+            placeholders.join(", "),
+            created_at_idx,
+            updated_at_idx,
+            version_idx
+        );
 
         let query = format!(
             r"
-            INSERT INTO {} ({}, created_at, updated_at, version)
-            VALUES ({}, ${}, ${}, ${})
+            INSERT INTO {} ({})
+            VALUES ({})
             ",
             $table,
-            stringify!($($column),*),
-            values_clause,
-            idx,
-            idx + 1,
-            idx + 2
+            column_names,
+            values_clause
         );
 
         sqlx::query(&query)
+            .bind($entity.id_as_bytes())
             $(
                 .bind(&$entity.$column)
             )*
@@ -59,6 +79,7 @@ macro_rules! insert {
 /// - version チェックを行い、不一致の場合はエラーを返す
 /// - `updated_at` を現在時刻に更新
 /// - version をインクリメント
+/// - `id` フィールドは自動的に `id_as_bytes()` を使用して変換される
 #[macro_export]
 macro_rules! update {
     (
@@ -87,6 +108,7 @@ macro_rules! update {
         set_clauses.push(format!("updated_at = ${}", idx));
         idx += 1;
         set_clauses.push(format!("version = ${}", idx));
+        idx += 1;
         let set_clause = set_clauses.join(", ");
 
         let id_idx = idx;
@@ -113,7 +135,7 @@ macro_rules! update {
             )*
             .bind(now)
             .bind(new_version_i64)
-            .bind($entity.id())
+            .bind($entity.id_as_bytes())
             .bind(current_version_i64)
             .fetch_optional($pool)
             .await
@@ -128,7 +150,7 @@ macro_rules! update {
                     "SELECT version FROM {} WHERE {} = $1 AND deleted_at IS NULL",
                     $table, $id_column
                 ))
-                .bind($entity.id())
+                .bind($entity.id_as_bytes())
                 .fetch_optional($pool)
                 .await
                 .map_err(Error::from_sqlx)?;
@@ -500,6 +522,10 @@ mod tests {
             &self.id
         }
 
+        fn id_as_bytes(&self) -> Vec<u8> {
+            self.id.as_bytes().to_vec()
+        }
+
         fn version(&self) -> u64 {
             self.version
         }
@@ -559,73 +585,20 @@ mod tests {
             )?;
 
             if exists {
-                // 更新処理も id のバイト配列変換を考慮
-                let query = r"
-                    UPDATE mock_entities
-                    SET name = $1, value = $2, updated_at = $3, version = version + 1
-                    WHERE id = $4 AND version = $5 AND deleted_at IS NULL
-                    RETURNING version
-                ";
-
-                let now = Utc::now();
-                #[allow(clippy::cast_possible_wrap)]
-                let version_i64 = entity.version as i64;
-
-                let new_version: Option<i64> = sqlx::query_scalar(query)
-                    .bind(&entity.name)
-                    .bind(entity.value)
-                    .bind(now)
-                    .bind(entity.id.as_bytes().as_slice())
-                    .bind(version_i64)
-                    .fetch_optional(&self.pool)
-                    .await
-                    .map_err(Error::from_sqlx)?;
-
-                if new_version.is_some() {
-                    Ok(())
-                } else {
-                    // バージョン不一致または存在しない
-                    let check_query =
-                        "SELECT version FROM mock_entities WHERE id = $1 AND deleted_at IS NULL";
-                    let actual_version: Option<i64> = sqlx::query_scalar(check_query)
-                        .bind(entity.id.as_bytes().as_slice())
-                        .fetch_optional(&self.pool)
-                        .await
-                        .map_err(Error::from_sqlx)?;
-
-                    actual_version.map_or_else(
-                        || {
-                            Err(Error::not_found(
-                                "mock_entities",
-                                &format!("{:?}", entity.id),
-                            ))
-                        },
-                        |v| {
-                            #[allow(clippy::cast_sign_loss)]
-                            let actual = v as u64;
-                            Err(Error::optimistic_lock_failure(entity.version, actual))
-                        },
-                    )
-                }
+                update!(
+                    table: "mock_entities",
+                    entity: entity,
+                    id_column: "id",
+                    columns: [name, value],
+                    pool: &self.pool
+                )
             } else {
-                // id をバイト配列として扱うための特別な処理
-                let query = r"
-                    INSERT INTO mock_entities (id, name, value, created_at, updated_at, version)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                ";
-
-                let now = Utc::now();
-                sqlx::query(query)
-                    .bind(entity.id.as_bytes().as_slice())
-                    .bind(&entity.name)
-                    .bind(entity.value)
-                    .bind(now)
-                    .bind(now)
-                    .bind(1_i64)
-                    .execute(&self.pool)
-                    .await
-                    .map(|_| ())
-                    .map_err(Error::from_sqlx)
+                insert!(
+                    table: "mock_entities",
+                    entity: entity,
+                    columns: [name, value],
+                    pool: &self.pool
+                )
             }
         }
 

@@ -15,6 +15,14 @@ pub trait Entity: Send + Sync {
     /// エンティティのIDを取得
     fn id(&self) -> &Self::Id;
 
+    /// エンティティのIDをバイト配列として取得（データベース保存用）
+    ///
+    /// デフォルト実装では、IDの文字列表現をバイト配列に変換する。
+    /// UUID型など特別な変換が必要な場合は、このメソッドをオーバーライドする。
+    fn id_as_bytes(&self) -> Vec<u8> {
+        self.id().to_string().into_bytes()
+    }
+
     /// バージョン番号を取得（楽観的ロック用）
     fn version(&self) -> u64;
 
