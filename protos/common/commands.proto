@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package effect.common;
+
+import "google/protobuf/timestamp.proto";
+
+// 分散トレーシングコンテキスト
+// OpenTelemetry の W3C Trace Context 標準に準拠
+message TraceContext {
+  // トレース ID（128-bit を 32 文字の16進数で表現）
+  // 分散システム全体でのリクエストを一意に識別
+  string trace_id = 1;
+
+  // スパン ID（64-bit を 16 文字の16進数で表現）
+  // トレース内の個別の操作を一意に識別
+  string span_id = 2;
+
+  // 親スパン ID（optional）
+  // このスパンを開始した親スパンの ID
+  optional string parent_span_id = 3;
+
+  // トレースフラグ（optional）
+  // サンプリング決定などのフラグ
+  optional uint32 trace_flags = 4;
+}
+
+// コマンドメタデータ
+// すべてのコマンドに共通するメタデータ情報
+message CommandMetadata {
+  // コマンドの一意識別子（UUID v4）
+  string command_id = 1;
+
+  // 相関 ID
+  // 複数のサービスをまたがる一連の処理を追跡するための識別子
+  string correlation_id = 2;
+
+  // 対象となる集約の識別子
+  string aggregate_id = 3;
+
+  // 分散トレーシングコンテキスト
+  TraceContext trace_context = 4;
+
+  // コマンドを発行したユーザーの ID
+  string issued_by = 5;
+
+  // コマンドの発行時刻
+  google.protobuf.Timestamp issued_at = 6;
+
+  // コマンドのバージョン（後方互換性のため）
+  uint32 version = 7;
+
+  // コマンドのソース（どのサービス/コンポーネントから発行されたか）
+  string source = 8;
+
+  // タイムアウト（ミリ秒）
+  // 0 の場合はタイムアウトなし
+  optional uint32 timeout_ms = 9;
+
+  // リトライポリシー
+  optional RetryPolicy retry_policy = 10;
+}
+
+// リトライポリシー
+message RetryPolicy {
+  // 最大リトライ回数
+  uint32 max_attempts = 1;
+
+  // 初期遅延（ミリ秒）
+  uint32 initial_delay_ms = 2;
+
+  // 最大遅延（ミリ秒）
+  uint32 max_delay_ms = 3;
+
+  // バックオフ乗数
+  float backoff_multiplier = 4;
+}
+
+// コマンドの結果
+message CommandResult {
+  // コマンド ID（どのコマンドに対する結果か）
+  string command_id = 1;
+
+  // 成功/失敗
+  bool success = 2;
+
+  // エラー情報（失敗時のみ）
+  optional CommandError error = 3;
+
+  // 生成されたイベントの ID リスト
+  repeated string event_ids = 4;
+
+  // 実行時間（ミリ秒）
+  uint32 execution_time_ms = 5;
+}
+
+// コマンドエラー
+message CommandError {
+  // エラーコード
+  string code = 1;
+
+  // エラーメッセージ
+  string message = 2;
+
+  // 詳細情報
+  map<string, string> details = 3;
+
+  // リトライ可能かどうか
+  bool retryable = 4;
+}
+
+// コマンドエンベロープ
+// コマンドバスで送信される際の共通フォーマット
+message CommandEnvelope {
+  // コマンドメタデータ
+  CommandMetadata metadata = 1;
+
+  // コマンドタイプ（例: "CreateUser", "StartLearningSession"）
+  string command_type = 2;
+
+  // コマンドペイロード（Protocol Buffers でエンコードされたバイト列）
+  bytes payload = 3;
+}

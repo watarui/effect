@@ -11,6 +11,33 @@ message SessionStarted {
   string session_id = 2; // UUID
   string user_id = 3; // UUID
   uint32 item_count = 4; // セッションで学習する項目数
+  SelectionStrategy strategy = 5; // 項目選定戦略
+}
+
+// 項目選定完了イベント
+message ItemsSelected {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  repeated SelectedItem selected_items = 3; // 選定された項目のリスト
+  uint32 requested_count = 4; // 要求された項目数
+  uint32 actual_count = 5; // 実際に選定された項目数
+}
+
+// 項目提示イベント
+message ItemPresented {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  string item_id = 3; // UUID
+  uint32 item_index = 4; // セッション内での順番（0-based）
+}
+
+// 解答表示イベント
+message AnswerRevealed {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  string item_id = 3; // UUID
+  AnswerRevealTrigger trigger = 4; // 解答表示のトリガー
+  uint32 time_to_reveal_ms = 5; // 問題提示から解答表示までの時間（ミリ秒）
 }
 
 // 正誤判定イベント
@@ -19,7 +46,16 @@ message CorrectnessJudged {
   string session_id = 2; // UUID
   string item_id = 3; // UUID
   effect.common.CorrectnessJudgment judgment = 4;
-  uint32 response_time_ms = 5; // 応答時間（ミリ秒）
+  uint32 response_time_ms = 5; // 解答表示から判定までの時間（ミリ秒）
+  JudgmentTrigger trigger = 6; // 判定のトリガー
+}
+
+// 正解提供イベント（ユーザーが正解を知らなかった場合）
+message CorrectAnswerProvided {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  string item_id = 3; // UUID
+  string correct_answer = 4; // 正解内容
 }
 
 // 学習セッション完了イベント
@@ -29,13 +65,75 @@ message SessionCompleted {
   string user_id = 3; // UUID
   uint32 completed_count = 4; // 完了した項目数
   uint32 correct_count = 5; // 正解数
+  uint32 duration_seconds = 6; // セッションの総時間（秒）
+  CompletionReason reason = 7; // 完了理由
+}
+
+// セッション放棄イベント
+message SessionAbandoned {
+  effect.common.EventMetadata metadata = 1;
+  string session_id = 2; // UUID
+  string user_id = 3; // UUID
+  uint32 completed_count = 4; // 放棄時点での完了項目数
+  AbandonReason reason = 5; // 放棄理由
+}
+
+// 項目選定戦略
+enum SelectionStrategy {
+  SELECTION_STRATEGY_UNSPECIFIED = 0;
+  SELECTION_STRATEGY_NEW_ITEMS_FIRST = 1; // 新規項目優先
+  SELECTION_STRATEGY_DUE_FOR_REVIEW = 2; // 復習期限到来優先
+  SELECTION_STRATEGY_WEAK_ITEMS_FIRST = 3; // 苦手項目優先
+  SELECTION_STRATEGY_MIXED = 4; // 混合
+}
+
+// 選定された項目
+message SelectedItem {
+  string item_id = 1; // UUID
+  float priority_score = 2; // 優先度スコア
+  string reason = 3; // 選定理由
+}
+
+// 解答表示のトリガー
+enum AnswerRevealTrigger {
+  ANSWER_REVEAL_TRIGGER_UNSPECIFIED = 0;
+  ANSWER_REVEAL_TRIGGER_USER_REQUEST = 1; // ユーザーが「解答を表示」をクリック
+  ANSWER_REVEAL_TRIGGER_TIMEOUT = 2; // 30秒タイムアウト
+}
+
+// 判定のトリガー
+enum JudgmentTrigger {
+  JUDGMENT_TRIGGER_UNSPECIFIED = 0;
+  JUDGMENT_TRIGGER_USER_ACTION = 1; // ユーザーがボタンをクリック
+  JUDGMENT_TRIGGER_AUTO = 2; // 3秒経過による自動判定
+}
+
+// セッション完了理由
+enum CompletionReason {
+  COMPLETION_REASON_UNSPECIFIED = 0;
+  COMPLETION_REASON_ALL_ITEMS_COMPLETED = 1; // 全項目完了
+  COMPLETION_REASON_USER_REQUEST = 2; // ユーザーが終了
+  COMPLETION_REASON_TIMEOUT = 3; // タイムアウト
+}
+
+// セッション放棄理由
+enum AbandonReason {
+  ABANDON_REASON_UNSPECIFIED = 0;
+  ABANDON_REASON_USER_LEFT = 1; // ユーザーが離脱
+  ABANDON_REASON_INACTIVITY = 2; // 無活動によるタイムアウト
+  ABANDON_REASON_TECHNICAL_ERROR = 3; // 技術的エラー
 }
 
 // 学習コンテキストのイベント
 message LearningEvent {
   oneof event {
     SessionStarted session_started = 1;
-    CorrectnessJudged correctness_judged = 2;
-    SessionCompleted session_completed = 3;
+    ItemsSelected items_selected = 2;
+    ItemPresented item_presented = 3;
+    AnswerRevealed answer_revealed = 4;
+    CorrectnessJudged correctness_judged = 5;
+    CorrectAnswerProvided correct_answer_provided = 6;
+    SessionCompleted session_completed = 7;
+    SessionAbandoned session_abandoned = 8;
   }
 }

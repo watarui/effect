@@ -7,7 +7,7 @@ import "common/events.proto";
 // 語彙エントリー作成イベント
 message EntryCreated {
   effect.common.EventMetadata metadata = 1;
-  string entry_id = 2; // UUID（ItemId）
+  string entry_id = 2; // UUID（EntryId）
   string spelling = 3;
 }
 
@@ -15,23 +15,72 @@ message EntryCreated {
 message ItemCreated {
   effect.common.EventMetadata metadata = 1;
   string item_id = 2; // UUID（ItemId）
-  string spelling = 3;
-  string created_by = 4; // UUID（UserId）
+  string entry_id = 3; // UUID（EntryId）
+  string spelling = 4;
+  string disambiguation = 5; // 曖昧さ回避用の説明
+  string created_by = 6; // UUID（UserId）
+}
+
+// フィールド更新イベント（細かく記録）
+message FieldUpdated {
+  effect.common.EventMetadata metadata = 1;
+  string item_id = 2; // UUID（ItemId）
+  string field_path = 3; // 更新されたフィールドのパス（例: "pronunciation", "definitions[0]"）
+  string old_value_json = 4; // 古い値（JSON形式、optional）
+  string new_value_json = 5; // 新しい値（JSON形式）
+  string updated_by = 6; // UUID（UserId）
+  uint32 version = 7; // 更新後のバージョン番号
 }
 
 // AI 生成要求イベント
 message AIGenerationRequested {
   effect.common.EventMetadata metadata = 1;
   string item_id = 2; // UUID（ItemId）
-  string spelling = 3;
+  bool is_regeneration = 3; // 再生成かどうか
 }
 
-// AI 情報生成完了イベント
-message AIInfoGenerated {
+// AI 生成完了イベント
+message AIGenerationCompleted {
   effect.common.EventMetadata metadata = 1;
   string item_id = 2; // UUID（ItemId）
-  string pronunciation = 3; // IPA 発音記号
-  repeated string definitions = 4; // 定義リスト
+  GeneratedContent generated_content = 3; // 生成されたコンテンツ
+  string ai_model = 4; // 使用したAIモデル
+}
+
+// AI 生成失敗イベント
+message AIGenerationFailed {
+  effect.common.EventMetadata metadata = 1;
+  string item_id = 2; // UUID（ItemId）
+  string error = 3; // エラーメッセージ
+  uint32 retry_count = 4; // 再試行回数
+}
+
+// 項目公開イベント
+message ItemPublished {
+  effect.common.EventMetadata metadata = 1;
+  string item_id = 2; // UUID（ItemId）
+}
+
+// 更新競合イベント
+message UpdateConflicted {
+  effect.common.EventMetadata metadata = 1;
+  string item_id = 2; // UUID（ItemId）
+  string attempted_by = 3; // UUID（UserId）
+  uint32 expected_version = 4; // 期待していたバージョン
+  uint32 actual_version = 5; // 実際のバージョン
+  repeated string conflicting_fields = 6; // 競合したフィールドのリスト
+}
+
+// AI が生成したコンテンツ
+message GeneratedContent {
+  string pronunciation = 1; // IPA 発音記号
+  repeated string definitions = 2; // 定義リスト
+  repeated string example_sentences = 3; // 例文リスト
+  repeated string synonyms = 4; // 同義語リスト
+  repeated string antonyms = 5; // 反対語リスト
+  string etymology = 6; // 語源
+  string usage_notes = 7; // 使用法の注意事項
+  string difficulty_level = 8; // 難易度レベル（A1-C2）
 }
 
 // 語彙コンテキストのイベント
@@ -39,7 +88,11 @@ message VocabularyEvent {
   oneof event {
     EntryCreated entry_created = 1;
     ItemCreated item_created = 2;
-    AIGenerationRequested ai_generation_requested = 3;
-    AIInfoGenerated ai_info_generated = 4;
+    FieldUpdated field_updated = 3;
+    AIGenerationRequested ai_generation_requested = 4;
+    AIGenerationCompleted ai_generation_completed = 5;
+    AIGenerationFailed ai_generation_failed = 6;
+    ItemPublished item_published = 7;
+    UpdateConflicted update_conflicted = 8;
   }
 }

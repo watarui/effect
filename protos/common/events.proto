@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package effect.common;
 
+import "common/commands.proto";
 import "google/protobuf/timestamp.proto";
 
 // イベントメタデータ
@@ -27,6 +28,18 @@ message EventMetadata {
 
   // 因果関係ID（このイベントを引き起こしたイベントのID）
   optional string causation_id = 7;
+
+  // 分散トレーシングコンテキスト
+  optional TraceContext trace_context = 8;
+
+  // このイベントを生成したコマンドのID（オプション）
+  optional string command_id = 9;
+
+  // イベントのソース（どのサービス/コンポーネントから発行されたか）
+  optional string source = 10;
+
+  // イベントのスキーマバージョン（後方互換性のため）
+  optional uint32 schema_version = 11;
 }
 
 // イベントタイプ

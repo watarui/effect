@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+package effect.common;
+
+import "common/commands.proto";
+import "google/protobuf/timestamp.proto";
+
+// メッセージメタデータ
+// Pub/Sub や他のメッセージングシステムで使用される共通メタデータ
+message MessageMetadata {
+  // メッセージの一意識別子（UUID v4）
+  string message_id = 1;
+
+  // 相関 ID
+  // 複数のサービスをまたがる一連の処理を追跡するための識別子
+  string correlation_id = 2;
+
+  // 分散トレーシングコンテキスト
+  TraceContext trace_context = 3;
+
+  // メッセージの発行時刻
+  google.protobuf.Timestamp published_at = 4;
+
+  // メッセージの発行元サービス
+  string publisher = 5;
+
+  // メッセージのバージョン（スキーマバージョン）
+  uint32 schema_version = 6;
+
+  // コンテンツタイプ（例: "application/protobuf", "application/json"）
+  string content_type = 7;
+
+  // メッセージの優先度（0 = 低, 1 = 通常, 2 = 高）
+  uint32 priority = 8;
+
+  // メッセージの有効期限
+  optional google.protobuf.Timestamp expires_at = 9;
+
+  // 配信に関する情報
+  DeliveryInfo delivery_info = 10;
+
+  // カスタム属性（拡張用）
+  map<string, string> attributes = 11;
+}
+
+// 配信情報
+message DeliveryInfo {
+  // 配信試行回数
+  uint32 delivery_count = 1;
+
+  // 最後の配信試行時刻
+  optional google.protobuf.Timestamp last_attempted_at = 2;
+
+  // 次の配信予定時刻（再配信の場合）
+  optional google.protobuf.Timestamp scheduled_at = 3;
+
+  // エラー情報（配信失敗時）
+  optional DeliveryError last_error = 4;
+
+  // 配信先のサブスクリプション/キュー
+  string destination = 5;
+
+  // ACK デッドライン（秒）
+  uint32 ack_deadline_seconds = 6;
+}
+
+// 配信エラー
+message DeliveryError {
+  // エラーコード
+  string code = 1;
+
+  // エラーメッセージ
+  string message = 2;
+
+  // エラー発生時刻
+  google.protobuf.Timestamp occurred_at = 3;
+
+  // リトライ可能かどうか
+  bool retryable = 4;
+}
+
+// メッセージエンベロープ
+// メッセージングシステムで送信される際の共通フォーマット
+message MessageEnvelope {
+  // メッセージメタデータ
+  MessageMetadata metadata = 1;
+
+  // トピック名（Pub/Sub のトピック）
+  string topic = 2;
+
+  // メッセージタイプ（例: "DomainEvent", "Command", "Query"）
+  string message_type = 3;
+
+  // ペイロード（Protocol Buffers でエンコードされたバイト列）
+  bytes payload = 4;
+}
+
+// メッセージの確認応答
+message MessageAck {
+  // 対象のメッセージ ID
+  string message_id = 1;
+
+  // 確認応答のタイプ
+  AckType ack_type = 2;
+
+  // 確認応答時刻
+  google.protobuf.Timestamp acked_at = 3;
+
+  // 処理したサービス
+  string acked_by = 4;
+
+  // エラー情報（NACK の場合）
+  optional string error_message = 5;
+}
+
+// 確認応答のタイプ
+enum AckType {
+  ACK_TYPE_UNSPECIFIED = 0;
+  ACK_TYPE_SUCCESS = 1; // 正常に処理完了
+  ACK_TYPE_RETRY = 2; // 再試行が必要
+  ACK_TYPE_DEAD_LETTER = 3; // デッドレターキューへ
+  ACK_TYPE_IGNORE = 4; // 無視（処理不要）
+}
+
+// バッチメッセージ
+// 複数のメッセージを一度に送信する場合
+message BatchMessage {
+  // バッチ ID
+  string batch_id = 1;
+
+  // バッチ内のメッセージ
+  repeated MessageEnvelope messages = 2;
+
+  // バッチのメタデータ
+  BatchMetadata batch_metadata = 3;
+}
+
+// バッチメタデータ
+message BatchMetadata {
+  // バッチ作成時刻
+  google.protobuf.Timestamp created_at = 1;
+
+  // バッチサイズ
+  uint32 size = 2;
+
+  // バッチの送信元
+  string source = 3;
+
+  // バッチの相関 ID（バッチ内の全メッセージで共通）
+  string correlation_id = 4;
+}

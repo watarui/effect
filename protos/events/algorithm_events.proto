@@ -12,6 +12,35 @@ message ReviewScheduleUpdated {
   string item_id = 3; // UUID
   google.protobuf.Timestamp next_review_date = 4; // 次回復習予定日
   uint32 interval_days = 5; // 復習間隔（日数）
+  float easiness_factor = 6; // 難易度係数（1.3-2.5）
+  uint32 repetition_count = 7; // 連続正解回数
+}
+
+// 難易度調整イベント
+message DifficultyAdjusted {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2; // UUID
+  string item_id = 3; // UUID
+  float old_easiness_factor = 4; // 調整前の難易度係数
+  float new_easiness_factor = 5; // 調整後の難易度係数
+  uint32 quality_rating = 6; // 品質評価（0-5）
+  string adjustment_reason = 7; // 調整理由
+}
+
+// パフォーマンス分析イベント
+message PerformanceAnalyzed {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2; // UUID
+  LearningPerformance performance = 3; // パフォーマンス情報
+}
+
+// 戦略調整イベント
+message StrategyAdjusted {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2; // UUID
+  MixedStrategyRatios old_ratios = 3; // 調整前の配分
+  MixedStrategyRatios new_ratios = 4; // 調整後の配分
+  string reason = 5; // 調整理由
 }
 
 // 学習統計更新イベント
@@ -20,12 +49,44 @@ message StatisticsUpdated {
   string user_id = 2; // UUID
   uint32 total_items = 3; // 総項目数
   uint32 mastered_items = 4; // 習得済み項目数
+  float mastery_rate = 5; // 習熟率
+  uint32 streak_days = 6; // 連続学習日数
+}
+
+// 項目レビュー記録イベント
+message ItemReviewed {
+  effect.common.EventMetadata metadata = 1;
+  string user_id = 2; // UUID
+  string item_id = 3; // UUID
+  uint32 quality_rating = 4; // 品質評価（0-5）
+  uint32 response_time_ms = 5; // 反応時間（ミリ秒）
+  bool is_correct = 6; // 正解かどうか
+}
+
+// 学習パフォーマンス
+message LearningPerformance {
+  float recent_accuracy = 1; // 直近10回の正答率
+  float average_quality = 2; // 平均品質評価
+  uint32 session_count = 3; // 総セッション数
+  float consistency_score = 4; // 学習の継続性スコア
+  float optimal_difficulty = 5; // 最適な難易度レベル
+}
+
+// 混合戦略の配分
+message MixedStrategyRatios {
+  float new_ratio = 1; // 新規項目の割合
+  float due_ratio = 2; // 復習期限到来項目の割合
+  float weak_ratio = 3; // 苦手項目の割合
 }
 
 // 学習アルゴリズムコンテキストのイベント
 message LearningAlgorithmEvent {
   oneof event {
     ReviewScheduleUpdated review_schedule_updated = 1;
-    StatisticsUpdated statistics_updated = 2;
+    DifficultyAdjusted difficulty_adjusted = 2;
+    PerformanceAnalyzed performance_analyzed = 3;
+    StrategyAdjusted strategy_adjusted = 4;
+    StatisticsUpdated statistics_updated = 5;
+    ItemReviewed item_reviewed = 6;
   }
 }
