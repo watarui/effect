@@ -2,36 +2,36 @@
 CREATE TABLE IF NOT EXISTS user_progress_summaries (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- User association
     user_id UUID NOT NULL UNIQUE,
-    
+
     -- Overall statistics
     total_vocabularies_learned INTEGER NOT NULL DEFAULT 0,
     total_learning_time_minutes INTEGER NOT NULL DEFAULT 0,
     total_sessions_completed INTEGER NOT NULL DEFAULT 0,
-    
+
     -- Current streak
     current_streak_days INTEGER NOT NULL DEFAULT 0,
     longest_streak_days INTEGER NOT NULL DEFAULT 0,
     last_activity_date DATE,
-    
+
     -- Performance metrics
-    average_accuracy DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    average_accuracy DECIMAL(5, 2) NOT NULL DEFAULT 0.00,
     average_response_time_ms INTEGER NOT NULL DEFAULT 0,
-    
+
     -- Level and achievements
     current_level INTEGER NOT NULL DEFAULT 1,
     experience_points INTEGER NOT NULL DEFAULT 0,
     achievement_count INTEGER NOT NULL DEFAULT 0,
-    
+
     -- Learning goal progress
     learning_goal VARCHAR(50),
-    goal_progress_percentage DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-    
+    goal_progress_percentage DECIMAL(5, 2) NOT NULL DEFAULT 0.00,
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -41,28 +41,28 @@ CREATE TABLE IF NOT EXISTS user_progress_summaries (
 CREATE TABLE IF NOT EXISTS daily_progress_snapshots (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- User and date
     user_id UUID NOT NULL,
     snapshot_date DATE NOT NULL,
-    
+
     -- Daily metrics
     vocabularies_learned INTEGER NOT NULL DEFAULT 0,
     vocabularies_reviewed INTEGER NOT NULL DEFAULT 0,
     learning_time_minutes INTEGER NOT NULL DEFAULT 0,
     sessions_completed INTEGER NOT NULL DEFAULT 0,
-    
+
     -- Performance
-    accuracy DECIMAL(5,2),
+    accuracy DECIMAL(5, 2),
     average_response_time_ms INTEGER,
-    
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Unique constraint for one snapshot per user per day
     CONSTRAINT unique_user_date UNIQUE (user_id, snapshot_date)
 );
@@ -71,48 +71,70 @@ CREATE TABLE IF NOT EXISTS daily_progress_snapshots (
 CREATE TABLE IF NOT EXISTS vocabulary_mastery_levels (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- Associations
     user_id UUID NOT NULL,
     vocabulary_id UUID NOT NULL,
-    
+
     -- Mastery data
-    mastery_level INTEGER NOT NULL DEFAULT 0 CHECK (mastery_level BETWEEN 0 AND 5),
+    mastery_level INTEGER NOT NULL DEFAULT 0 CHECK (
+        mastery_level BETWEEN 0 AND 5
+    ),
     total_reviews INTEGER NOT NULL DEFAULT 0,
     successful_reviews INTEGER NOT NULL DEFAULT 0,
     last_reviewed_at TIMESTAMPTZ,
-    
+
     -- SM-2 current state
-    current_easiness_factor DECIMAL(3,2) NOT NULL DEFAULT 2.5,
+    current_easiness_factor DECIMAL(3, 2) NOT NULL DEFAULT 2.5,
     current_interval_days INTEGER NOT NULL DEFAULT 1,
     next_review_date DATE,
-    
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Unique constraint
     CONSTRAINT unique_user_vocabulary UNIQUE (user_id, vocabulary_id)
 );
 
 -- Indexes for user_progress_summaries
-CREATE INDEX idx_user_progress_summaries_user_id ON user_progress_summaries(user_id);
-CREATE INDEX idx_user_progress_summaries_current_level ON user_progress_summaries(current_level);
-CREATE INDEX idx_user_progress_summaries_last_activity_date ON user_progress_summaries(last_activity_date);
+CREATE INDEX idx_user_progress_summaries_user_id ON user_progress_summaries (
+    user_id
+);
+CREATE INDEX idx_user_progress_summaries_current_level ON user_progress_summaries (
+    current_level
+);
+CREATE INDEX idx_user_progress_summaries_last_activity_date ON user_progress_summaries (
+    last_activity_date
+);
 
 -- Indexes for daily_progress_snapshots
-CREATE INDEX idx_daily_progress_snapshots_user_id ON daily_progress_snapshots(user_id);
-CREATE INDEX idx_daily_progress_snapshots_snapshot_date ON daily_progress_snapshots(snapshot_date);
-CREATE INDEX idx_daily_progress_snapshots_user_date ON daily_progress_snapshots(user_id, snapshot_date);
+CREATE INDEX idx_daily_progress_snapshots_user_id ON daily_progress_snapshots (
+    user_id
+);
+CREATE INDEX idx_daily_progress_snapshots_snapshot_date ON daily_progress_snapshots (
+    snapshot_date
+);
+CREATE INDEX idx_daily_progress_snapshots_user_date ON daily_progress_snapshots (
+    user_id, snapshot_date
+);
 
 -- Indexes for vocabulary_mastery_levels
-CREATE INDEX idx_vocabulary_mastery_levels_user_id ON vocabulary_mastery_levels(user_id);
-CREATE INDEX idx_vocabulary_mastery_levels_vocabulary_id ON vocabulary_mastery_levels(vocabulary_id);
-CREATE INDEX idx_vocabulary_mastery_levels_mastery_level ON vocabulary_mastery_levels(mastery_level);
-CREATE INDEX idx_vocabulary_mastery_levels_next_review_date ON vocabulary_mastery_levels(next_review_date);
+CREATE INDEX idx_vocabulary_mastery_levels_user_id ON vocabulary_mastery_levels (
+    user_id
+);
+CREATE INDEX idx_vocabulary_mastery_levels_vocabulary_id ON vocabulary_mastery_levels (
+    vocabulary_id
+);
+CREATE INDEX idx_vocabulary_mastery_levels_mastery_level ON vocabulary_mastery_levels (
+    mastery_level
+);
+CREATE INDEX idx_vocabulary_mastery_levels_next_review_date ON vocabulary_mastery_levels (
+    next_review_date
+);
 
 -- Add comments
 COMMENT ON TABLE user_progress_summaries IS 'Aggregated user progress read model';

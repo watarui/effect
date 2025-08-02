@@ -1,0 +1,36 @@
+[sqlfluff]
+# PostgreSQL 方言を明示的に指定
+dialect = postgres
+# SQL ファイル拡張子
+sql_file_exts = .sql,.sql.j2,.dml,.ddl
+# 除外するルール（必要に応じて）
+exclude_rules = None
+# 最大行長
+max_line_length = 120
+
+[sqlfluff:indentation]
+# インデントの設定
+indented_joins = False
+indented_using_on = True
+template_blocks_indent = False
+
+[sqlfluff:rules:capitalisation.keywords]
+# SQL キーワードの大文字化
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+# 識別子の小文字化
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+# 関数名の小文字化
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.literals]
+# リテラルの大文字化
+capitalisation_policy = upper
+
+[sqlfluff:rules:layout.long_lines]
+# 長い行の処理
+ignore_comment_lines = True
+ignore_comment_clauses = True

@@ -47,6 +47,11 @@ pre-commit:
           buf format -w "$file"
         done
       stage_fixed: true
+    sqlfluff-format:
+      priority: 1
+      glob: "*.sql"
+      run: sqlfluff fix --dialect postgres {staged_files}
+      stage_fixed: true
     # === グループ2: Rust 固有の修正 ===
     clippy-fix:
       priority: 2
@@ -88,6 +93,11 @@ pre-commit:
             exit 1
           fi
         done
+      stage_fixed: false
+    sqlfluff-lint:
+      priority: 3
+      glob: "*.sql"
+      run: sqlfluff lint --dialect postgres {staged_files}
       stage_fixed: false
     # === グループ4: セキュリティチェック ===
     gitleaks:

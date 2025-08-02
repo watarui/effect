@@ -2,15 +2,15 @@
 CREATE TABLE IF NOT EXISTS algorithm_configurations (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- Configuration details
     algorithm_name VARCHAR(100) NOT NULL,
     configuration JSONB NOT NULL DEFAULT '{}',
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -20,31 +20,35 @@ CREATE TABLE IF NOT EXISTS algorithm_configurations (
 CREATE TABLE IF NOT EXISTS learning_parameters (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- User association
     user_id UUID NOT NULL UNIQUE,
-    
+
     -- SM-2 parameters
     initial_interval INTEGER NOT NULL DEFAULT 1,
-    initial_easiness DECIMAL(3,2) NOT NULL DEFAULT 2.5,
-    min_easiness DECIMAL(3,2) NOT NULL DEFAULT 1.3,
-    
+    initial_easiness DECIMAL(3, 2) NOT NULL DEFAULT 2.5,
+    min_easiness DECIMAL(3, 2) NOT NULL DEFAULT 1.3,
+
     -- Additional parameters
-    review_threshold DECIMAL(3,2) NOT NULL DEFAULT 0.8,
-    difficulty_adjustment_factor DECIMAL(3,2) NOT NULL DEFAULT 1.0,
-    
+    review_threshold DECIMAL(3, 2) NOT NULL DEFAULT 0.8,
+    difficulty_adjustment_factor DECIMAL(3, 2) NOT NULL DEFAULT 1.0,
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Indexes
-CREATE INDEX idx_algorithm_configurations_algorithm_name ON algorithm_configurations(algorithm_name);
-CREATE INDEX idx_algorithm_configurations_is_active ON algorithm_configurations(is_active);
-CREATE INDEX idx_learning_parameters_user_id ON learning_parameters(user_id);
+CREATE INDEX idx_algorithm_configurations_algorithm_name ON algorithm_configurations (
+    algorithm_name
+);
+CREATE INDEX idx_algorithm_configurations_is_active ON algorithm_configurations (
+    is_active
+);
+CREATE INDEX idx_learning_parameters_user_id ON learning_parameters (user_id);
 
 -- Add comments
 COMMENT ON TABLE algorithm_configurations IS 'Algorithm configuration settings';

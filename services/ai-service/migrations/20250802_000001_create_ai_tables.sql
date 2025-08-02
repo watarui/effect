@@ -2,27 +2,27 @@
 CREATE TABLE IF NOT EXISTS ai_generation_requests (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- Request details
     request_type VARCHAR(100) NOT NULL,
     prompt TEXT NOT NULL,
     parameters JSONB NOT NULL DEFAULT '{}',
-    
+
     -- Response
     response TEXT,
     response_metadata JSONB,
-    
+
     -- Status tracking
     status VARCHAR(50) NOT NULL DEFAULT 'pending',
     error_message TEXT,
     retry_count INTEGER NOT NULL DEFAULT 0,
-    
+
     -- User association
     requested_by UUID NOT NULL,
-    
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -33,35 +33,43 @@ CREATE TABLE IF NOT EXISTS ai_generation_requests (
 CREATE TABLE IF NOT EXISTS ai_templates (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- Template details
     template_name VARCHAR(255) NOT NULL UNIQUE,
     template_type VARCHAR(100) NOT NULL,
     prompt_template TEXT NOT NULL,
-    
+
     -- Configuration
     model_name VARCHAR(100) NOT NULL DEFAULT 'gemini-pro',
-    temperature DECIMAL(2,1) NOT NULL DEFAULT 0.7,
+    temperature DECIMAL(2, 1) NOT NULL DEFAULT 0.7,
     max_tokens INTEGER NOT NULL DEFAULT 1000,
-    
+
     -- Status
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Indexes
-CREATE INDEX idx_ai_generation_requests_request_type ON ai_generation_requests(request_type);
-CREATE INDEX idx_ai_generation_requests_status ON ai_generation_requests(status);
-CREATE INDEX idx_ai_generation_requests_requested_by ON ai_generation_requests(requested_by);
-CREATE INDEX idx_ai_generation_requests_created_at ON ai_generation_requests(created_at);
-CREATE INDEX idx_ai_templates_template_type ON ai_templates(template_type);
-CREATE INDEX idx_ai_templates_is_active ON ai_templates(is_active);
+CREATE INDEX idx_ai_generation_requests_request_type ON ai_generation_requests (
+    request_type
+);
+CREATE INDEX idx_ai_generation_requests_status ON ai_generation_requests (
+    status
+);
+CREATE INDEX idx_ai_generation_requests_requested_by ON ai_generation_requests (
+    requested_by
+);
+CREATE INDEX idx_ai_generation_requests_created_at ON ai_generation_requests (
+    created_at
+);
+CREATE INDEX idx_ai_templates_template_type ON ai_templates (template_type);
+CREATE INDEX idx_ai_templates_is_active ON ai_templates (is_active);
 
 -- Add comments
 COMMENT ON TABLE ai_generation_requests IS 'AI generation request history';

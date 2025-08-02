@@ -3,22 +3,22 @@ CREATE TABLE IF NOT EXISTS saga_instances (
     -- Saga identification
     saga_id UUID PRIMARY KEY,
     saga_type VARCHAR(255) NOT NULL,
-    
+
     -- State management
     current_state VARCHAR(100) NOT NULL,
     saga_data JSONB NOT NULL DEFAULT '{}',
-    
+
     -- Status tracking
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     error_message TEXT,
     retry_count INTEGER NOT NULL DEFAULT 0,
-    
+
     -- Correlation
     correlation_id UUID NOT NULL,
-    
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -29,31 +29,31 @@ CREATE TABLE IF NOT EXISTS saga_instances (
 CREATE TABLE IF NOT EXISTS saga_steps (
     -- Step identification
     step_id UUID PRIMARY KEY,
-    saga_id UUID NOT NULL REFERENCES saga_instances(saga_id),
-    
+    saga_id UUID NOT NULL REFERENCES saga_instances (saga_id),
+
     -- Step details
     step_name VARCHAR(255) NOT NULL,
     step_sequence INTEGER NOT NULL,
-    
+
     -- Status and execution
     status VARCHAR(50) NOT NULL DEFAULT 'pending',
     started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
-    
+
     -- Compensation
-    compensation_required BOOLEAN NOT NULL DEFAULT false,
+    compensation_required BOOLEAN NOT NULL DEFAULT FALSE,
     compensation_status VARCHAR(50),
     compensated_at TIMESTAMPTZ,
-    
+
     -- Command and response
     command_data JSONB NOT NULL,
     response_data JSONB,
     error_data JSONB,
-    
+
     -- Retry information
     retry_count INTEGER NOT NULL DEFAULT 0,
     next_retry_at TIMESTAMPTZ,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -63,35 +63,42 @@ CREATE TABLE IF NOT EXISTS saga_steps (
 CREATE TABLE IF NOT EXISTS saga_timeouts (
     -- Timeout identification
     timeout_id VARCHAR(255) PRIMARY KEY,
-    saga_id UUID NOT NULL REFERENCES saga_instances(saga_id),
-    
+    saga_id UUID NOT NULL REFERENCES saga_instances (saga_id),
+
     -- Timeout details
     timeout_type VARCHAR(100) NOT NULL,
     timeout_at TIMESTAMPTZ NOT NULL,
-    
+
     -- Status
     status VARCHAR(50) NOT NULL DEFAULT 'pending',
     processed_at TIMESTAMPTZ,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Indexes for saga_instances
-CREATE INDEX idx_saga_instances_saga_type ON saga_instances(saga_type);
-CREATE INDEX idx_saga_instances_status ON saga_instances(status);
-CREATE INDEX idx_saga_instances_correlation_id ON saga_instances(correlation_id);
-CREATE INDEX idx_saga_instances_created_at ON saga_instances(created_at);
+CREATE INDEX idx_saga_instances_saga_type ON saga_instances (saga_type);
+CREATE INDEX idx_saga_instances_status ON saga_instances (status);
+CREATE INDEX idx_saga_instances_correlation_id ON saga_instances (
+    correlation_id
+);
+CREATE INDEX idx_saga_instances_created_at ON saga_instances (created_at);
 
 -- Indexes for saga_steps
-CREATE INDEX idx_saga_steps_saga_id ON saga_steps(saga_id);
-CREATE INDEX idx_saga_steps_status ON saga_steps(status);
-CREATE INDEX idx_saga_steps_step_sequence ON saga_steps(saga_id, step_sequence);
+CREATE INDEX idx_saga_steps_saga_id ON saga_steps (saga_id);
+CREATE INDEX idx_saga_steps_status ON saga_steps (status);
+CREATE INDEX idx_saga_steps_step_sequence ON saga_steps (
+    saga_id, step_sequence
+);
 
 -- Indexes for saga_timeouts
-CREATE INDEX idx_saga_timeouts_saga_id ON saga_timeouts(saga_id);
-CREATE INDEX idx_saga_timeouts_timeout_at ON saga_timeouts(timeout_at) WHERE status = 'pending';
-CREATE INDEX idx_saga_timeouts_status ON saga_timeouts(status);
+CREATE INDEX idx_saga_timeouts_saga_id ON saga_timeouts (saga_id);
+CREATE INDEX idx_saga_timeouts_timeout_at ON saga_timeouts (
+    timeout_at
+) WHERE status
+= 'pending';
+CREATE INDEX idx_saga_timeouts_status ON saga_timeouts (status);
 
 -- Add comments for saga_instances
 COMMENT ON TABLE saga_instances IS 'Saga orchestration instances';

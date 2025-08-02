@@ -2,24 +2,24 @@
 CREATE TABLE IF NOT EXISTS users (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- User information
     email VARCHAR(255) NOT NULL UNIQUE,
     display_name VARCHAR(255),
-    
+
     -- Profile JSON
     profile JSONB NOT NULL DEFAULT '{}',
-    
+
     -- Status and role
     account_status VARCHAR(50) NOT NULL DEFAULT 'active',
     role VARCHAR(50) NOT NULL DEFAULT 'free_user',
-    
+
     -- Learning goal
     learning_goal VARCHAR(50) NOT NULL DEFAULT 'general',
-    
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -27,11 +27,13 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_account_status ON users(account_status);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_created_at ON users(created_at);
-CREATE INDEX idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NOT NULL;
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_account_status ON users (account_status);
+CREATE INDEX idx_users_role ON users (role);
+CREATE INDEX idx_users_created_at ON users (created_at);
+CREATE INDEX idx_users_deleted_at ON users (
+    deleted_at
+) WHERE deleted_at IS NOT NULL;
 
 -- Add comment to table
 COMMENT ON TABLE users IS 'User aggregate root table';

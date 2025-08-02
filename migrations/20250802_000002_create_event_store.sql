@@ -3,35 +3,37 @@ CREATE TABLE IF NOT EXISTS events (
     -- Event identification
     event_id UUID PRIMARY KEY,
     event_type VARCHAR(255) NOT NULL,
-    
+
     -- Aggregate information
     aggregate_id UUID NOT NULL,
     aggregate_type VARCHAR(255) NOT NULL,
     aggregate_version BIGINT NOT NULL,
-    
+
     -- Event data
     event_data JSONB NOT NULL,
     event_metadata JSONB NOT NULL DEFAULT '{}',
-    
+
     -- User tracking
     user_id UUID,
-    
+
     -- Timestamp
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Ensure events are immutable
     CONSTRAINT unique_aggregate_version UNIQUE (aggregate_id, aggregate_version)
 );
 
 -- Indexes for efficient querying
-CREATE INDEX idx_events_aggregate_id ON events(aggregate_id);
-CREATE INDEX idx_events_aggregate_type ON events(aggregate_type);
-CREATE INDEX idx_events_event_type ON events(event_type);
-CREATE INDEX idx_events_occurred_at ON events(occurred_at);
-CREATE INDEX idx_events_user_id ON events(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_events_aggregate_id ON events (aggregate_id);
+CREATE INDEX idx_events_aggregate_type ON events (aggregate_type);
+CREATE INDEX idx_events_event_type ON events (event_type);
+CREATE INDEX idx_events_occurred_at ON events (occurred_at);
+CREATE INDEX idx_events_user_id ON events (user_id) WHERE user_id IS NOT NULL;
 
 -- Composite index for aggregate event stream queries
-CREATE INDEX idx_events_aggregate_stream ON events(aggregate_id, aggregate_version);
+CREATE INDEX idx_events_aggregate_stream ON events (
+    aggregate_id, aggregate_version
+);
 
 -- Add comments
 COMMENT ON TABLE events IS 'Event store for Event Sourcing pattern';
@@ -49,25 +51,29 @@ COMMENT ON COLUMN events.occurred_at IS 'When the event occurred';
 CREATE TABLE IF NOT EXISTS event_snapshots (
     -- Snapshot identification
     snapshot_id UUID PRIMARY KEY,
-    
+
     -- Aggregate information
     aggregate_id UUID NOT NULL,
     aggregate_type VARCHAR(255) NOT NULL,
     aggregate_version BIGINT NOT NULL,
-    
+
     -- Snapshot data
     snapshot_data JSONB NOT NULL,
-    
+
     -- Timestamp
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Ensure one snapshot per aggregate version
-    CONSTRAINT unique_aggregate_snapshot UNIQUE (aggregate_id, aggregate_version)
+    CONSTRAINT unique_aggregate_snapshot UNIQUE (
+        aggregate_id, aggregate_version
+    )
 );
 
 -- Indexes for snapshots
-CREATE INDEX idx_event_snapshots_aggregate_id ON event_snapshots(aggregate_id);
-CREATE INDEX idx_event_snapshots_aggregate_version ON event_snapshots(aggregate_id, aggregate_version DESC);
+CREATE INDEX idx_event_snapshots_aggregate_id ON event_snapshots (aggregate_id);
+CREATE INDEX idx_event_snapshots_aggregate_version ON event_snapshots (
+    aggregate_id, aggregate_version DESC
+);
 
 -- Add comments for snapshots
 COMMENT ON TABLE event_snapshots IS 'Aggregate snapshots for performance optimization';

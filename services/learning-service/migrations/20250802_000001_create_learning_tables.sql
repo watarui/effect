@@ -2,23 +2,23 @@
 CREATE TABLE IF NOT EXISTS learning_sessions (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- User association
     user_id UUID NOT NULL,
-    
+
     -- Session information
     session_type VARCHAR(50) NOT NULL,
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ended_at TIMESTAMPTZ,
-    
+
     -- Progress tracking
     total_items INTEGER NOT NULL DEFAULT 0,
     completed_items INTEGER NOT NULL DEFAULT 0,
     correct_items INTEGER NOT NULL DEFAULT 0,
-    
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -28,42 +28,50 @@ CREATE TABLE IF NOT EXISTS learning_sessions (
 CREATE TABLE IF NOT EXISTS learning_records (
     -- Primary key
     id UUID PRIMARY KEY,
-    
+
     -- Associations
     user_id UUID NOT NULL,
     vocabulary_id UUID NOT NULL,
     session_id UUID,
-    
+
     -- Learning data
     response_quality INTEGER CHECK (response_quality BETWEEN 0 AND 5),
     response_time_ms INTEGER,
     is_correct BOOLEAN,
-    
+
     -- SM-2 algorithm data
     repetition_count INTEGER NOT NULL DEFAULT 0,
-    easiness_factor DECIMAL(3,2) NOT NULL DEFAULT 2.5,
+    easiness_factor DECIMAL(3, 2) NOT NULL DEFAULT 2.5,
     interval_days INTEGER NOT NULL DEFAULT 1,
     next_review_date DATE NOT NULL DEFAULT CURRENT_DATE + INTERVAL '1 day',
-    
+
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Indexes for learning_sessions
-CREATE INDEX idx_learning_sessions_user_id ON learning_sessions(user_id);
-CREATE INDEX idx_learning_sessions_started_at ON learning_sessions(started_at);
-CREATE INDEX idx_learning_sessions_session_type ON learning_sessions(session_type);
+CREATE INDEX idx_learning_sessions_user_id ON learning_sessions (user_id);
+CREATE INDEX idx_learning_sessions_started_at ON learning_sessions (started_at);
+CREATE INDEX idx_learning_sessions_session_type ON learning_sessions (
+    session_type
+);
 
 -- Indexes for learning_records
-CREATE INDEX idx_learning_records_user_id ON learning_records(user_id);
-CREATE INDEX idx_learning_records_vocabulary_id ON learning_records(vocabulary_id);
-CREATE INDEX idx_learning_records_session_id ON learning_records(session_id);
-CREATE INDEX idx_learning_records_next_review_date ON learning_records(next_review_date);
-CREATE UNIQUE INDEX idx_learning_records_user_vocabulary ON learning_records(user_id, vocabulary_id);
+CREATE INDEX idx_learning_records_user_id ON learning_records (user_id);
+CREATE INDEX idx_learning_records_vocabulary_id ON learning_records (
+    vocabulary_id
+);
+CREATE INDEX idx_learning_records_session_id ON learning_records (session_id);
+CREATE INDEX idx_learning_records_next_review_date ON learning_records (
+    next_review_date
+);
+CREATE UNIQUE INDEX idx_learning_records_user_vocabulary ON learning_records (
+    user_id, vocabulary_id
+);
 
 -- Add comments for learning_sessions
 COMMENT ON TABLE learning_sessions IS 'Learning session aggregate root table';
