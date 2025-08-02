@@ -62,6 +62,10 @@ impl EventMetadata {
             caused_by_user_id: None,
             correlation_id: None,
             causation_id: None,
+            trace_context: None,
+            command_id: None,
+            source: None,
+            schema_version: Some(1),
         }
     }
 }
@@ -119,8 +123,13 @@ impl DomainEvent {
         match self {
             Self::Learning(e) => match &e.event {
                 Some(learning_event::Event::SessionStarted(e)) => e.metadata.as_ref(),
+                Some(learning_event::Event::ItemsSelected(e)) => e.metadata.as_ref(),
+                Some(learning_event::Event::ItemPresented(e)) => e.metadata.as_ref(),
+                Some(learning_event::Event::AnswerRevealed(e)) => e.metadata.as_ref(),
                 Some(learning_event::Event::CorrectnessJudged(e)) => e.metadata.as_ref(),
+                Some(learning_event::Event::CorrectAnswerProvided(e)) => e.metadata.as_ref(),
                 Some(learning_event::Event::SessionCompleted(e)) => e.metadata.as_ref(),
+                Some(learning_event::Event::SessionAbandoned(e)) => e.metadata.as_ref(),
                 None => None,
             },
             Self::Algorithm(e) => match &e.event {
@@ -128,13 +137,23 @@ impl DomainEvent {
                     e.metadata.as_ref()
                 },
                 Some(learning_algorithm_event::Event::StatisticsUpdated(e)) => e.metadata.as_ref(),
+                Some(learning_algorithm_event::Event::DifficultyAdjusted(e)) => e.metadata.as_ref(),
+                Some(learning_algorithm_event::Event::PerformanceAnalyzed(e)) => {
+                    e.metadata.as_ref()
+                },
+                Some(learning_algorithm_event::Event::StrategyAdjusted(e)) => e.metadata.as_ref(),
+                Some(learning_algorithm_event::Event::ItemReviewed(e)) => e.metadata.as_ref(),
                 None => None,
             },
             Self::Vocabulary(e) => match &e.event {
                 Some(vocabulary_event::Event::EntryCreated(e)) => e.metadata.as_ref(),
                 Some(vocabulary_event::Event::ItemCreated(e)) => e.metadata.as_ref(),
+                Some(vocabulary_event::Event::FieldUpdated(e)) => e.metadata.as_ref(),
                 Some(vocabulary_event::Event::AiGenerationRequested(e)) => e.metadata.as_ref(),
-                Some(vocabulary_event::Event::AiInfoGenerated(e)) => e.metadata.as_ref(),
+                Some(vocabulary_event::Event::AiGenerationCompleted(e)) => e.metadata.as_ref(),
+                Some(vocabulary_event::Event::AiGenerationFailed(e)) => e.metadata.as_ref(),
+                Some(vocabulary_event::Event::ItemPublished(e)) => e.metadata.as_ref(),
+                Some(vocabulary_event::Event::UpdateConflicted(e)) => e.metadata.as_ref(),
                 None => None,
             },
             Self::AI(e) => match &e.event {
@@ -142,6 +161,11 @@ impl DomainEvent {
                 Some(ai_integration_event::Event::TaskStarted(e)) => e.metadata.as_ref(),
                 Some(ai_integration_event::Event::TaskCompleted(e)) => e.metadata.as_ref(),
                 Some(ai_integration_event::Event::TaskFailed(e)) => e.metadata.as_ref(),
+                Some(ai_integration_event::Event::TaskRetried(e)) => e.metadata.as_ref(),
+                Some(ai_integration_event::Event::TaskCancelled(e)) => e.metadata.as_ref(),
+                Some(ai_integration_event::Event::GenerationCancelled(e)) => e.metadata.as_ref(),
+                Some(ai_integration_event::Event::ChatSessionStarted(e)) => e.metadata.as_ref(),
+                Some(ai_integration_event::Event::ChatMessageSent(e)) => e.metadata.as_ref(),
                 None => None,
             },
             Self::User(e) => match &e.event {
@@ -176,6 +200,10 @@ mod tests {
             caused_by_user_id: None,
             correlation_id:    None,
             causation_id:      None,
+            trace_context:     None,
+            command_id:        None,
+            source:            None,
+            schema_version:    Some(1),
         };
 
         let event = DomainEvent::Learning(LearningEvent {
@@ -184,6 +212,7 @@ mod tests {
                 session_id: uuid::Uuid::new_v4().to_string(),
                 user_id:    uuid::Uuid::new_v4().to_string(),
                 item_count: 50,
+                strategy:   0, // SelectionStrategy::SELECTION_STRATEGY_UNSPECIFIED
             })),
         });
 
@@ -230,6 +259,10 @@ mod tests {
             caused_by_user_id: Some("user-123".to_string()),
             correlation_id:    Some("correlation-123".to_string()),
             causation_id:      None,
+            trace_context:     None,
+            command_id:        None,
+            source:            None,
+            schema_version:    Some(1),
         };
 
         // メタデータのシリアライゼーションテスト

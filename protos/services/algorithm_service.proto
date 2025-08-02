@@ -1,0 +1,350 @@
+syntax = "proto3";
+
+package effect.services.algorithm;
+
+import "common/learning_types.proto";
+import "common/types.proto";
+import "events/algorithm_events.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// アルゴリズムサービス
+// SM-2 アルゴリズムに基づく学習スケジューリングと習熟度管理を提供
+service AlgorithmService {
+  // 新規項目のスケジューリング
+  rpc ScheduleNewItem(ScheduleNewItemRequest) returns (ScheduleNewItemResponse);
+
+  // 学習結果に基づくリスケジューリング
+  rpc RescheduleItem(RescheduleItemRequest) returns (RescheduleItemResponse);
+
+  // 復習対象項目の取得
+  rpc GetDueItems(GetDueItemsRequest) returns (GetDueItemsResponse);
+
+  // 学習統計の取得
+  rpc GetLearningStatistics(GetLearningStatisticsRequest) returns (GetLearningStatisticsResponse);
+
+  // 難易度の調整
+  rpc AdjustDifficulty(AdjustDifficultyRequest) returns (AdjustDifficultyResponse);
+
+  // パフォーマンス分析
+  rpc AnalyzePerformance(AnalyzePerformanceRequest) returns (AnalyzePerformanceResponse);
+
+  // 学習戦略の取得
+  rpc GetLearningStrategy(GetLearningStrategyRequest) returns (GetLearningStrategyResponse);
+
+  // 学習戦略の調整
+  rpc AdjustStrategy(AdjustStrategyRequest) returns (AdjustStrategyResponse);
+
+  // 項目の学習履歴取得
+  rpc GetItemHistory(GetItemHistoryRequest) returns (GetItemHistoryResponse);
+
+  // ユーザーの学習傾向分析
+  rpc AnalyzeLearningTrends(AnalyzeLearningTrendsRequest) returns (AnalyzeLearningTrendsResponse);
+}
+
+// 学習項目の状態
+message LearningItemState {
+  string item_id = 1; // 語彙項目ID
+  string user_id = 2; // ユーザーID
+
+  // SM-2 アルゴリズムパラメータ
+  float easiness_factor = 3; // 容易度係数 (1.3 - 2.5)
+  uint32 repetition_number = 4; // 繰り返し回数
+  uint32 interval_days = 5; // 次回復習までの間隔（日数）
+
+  // 習熟度情報
+  effect.common.MasteryLevel mastery_level = 6; // 現在の習熟レベル
+  float retention_rate = 7; // 保持率 (0.0 - 1.0)
+
+  // スケジューリング情報
+  google.protobuf.Timestamp next_review_date = 8; // 次回復習予定日
+  google.protobuf.Timestamp last_reviewed_at = 9; // 最終復習日時
+
+  // 統計情報
+  uint32 total_reviews = 10; // 総復習回数
+  uint32 correct_count = 11; // 正解回数
+  uint32 incorrect_count = 12; // 不正解回数
+  float average_response_time_ms = 13; // 平均反応時間
+
+  // 項目情報（キャッシュ）
+  effect.common.CefrLevel difficulty_level = 14; // 難易度レベル
+  bool is_problematic = 15; // 問題のある項目かどうか
+}
+
+// 新規項目スケジューリングリクエスト
+message ScheduleNewItemRequest {
+  string user_id = 1;
+  string item_id = 2;
+  effect.common.CefrLevel difficulty_level = 3; // 項目の難易度
+  effect.common.CefrLevel user_level = 4; // ユーザーの現在レベル
+}
+
+// 新規項目スケジューリングレスポンス
+message ScheduleNewItemResponse {
+  LearningItemState state = 1;
+  string message = 2; // ユーザーへのメッセージ
+}
+
+// リスケジューリングリクエスト
+message RescheduleItemRequest {
+  string user_id = 1;
+  string item_id = 2;
+  effect.common.CorrectnessJudgment judgment = 3; // 正誤判定
+  uint32 response_time_ms = 4; // 反応時間
+  optional string session_id = 5; // セッションID（コンテキスト用）
+}
+
+// リスケジューリングレスポンス
+message RescheduleItemResponse {
+  LearningItemState state = 1;
+  IntervalAdjustment adjustment = 2; // 間隔の調整情報
+}
+
+// 間隔調整情報
+message IntervalAdjustment {
+  uint32 old_interval_days = 1;
+  uint32 new_interval_days = 2;
+  float old_easiness_factor = 3;
+  float new_easiness_factor = 4;
+  string reason = 5; // 調整の理由
+}
+
+// 復習対象項目取得リクエスト
+message GetDueItemsRequest {
+  string user_id = 1;
+  uint32 limit = 2; // 最大取得件数（デフォルト: 20）
+  optional google.protobuf.Timestamp as_of = 3; // 基準日時（デフォルト: 現在）
+  optional effect.events.learning.SelectionStrategy strategy = 4; // 選択戦略
+}
+
+// 復習対象項目取得レスポンス
+message GetDueItemsResponse {
+  repeated DueItem due_items = 1;
+  uint32 total_due_count = 2; // 総復習対象数
+}
+
+// 復習対象項目
+message DueItem {
+  LearningItemState state = 1;
+  uint32 overdue_days = 2; // 期限超過日数（0 = 本日が期限）
+  float priority_score = 3; // 優先度スコア（高いほど優先）
+}
+
+// 学習統計取得リクエスト
+message GetLearningStatisticsRequest {
+  string user_id = 1;
+  optional google.protobuf.Timestamp since = 2; // この日時以降の統計
+  optional google.protobuf.Timestamp until = 3; // この日時以前の統計
+}
+
+// 学習統計取得レスポンス
+message GetLearningStatisticsResponse {
+  UserLearningStatistics statistics = 1;
+}
+
+// ユーザー学習統計
+message UserLearningStatistics {
+  string user_id = 1;
+
+  // 全体統計
+  uint32 total_items = 2; // 総学習項目数
+  uint32 mastered_items = 3; // 習得済み項目数
+  uint32 learning_items = 4; // 学習中項目数
+  uint32 new_items = 5; // 新規項目数
+
+  // セッション統計
+  uint32 total_sessions = 6; // 総セッション数
+  uint32 total_reviews = 7; // 総復習回数
+  float overall_accuracy = 8; // 全体正答率
+  uint32 average_session_duration_seconds = 9; // 平均セッション時間
+
+  // 進捗統計
+  float daily_review_average = 10; // 日平均復習数
+  uint32 current_streak_days = 11; // 現在の連続学習日数
+  uint32 longest_streak_days = 12; // 最長連続学習日数
+
+  // レベル別分布
+  repeated LevelDistribution level_distribution = 13;
+}
+
+// レベル別分布
+message LevelDistribution {
+  effect.common.CefrLevel level = 1;
+  uint32 item_count = 2;
+  float percentage = 3;
+}
+
+// 難易度調整リクエスト
+message AdjustDifficultyRequest {
+  string user_id = 1;
+  string item_id = 2;
+  effect.events.algorithm.AdjustmentReason reason = 3; // 調整理由
+  optional float suggested_factor = 4; // 提案される係数
+}
+
+// 難易度調整レスポンス
+message AdjustDifficultyResponse {
+  LearningItemState state = 1;
+  DifficultyAdjustment adjustment = 2;
+}
+
+// 難易度調整情報
+message DifficultyAdjustment {
+  float old_factor = 1;
+  float new_factor = 2;
+  string explanation = 3; // 調整の説明
+}
+
+// パフォーマンス分析リクエスト
+message AnalyzePerformanceRequest {
+  string user_id = 1;
+  uint32 recent_sessions = 2; // 分析対象の直近セッション数（デフォルト: 10）
+}
+
+// パフォーマンス分析レスポンス
+message AnalyzePerformanceResponse {
+  PerformanceAnalysis analysis = 1;
+  repeated PerformanceRecommendation recommendations = 2;
+}
+
+// パフォーマンス分析
+message PerformanceAnalysis {
+  // 傾向分析
+  float accuracy_trend = 1; // 正答率の傾向（正 = 改善、負 = 悪化）
+  float speed_trend = 2; // 反応速度の傾向
+  float retention_trend = 3; // 保持率の傾向
+
+  // 問題領域
+  repeated string problematic_categories = 4; // 問題のあるカテゴリ
+  repeated string strong_categories = 5; // 得意なカテゴリ
+
+  // 学習パターン
+  repeated uint32 active_hours = 6; // アクティブな時間帯（0-23）
+  float consistency_score = 7; // 学習の一貫性スコア (0.0 - 1.0)
+}
+
+// パフォーマンス推奨事項
+message PerformanceRecommendation {
+  string recommendation_type = 1; // 推奨タイプ
+  string description = 2; // 説明
+  float impact_score = 3; // 影響度スコア (0.0 - 1.0)
+}
+
+// 学習戦略取得リクエスト
+message GetLearningStrategyRequest {
+  string user_id = 1;
+}
+
+// 学習戦略取得レスポンス
+message GetLearningStrategyResponse {
+  LearningStrategy strategy = 1;
+}
+
+// 学習戦略
+message LearningStrategy {
+  string user_id = 1;
+
+  // 現在の戦略設定
+  effect.events.algorithm.StrategyType strategy_type = 2; // 戦略タイプ
+  uint32 daily_target_items = 3; // 日次目標項目数
+  uint32 new_items_per_day = 4; // 1日の新規項目数
+  float difficulty_threshold = 5; // 難易度閾値
+
+  // 適応的パラメータ
+  float learning_speed_factor = 6; // 学習速度係数 (0.5 - 2.0)
+  float retention_priority = 7; // 保持優先度 (0.0 - 1.0)
+  bool adaptive_scheduling = 8; // 適応的スケジューリングの有効化
+
+  // 最終更新
+  google.protobuf.Timestamp last_adjusted_at = 9;
+}
+
+// 戦略調整リクエスト
+message AdjustStrategyRequest {
+  string user_id = 1;
+  optional effect.events.algorithm.StrategyType new_strategy_type = 2;
+  optional uint32 daily_target_items = 3;
+  optional uint32 new_items_per_day = 4;
+  optional float learning_speed_factor = 5;
+}
+
+// 戦略調整レスポンス
+message AdjustStrategyResponse {
+  LearningStrategy strategy = 1;
+  string adjustment_reason = 2; // 調整の理由
+}
+
+// 項目履歴取得リクエスト
+message GetItemHistoryRequest {
+  string user_id = 1;
+  string item_id = 2;
+  uint32 limit = 3; // 最大取得件数（デフォルト: 20）
+}
+
+// 項目履歴取得レスポンス
+message GetItemHistoryResponse {
+  repeated ReviewHistory history = 1;
+  LearningItemState current_state = 2;
+}
+
+// 復習履歴
+message ReviewHistory {
+  google.protobuf.Timestamp reviewed_at = 1;
+  effect.common.CorrectnessJudgment judgment = 2;
+  uint32 response_time_ms = 3;
+  uint32 interval_days = 4; // この復習時の間隔
+  float easiness_factor = 5; // この復習後の係数
+  optional string session_id = 6; // セッションID
+}
+
+// 学習傾向分析リクエスト
+message AnalyzeLearningTrendsRequest {
+  string user_id = 1;
+  uint32 days_to_analyze = 2; // 分析対象日数（デフォルト: 30）
+}
+
+// 学習傾向分析レスポンス
+message AnalyzeLearningTrendsResponse {
+  LearningTrends trends = 1;
+}
+
+// 学習傾向
+message LearningTrends {
+  // 時間帯別パフォーマンス
+  repeated HourlyPerformance hourly_performance = 1;
+
+  // 曜日別パフォーマンス
+  repeated DailyPerformance daily_performance = 2;
+
+  // カテゴリ別進捗
+  repeated CategoryProgress category_progress = 3;
+
+  // 予測
+  uint32 predicted_mastery_days = 4; // 目標達成予測日数
+  float burnout_risk = 5; // バーンアウトリスク (0.0 - 1.0)
+}
+
+// 時間帯別パフォーマンス
+message HourlyPerformance {
+  uint32 hour = 1; // 時間 (0-23)
+  float accuracy_rate = 2;
+  uint32 review_count = 3;
+  float average_response_time_ms = 4;
+}
+
+// 曜日別パフォーマンス
+message DailyPerformance {
+  uint32 day_of_week = 1; // 曜日 (0 = 日曜日)
+  float accuracy_rate = 2;
+  uint32 average_reviews = 3;
+  float completion_rate = 4;
+}
+
+// カテゴリ別進捗
+message CategoryProgress {
+  string category = 1; // カテゴリ名（品詞など）
+  uint32 total_items = 2;
+  uint32 mastered_items = 3;
+  float progress_rate = 4;
+  float average_easiness_factor = 5;
+}

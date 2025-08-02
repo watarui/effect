@@ -23,10 +23,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Timestamp 型のフィールドには専用の serde ヘルパーを使用
     // 全ての optional Timestamp フィールドに適用
     config = config
+        // EventMetadata のフィールド
         .field_attribute(
             "occurred_at",
             "#[serde(with = \"crate::serde_helpers::timestamp\")]",
         )
+        // CommandMetadata のフィールド
+        .field_attribute(
+            "issued_at",
+            "#[serde(with = \"crate::serde_helpers::timestamp\")]",
+        )
+        // MessageMetadata のフィールド
+        .field_attribute(
+            "published_at",
+            "#[serde(with = \"crate::serde_helpers::timestamp\")]",
+        )
+        .field_attribute(
+            "expires_at",
+            "#[serde(with = \"crate::serde_helpers::timestamp\")]",
+        )
+        // DeliveryInfo のフィールド
+        .field_attribute(
+            "last_attempted_at",
+            "#[serde(with = \"crate::serde_helpers::timestamp\")]",
+        )
+        .field_attribute(
+            "scheduled_at",
+            "#[serde(with = \"crate::serde_helpers::timestamp\")]",
+        )
+        // MessageAck のフィールド
+        .field_attribute(
+            "acked_at",
+            "#[serde(with = \"crate::serde_helpers::timestamp\")]",
+        )
+        // 既存のイベントフィールド
         .field_attribute(
             "created_at",
             "#[serde(with = \"crate::serde_helpers::timestamp\")]",
@@ -77,13 +107,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     config.compile_protos(
         &[
+            // 共通型定義
+            &format!("{proto_root}/common/types.proto"),
+            &format!("{proto_root}/common/learning_types.proto"),
+            &format!("{proto_root}/common/commands.proto"),
+            &format!("{proto_root}/common/messaging.proto"),
             &format!("{proto_root}/common/events.proto"),
+            // イベント定義
             &format!("{proto_root}/events/learning_events.proto"),
             &format!("{proto_root}/events/vocabulary_events.proto"),
             &format!("{proto_root}/events/algorithm_events.proto"),
             &format!("{proto_root}/events/ai_events.proto"),
             &format!("{proto_root}/events/user_events.proto"),
-            &format!("{proto_root}/common/learning_types.proto"),
+            // サービス定義（必要な型のため）
             &format!("{proto_root}/services/user_service.proto"), // LearningGoal 型のため必要
         ],
         &[&proto_root],

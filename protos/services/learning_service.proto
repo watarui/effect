@@ -1,0 +1,320 @@
+syntax = "proto3";
+
+package effect.services.learning;
+
+import "common/learning_types.proto";
+import "common/types.proto";
+import "events/learning_events.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// 学習サービス
+// 学習セッションの管理、項目の提示、正誤判定、学習状態の追跡を担当
+service LearningService {
+  // セッションを開始
+  rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
+
+  // 現在のセッション状態を取得
+  rpc GetCurrentSession(GetCurrentSessionRequest) returns (GetCurrentSessionResponse);
+
+  // 次の項目を取得
+  rpc GetNextItem(GetNextItemRequest) returns (GetNextItemResponse);
+
+  // 解答を表示
+  rpc RevealAnswer(RevealAnswerRequest) returns (RevealAnswerResponse);
+
+  // 正誤を判定
+  rpc JudgeCorrectness(JudgeCorrectnessRequest) returns (JudgeCorrectnessResponse);
+
+  // セッションを完了
+  rpc CompleteSession(CompleteSessionRequest) returns (CompleteSessionResponse);
+
+  // セッションを放棄
+  rpc AbandonSession(AbandonSessionRequest) returns (AbandonSessionResponse);
+
+  // セッション履歴を取得
+  rpc GetSessionHistory(GetSessionHistoryRequest) returns (GetSessionHistoryResponse);
+
+  // セッション詳細を取得
+  rpc GetSessionDetail(GetSessionDetailRequest) returns (GetSessionDetailResponse);
+
+  // アクティブなセッションがあるか確認
+  rpc HasActiveSession(HasActiveSessionRequest) returns (HasActiveSessionResponse);
+}
+
+// 学習セッション
+message LearningSession {
+  string session_id = 1; // UUID
+  string user_id = 2; // UUID
+
+  // セッション設定
+  SessionConfig config = 3;
+
+  // セッション状態
+  SessionStatus status = 4;
+  uint32 current_item_index = 5; // 現在の項目インデックス（0-based）
+
+  // 項目リスト
+  repeated SessionItem items = 6;
+
+  // タイミング情報
+  google.protobuf.Timestamp started_at = 7;
+  optional google.protobuf.Timestamp completed_at = 8;
+  optional google.protobuf.Timestamp last_activity_at = 9;
+
+  // 統計情報（リアルタイム更新）
+  SessionStatistics statistics = 10;
+}
+
+// セッション設定
+message SessionConfig {
+  effect.events.learning.SelectionStrategy selection_strategy = 1; // 項目選定戦略
+  uint32 item_count = 2; // 項目数（1-100）
+  uint32 time_limit_minutes = 3; // 制限時間（分）、0 = 無制限
+}
+
+// セッションステータス
+enum SessionStatus {
+  SESSION_STATUS_UNSPECIFIED = 0;
+  SESSION_STATUS_NOT_STARTED = 1; // 未開始
+  SESSION_STATUS_IN_PROGRESS = 2; // 進行中
+  SESSION_STATUS_COMPLETED = 3; // 完了
+  SESSION_STATUS_ABANDONED = 4; // 放棄
+}
+
+// セッション内の項目
+message SessionItem {
+  string item_id = 1; // UUID（VocabularyItem のID）
+  uint32 order_index = 2; // 提示順序（0-based）
+
+  // タイミング情報
+  optional google.protobuf.Timestamp presented_at = 3; // 提示時刻
+  optional google.protobuf.Timestamp answer_revealed_at = 4; // 解答表示時刻
+  optional google.protobuf.Timestamp judged_at = 5; // 判定時刻
+
+  // 反応情報
+  optional effect.events.learning.AnswerRevealTrigger reveal_trigger = 6; // 解答表示トリガー
+  optional effect.common.CorrectnessJudgment judgment = 7; // 正誤判定
+  optional effect.events.learning.JudgmentTrigger judgment_trigger = 8; // 判定トリガー
+
+  // 時間計測
+  optional uint32 time_to_reveal_ms = 9; // 提示から解答表示までの時間
+  optional uint32 time_to_judge_ms = 10; // 解答表示から判定までの時間
+
+  // 項目情報（キャッシュ）
+  optional ItemSnapshot item_snapshot = 11;
+}
+
+// 項目のスナップショット（表示用）
+message ItemSnapshot {
+  string spelling = 1;
+  string part_of_speech = 2;
+  string pronunciation = 3;
+  repeated string definitions = 4;
+  repeated string example_sentences = 5;
+  effect.common.CefrLevel difficulty_level = 6;
+}
+
+// セッション統計
+message SessionStatistics {
+  uint32 total_items = 1; // 総項目数
+  uint32 presented_items = 2; // 提示済み項目数
+  uint32 completed_items = 3; // 完了済み項目数
+  uint32 correct_count = 4; // 正解数
+  uint32 incorrect_count = 5; // 不正解数
+  float accuracy_rate = 6; // 正答率
+  uint32 average_response_time_ms = 7; // 平均反応時間
+  uint32 elapsed_seconds = 8; // 経過時間（秒）
+}
+
+// セッション開始リクエスト
+message StartSessionRequest {
+  string user_id = 1;
+  SessionConfig config = 2;
+}
+
+// セッション開始レスポンス
+message StartSessionResponse {
+  LearningSession session = 1;
+  repeated effect.events.learning.SelectedItem selected_items = 2; // 選定された項目の詳細
+}
+
+// 現在のセッション取得リクエスト
+message GetCurrentSessionRequest {
+  string user_id = 1;
+}
+
+// 現在のセッション取得レスポンス
+message GetCurrentSessionResponse {
+  optional LearningSession session = 1; // アクティブなセッションがない場合は null
+}
+
+// 次の項目取得リクエスト
+message GetNextItemRequest {
+  string session_id = 1;
+  string user_id = 2;
+}
+
+// 次の項目取得レスポンス
+message GetNextItemResponse {
+  SessionItem item = 1;
+  ItemDetail item_detail = 2; // 表示用の詳細情報
+  uint32 remaining_items = 3; // 残り項目数
+}
+
+// 項目の詳細情報
+message ItemDetail {
+  string item_id = 1;
+  string spelling = 2;
+  string disambiguation = 3;
+  string part_of_speech = 4;
+  effect.common.CefrLevel difficulty_level = 5;
+
+  // 問題表示時点では隠す情報
+  optional HiddenContent hidden_content = 6;
+}
+
+// 隠された内容（解答表示後に見せる）
+message HiddenContent {
+  string pronunciation = 1;
+  repeated string definitions = 2;
+  repeated string example_sentences = 3;
+  repeated string synonyms = 4;
+  repeated string antonyms = 5;
+  string etymology = 6;
+  string usage_notes = 7;
+  repeated string test_tips = 8;
+}
+
+// 解答表示リクエスト
+message RevealAnswerRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string item_id = 3;
+}
+
+// 解答表示レスポンス
+message RevealAnswerResponse {
+  HiddenContent content = 1;
+  uint32 time_to_reveal_ms = 2; // 提示から解答表示までの時間
+}
+
+// 正誤判定リクエスト
+message JudgeCorrectnessRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string item_id = 3;
+  effect.common.CorrectnessJudgment judgment = 4;
+}
+
+// 正誤判定レスポンス
+message JudgeCorrectnessResponse {
+  SessionStatistics updated_statistics = 1; // 更新された統計
+  bool is_last_item = 2; // 最後の項目だったか
+}
+
+// セッション完了リクエスト
+message CompleteSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+}
+
+// セッション完了レスポンス
+message CompleteSessionResponse {
+  SessionSummary summary = 1;
+}
+
+// セッションサマリー
+message SessionSummary {
+  string session_id = 1;
+  google.protobuf.Timestamp started_at = 2;
+  google.protobuf.Timestamp completed_at = 3;
+  uint32 duration_seconds = 4;
+
+  // 結果統計
+  uint32 total_items = 5;
+  uint32 completed_items = 6;
+  uint32 correct_count = 7;
+  float accuracy_rate = 8;
+  uint32 average_response_time_ms = 9;
+
+  // 習熟度の変化
+  repeated MasteryChange mastery_changes = 10;
+}
+
+// 習熟度の変化
+message MasteryChange {
+  string item_id = 1;
+  string spelling = 2;
+  effect.common.MasteryLevel old_level = 3;
+  effect.common.MasteryLevel new_level = 4;
+}
+
+// セッション放棄リクエスト
+message AbandonSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+  effect.events.learning.AbandonReason reason = 3;
+}
+
+// セッション放棄レスポンス
+message AbandonSessionResponse {
+  // 空のレスポンス
+}
+
+// セッション履歴取得リクエスト
+message GetSessionHistoryRequest {
+  string user_id = 1;
+  uint32 limit = 2; // 最大取得件数（デフォルト: 20）
+  uint32 offset = 3; // オフセット
+  optional google.protobuf.Timestamp since = 4; // この日時以降のみ
+  optional google.protobuf.Timestamp until = 5; // この日時以前のみ
+}
+
+// セッション履歴取得レスポンス
+message GetSessionHistoryResponse {
+  repeated SessionSummary sessions = 1;
+  uint32 total_count = 2;
+}
+
+// セッション詳細取得リクエスト
+message GetSessionDetailRequest {
+  string session_id = 1;
+  string user_id = 2;
+}
+
+// セッション詳細取得レスポンス
+message GetSessionDetailResponse {
+  LearningSession session = 1;
+  repeated ItemResult item_results = 2; // 各項目の結果詳細
+}
+
+// 項目ごとの結果
+message ItemResult {
+  string item_id = 1;
+  ItemSnapshot item_snapshot = 2;
+
+  // 判定結果
+  effect.common.CorrectnessJudgment judgment = 3;
+  uint32 response_time_ms = 4;
+
+  // タイミング詳細
+  google.protobuf.Timestamp presented_at = 5;
+  google.protobuf.Timestamp answer_revealed_at = 6;
+  google.protobuf.Timestamp judged_at = 7;
+
+  // トリガー情報
+  effect.events.learning.AnswerRevealTrigger reveal_trigger = 8;
+  effect.events.learning.JudgmentTrigger judgment_trigger = 9;
+}
+
+// アクティブセッション確認リクエスト
+message HasActiveSessionRequest {
+  string user_id = 1;
+}
+
+// アクティブセッション確認レスポンス
+message HasActiveSessionResponse {
+  bool has_active = 1;
+  optional string session_id = 2; // アクティブなセッションのID（ある場合）
+}

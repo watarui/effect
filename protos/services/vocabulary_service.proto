@@ -1,0 +1,243 @@
+syntax = "proto3";
+
+package effect.services.vocabulary;
+
+import "common/types.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// 語彙サービス
+// 全ユーザーが共有するグローバル辞書を管理し、
+// Wikipedia スタイルの語彙管理（1つの綴りに複数の項目）を提供
+service VocabularyService {
+  // エントリーを検索（綴りで検索）
+  rpc SearchEntries(SearchEntriesRequest) returns (SearchEntriesResponse);
+
+  // エントリーを取得
+  rpc GetEntry(GetEntryRequest) returns (GetEntryResponse);
+
+  // 項目を作成（エントリーが無ければ自動作成）
+  rpc CreateItem(CreateItemRequest) returns (CreateItemResponse);
+
+  // 項目を取得
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+
+  // 項目を更新（楽観的ロック + 自動マージ）
+  rpc UpdateItem(UpdateItemRequest) returns (UpdateItemResponse);
+
+  // 項目を削除（論理削除）
+  rpc DeleteItem(DeleteItemRequest) returns (DeleteItemResponse);
+
+  // 項目の履歴を取得
+  rpc GetItemHistory(GetItemHistoryRequest) returns (GetItemHistoryResponse);
+
+  // AI 生成をリクエスト
+  rpc RequestAIGeneration(RequestAIGenerationRequest) returns (RequestAIGenerationResponse);
+
+  // 複数項目を一括取得
+  rpc GetItems(GetItemsRequest) returns (GetItemsResponse);
+
+  // 最近追加された項目を取得
+  rpc GetRecentItems(GetRecentItemsRequest) returns (GetRecentItemsResponse);
+}
+
+// 語彙エントリー（綴りの単位）
+message VocabularyEntry {
+  string entry_id = 1; // UUID
+  string spelling = 2; // 綴り（小文字正規化済み）
+  repeated string item_ids = 3; // この綴りに属する項目のIDリスト
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// 語彙項目（意味の単位）
+message VocabularyItem {
+  string item_id = 1; // UUID
+  string entry_id = 2; // 所属するエントリーのID
+  string spelling = 3; // 綴り（エントリーと同じ）
+  string disambiguation = 4; // 曖昧さ回避用の説明
+
+  // 基本情報
+  string part_of_speech = 5; // 品詞
+  string pronunciation = 6; // IPA発音記号
+  repeated string definitions = 7; // 定義リスト
+
+  // 詳細情報
+  repeated string example_sentences = 8; // 例文
+  repeated string synonyms = 9; // 同義語
+  repeated string antonyms = 10; // 反対語
+  string etymology = 11; // 語源
+  string usage_notes = 12; // 使用法の注意
+  effect.common.CefrLevel difficulty_level = 13; // 難易度
+
+  // 試験対策情報
+  repeated string test_tips = 14; // 試験対策のヒント
+  repeated string common_mistakes = 15; // よくある間違い
+
+  // メタデータ
+  ItemStatus status = 16; // ステータス
+  string created_by = 17; // 作成者（システムまたはユーザーID）
+  string last_modified_by = 18; // 最終更新者
+  google.protobuf.Timestamp created_at = 19;
+  google.protobuf.Timestamp updated_at = 20;
+  uint64 version = 21; // 楽観的ロック用バージョン
+
+  // AI 生成情報
+  bool is_ai_generated = 22; // AI生成されたかどうか
+  optional string ai_model = 23; // 使用されたAIモデル
+  optional google.protobuf.Timestamp ai_generated_at = 24; // AI生成日時
+}
+
+// 項目のステータス
+enum ItemStatus {
+  ITEM_STATUS_UNSPECIFIED = 0;
+  ITEM_STATUS_DRAFT = 1; // 下書き
+  ITEM_STATUS_PENDING_AI = 2; // AI生成待ち
+  ITEM_STATUS_PUBLISHED = 3; // 公開済み
+  ITEM_STATUS_DELETED = 4; // 削除済み（論理削除）
+}
+
+// エントリー検索リクエスト
+message SearchEntriesRequest {
+  string query = 1; // 検索クエリ（部分一致）
+  uint32 limit = 2; // 最大取得件数（デフォルト: 10、最大: 50）
+  uint32 offset = 3; // オフセット
+}
+
+// エントリー検索レスポンス
+message SearchEntriesResponse {
+  repeated VocabularyEntry entries = 1;
+  uint32 total_count = 2; // 総件数
+}
+
+// エントリー取得リクエスト
+message GetEntryRequest {
+  string entry_id = 1;
+}
+
+// エントリー取得レスポンス
+message GetEntryResponse {
+  VocabularyEntry entry = 1;
+  repeated VocabularyItem items = 2; // このエントリーに属する全項目
+}
+
+// 項目作成リクエスト
+message CreateItemRequest {
+  string spelling = 1; // 綴り（必須）
+  string disambiguation = 2; // 曖昧さ回避（必須）
+  string part_of_speech = 3; // 品詞（必須）
+  string created_by = 4; // 作成者ID（必須）
+
+  // オプションフィールド（後でAI生成または手動追加可能）
+  optional string pronunciation = 5;
+  repeated string definitions = 6;
+  repeated string example_sentences = 7;
+  optional effect.common.CefrLevel difficulty_level = 8;
+}
+
+// 項目作成レスポンス
+message CreateItemResponse {
+  VocabularyItem item = 1;
+  bool entry_created = 2; // エントリーも新規作成されたかどうか
+}
+
+// 項目取得リクエスト
+message GetItemRequest {
+  string item_id = 1;
+}
+
+// 項目取得レスポンス
+message GetItemResponse {
+  VocabularyItem item = 1;
+}
+
+// 項目更新リクエスト
+message UpdateItemRequest {
+  string item_id = 1;
+  uint64 base_version = 2; // 更新の基となるバージョン（楽観的ロック）
+  repeated FieldUpdate updates = 3; // 更新内容
+  string updated_by = 4; // 更新者ID
+}
+
+// フィールド更新
+message FieldUpdate {
+  string field_path = 1; // 更新するフィールドのパス
+  string value_json = 2; // 新しい値（JSON形式）
+}
+
+// 項目更新レスポンス
+message UpdateItemResponse {
+  VocabularyItem item = 1;
+  bool auto_merged = 2; // 自動マージが行われたかどうか
+  repeated string conflicted_fields = 3; // 競合したフィールド（ある場合）
+}
+
+// 項目削除リクエスト
+message DeleteItemRequest {
+  string item_id = 1;
+  string deleted_by = 2; // 削除者ID
+}
+
+// 項目削除レスポンス
+message DeleteItemResponse {
+  // 空のレスポンス
+}
+
+// 項目履歴取得リクエスト
+message GetItemHistoryRequest {
+  string item_id = 1;
+  uint32 limit = 2; // 最大取得件数（デフォルト: 20）
+  uint32 offset = 3; // オフセット
+}
+
+// 項目履歴取得レスポンス
+message GetItemHistoryResponse {
+  repeated ItemHistoryEntry history = 1;
+  uint32 total_count = 2;
+}
+
+// 履歴エントリー
+message ItemHistoryEntry {
+  google.protobuf.Timestamp changed_at = 1;
+  string changed_by = 2;
+  string change_type = 3; // "created", "updated", "deleted"
+  string field_path = 4; // 変更されたフィールド（updateの場合）
+  string old_value_json = 5; // 古い値（updateの場合）
+  string new_value_json = 6; // 新しい値
+  uint64 version = 7; // 変更後のバージョン
+}
+
+// AI 生成リクエスト
+message RequestAIGenerationRequest {
+  string item_id = 1;
+  bool is_regeneration = 2; // 再生成かどうか
+  string requested_by = 3; // リクエスト者ID
+}
+
+// AI 生成レスポンス
+message RequestAIGenerationResponse {
+  string task_id = 1; // AI タスクID（Progress Context で追跡用）
+  string message = 2; // ユーザーへのメッセージ
+}
+
+// 複数項目取得リクエスト
+message GetItemsRequest {
+  repeated string item_ids = 1; // 取得したい項目のIDリスト（最大: 100）
+}
+
+// 複数項目取得レスポンス
+message GetItemsResponse {
+  repeated VocabularyItem items = 1;
+  repeated string not_found_ids = 2; // 見つからなかったID
+}
+
+// 最近追加された項目取得リクエスト
+message GetRecentItemsRequest {
+  uint32 limit = 1; // 最大取得件数（デフォルト: 20、最大: 100）
+  optional google.protobuf.Timestamp since = 2; // この日時以降のみ取得
+}
+
+// 最近追加された項目取得レスポンス
+message GetRecentItemsResponse {
+  repeated VocabularyItem items = 1;
+}

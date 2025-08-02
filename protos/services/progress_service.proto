@@ -1,0 +1,543 @@
+syntax = "proto3";
+
+package effect.services.progress;
+
+import "common/learning_types.proto";
+import "common/types.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// 進捗サービス
+// 学習進捗の追跡、統計分析、レポート生成を提供（読み取り専用）
+service ProgressService {
+  // 全体進捗を取得
+  rpc GetOverallProgress(GetOverallProgressRequest) returns (GetOverallProgressResponse);
+
+  // 期間別進捗を取得
+  rpc GetProgressByPeriod(GetProgressByPeriodRequest) returns (GetProgressByPeriodResponse);
+
+  // カテゴリ別進捗を取得
+  rpc GetProgressByCategory(GetProgressByCategoryRequest) returns (GetProgressByCategoryResponse);
+
+  // 学習カレンダーを取得
+  rpc GetLearningCalendar(GetLearningCalendarRequest) returns (GetLearningCalendarResponse);
+
+  // 達成状況を取得
+  rpc GetAchievements(GetAchievementsRequest) returns (GetAchievementsResponse);
+
+  // 学習統計を取得
+  rpc GetLearningStatistics(GetLearningStatisticsRequest) returns (GetLearningStatisticsResponse);
+
+  // 進捗レポートを生成
+  rpc GenerateProgressReport(GenerateProgressReportRequest) returns (GenerateProgressReportResponse);
+
+  // 目標達成予測を取得
+  rpc GetGoalPrediction(GetGoalPredictionRequest) returns (GetGoalPredictionResponse);
+
+  // 弱点分析を取得
+  rpc GetWeaknessAnalysis(GetWeaknessAnalysisRequest) returns (GetWeaknessAnalysisResponse);
+
+  // ランキングを取得（ゲーミフィケーション）
+  rpc GetLeaderboard(GetLeaderboardRequest) returns (GetLeaderboardResponse);
+}
+
+// 全体進捗
+message OverallProgress {
+  string user_id = 1;
+
+  // 現在のレベルと目標
+  effect.common.CefrLevel current_level = 2;
+  optional effect.common.CefrLevel target_level = 3;
+  float level_progress = 4; // レベル内の進捗率 (0.0 - 1.0)
+
+  // 語彙進捗
+  uint32 total_vocabulary_items = 5; // 総語彙数
+  uint32 mastered_items = 6; // 習得済み項目数
+  uint32 learning_items = 7; // 学習中項目数
+  uint32 new_items = 8; // 新規項目数
+  float vocabulary_coverage = 9; // カバー率 (0.0 - 1.0)
+
+  // 学習活動
+  uint32 total_study_days = 10; // 総学習日数
+  uint32 current_streak = 11; // 現在の連続学習日数
+  uint32 longest_streak = 12; // 最長連続学習日数
+  google.protobuf.Duration total_study_time = 13; // 総学習時間
+
+  // 達成率
+  float overall_achievement_rate = 14; // 全体達成率 (0.0 - 1.0)
+  optional google.protobuf.Timestamp goal_estimated_date = 15; // 目標達成予定日
+}
+
+// 全体進捗取得リクエスト
+message GetOverallProgressRequest {
+  string user_id = 1;
+}
+
+// 全体進捗取得レスポンス
+message GetOverallProgressResponse {
+  OverallProgress progress = 1;
+}
+
+// 期間別進捗取得リクエスト
+message GetProgressByPeriodRequest {
+  string user_id = 1;
+  PeriodType period_type = 2;
+  uint32 period_count = 3; // 取得する期間数（例：過去7日間なら7）
+  optional google.protobuf.Timestamp end_date = 4; // 終了日（デフォルト：今日）
+}
+
+// 期間タイプ
+enum PeriodType {
+  PERIOD_TYPE_UNSPECIFIED = 0;
+  PERIOD_TYPE_DAILY = 1; // 日次
+  PERIOD_TYPE_WEEKLY = 2; // 週次
+  PERIOD_TYPE_MONTHLY = 3; // 月次
+  PERIOD_TYPE_QUARTERLY = 4; // 四半期
+}
+
+// 期間別進捗取得レスポンス
+message GetProgressByPeriodResponse {
+  repeated PeriodProgress periods = 1;
+  PeriodComparison comparison = 2; // 期間比較
+}
+
+// 期間進捗
+message PeriodProgress {
+  google.protobuf.Timestamp period_start = 1;
+  google.protobuf.Timestamp period_end = 2;
+
+  // 学習活動
+  uint32 study_days = 3; // 学習日数
+  uint32 total_sessions = 4; // セッション数
+  uint32 total_items_studied = 5; // 学習項目数
+  google.protobuf.Duration total_study_time = 6; // 学習時間
+
+  // 成果
+  uint32 items_mastered = 7; // 習得項目数
+  float accuracy_rate = 8; // 正答率
+  uint32 new_items_learned = 9; // 新規学習項目数
+
+  // 目標達成
+  optional uint32 daily_goal = 10; // 日次目標
+  uint32 goals_achieved = 11; // 達成日数
+}
+
+// 期間比較
+message PeriodComparison {
+  float study_time_change = 1; // 学習時間の変化率
+  float accuracy_change = 2; // 正答率の変化率
+  float items_mastered_change = 3; // 習得項目数の変化率
+  string trend = 4; // "improving", "stable", "declining"
+}
+
+// カテゴリ別進捗取得リクエスト
+message GetProgressByCategoryRequest {
+  string user_id = 1;
+  CategoryType category_type = 2;
+}
+
+// カテゴリタイプ
+enum CategoryType {
+  CATEGORY_TYPE_UNSPECIFIED = 0;
+  CATEGORY_TYPE_PART_OF_SPEECH = 1; // 品詞別
+  CATEGORY_TYPE_DIFFICULTY_LEVEL = 2; // 難易度別
+  CATEGORY_TYPE_TOPIC = 3; // トピック別
+  CATEGORY_TYPE_TEST_TYPE = 4; // 試験タイプ別
+}
+
+// カテゴリ別進捗取得レスポンス
+message GetProgressByCategoryResponse {
+  repeated CategoryProgress categories = 1;
+  string strongest_category = 2; // 最も得意なカテゴリ
+  string weakest_category = 3; // 最も苦手なカテゴリ
+}
+
+// カテゴリ進捗
+message CategoryProgress {
+  string category_name = 1;
+  string category_value = 2; // カテゴリの値（例："noun", "B1"）
+
+  // 統計
+  uint32 total_items = 3; // 総項目数
+  uint32 mastered_items = 4; // 習得済み項目数
+  uint32 learning_items = 5; // 学習中項目数
+  float mastery_rate = 6; // 習得率 (0.0 - 1.0)
+
+  // パフォーマンス
+  float accuracy_rate = 7; // 正答率
+  float average_response_time_ms = 8; // 平均反応時間
+  uint32 total_reviews = 9; // 総復習回数
+
+  // 進捗
+  float progress_rate = 10; // 進捗率 (0.0 - 1.0)
+  google.protobuf.Duration time_spent = 11; // 費やした時間
+}
+
+// 学習カレンダー取得リクエスト
+message GetLearningCalendarRequest {
+  string user_id = 1;
+  uint32 year = 2;
+  uint32 month = 3; // 1-12
+}
+
+// 学習カレンダー取得レスポンス
+message GetLearningCalendarResponse {
+  repeated CalendarDay days = 1;
+  MonthlyStatistics monthly_stats = 2;
+}
+
+// カレンダー日
+message CalendarDay {
+  uint32 day = 1; // 1-31
+  bool studied = 2; // 学習したか
+
+  // 学習活動（学習した場合）
+  optional uint32 sessions_count = 3; // セッション数
+  optional uint32 items_studied = 4; // 学習項目数
+  optional google.protobuf.Duration study_time = 5; // 学習時間
+  optional float accuracy_rate = 6; // 正答率
+
+  // 特別なイベント
+  repeated string achievements = 7; // 達成項目
+  bool is_streak_milestone = 8; // 連続学習のマイルストーン
+}
+
+// 月次統計
+message MonthlyStatistics {
+  uint32 study_days = 1; // 学習日数
+  uint32 total_sessions = 2; // 総セッション数
+  uint32 total_items = 3; // 総学習項目数
+  google.protobuf.Duration total_time = 4; // 総学習時間
+  float average_accuracy = 5; // 平均正答率
+}
+
+// 達成状況取得リクエスト
+message GetAchievementsRequest {
+  string user_id = 1;
+  optional bool unlocked_only = 2; // アンロック済みのみ表示
+}
+
+// 達成状況取得レスポンス
+message GetAchievementsResponse {
+  repeated Achievement achievements = 1;
+  uint32 total_points = 2; // 総ポイント
+  string current_title = 3; // 現在の称号
+}
+
+// 達成項目
+message Achievement {
+  string achievement_id = 1;
+  string name = 2; // 達成項目名
+  string description = 3; // 説明
+  AchievementCategory category = 4; // カテゴリ
+
+  // 状態
+  bool unlocked = 5; // アンロック済みか
+  optional google.protobuf.Timestamp unlocked_at = 6; // アンロック日時
+  float progress = 7; // 進捗 (0.0 - 1.0)
+
+  // 報酬
+  uint32 points = 8; // ポイント
+  optional string badge_url = 9; // バッジ画像URL
+  optional string special_title = 10; // 特別な称号
+
+  // 条件
+  string requirement = 11; // 達成条件の説明
+  optional uint32 current_value = 12; // 現在の値
+  optional uint32 target_value = 13; // 目標値
+}
+
+// 達成カテゴリ
+enum AchievementCategory {
+  ACHIEVEMENT_CATEGORY_UNSPECIFIED = 0;
+  ACHIEVEMENT_CATEGORY_STREAK = 1; // 連続学習
+  ACHIEVEMENT_CATEGORY_VOCABULARY = 2; // 語彙
+  ACHIEVEMENT_CATEGORY_ACCURACY = 3; // 正確性
+  ACHIEVEMENT_CATEGORY_SPEED = 4; // スピード
+  ACHIEVEMENT_CATEGORY_MILESTONE = 5; // マイルストーン
+  ACHIEVEMENT_CATEGORY_SPECIAL = 6; // 特別
+}
+
+// 学習統計取得リクエスト
+message GetLearningStatisticsRequest {
+  string user_id = 1;
+  optional google.protobuf.Timestamp since = 2; // この日時以降
+  optional google.protobuf.Timestamp until = 3; // この日時以前
+}
+
+// 学習統計取得レスポンス
+message GetLearningStatisticsResponse {
+  DetailedStatistics statistics = 1;
+}
+
+// 詳細統計
+message DetailedStatistics {
+  // 基本統計
+  uint32 total_study_days = 1;
+  google.protobuf.Duration total_study_time = 2;
+  uint32 total_sessions = 3;
+  uint32 total_items_studied = 4;
+
+  // パフォーマンス統計
+  float overall_accuracy = 5; // 全体正答率
+  float recent_accuracy = 6; // 直近の正答率
+  uint32 average_daily_items = 7; // 日平均学習項目数
+  google.protobuf.Duration average_session_duration = 8; // 平均セッション時間
+
+  // 時間帯別統計
+  repeated HourlyStatistics hourly_stats = 9;
+  uint32 most_productive_hour = 10; // 最も生産的な時間帯
+
+  // 曜日別統計
+  repeated WeekdayStatistics weekday_stats = 11;
+  uint32 most_active_weekday = 12; // 最もアクティブな曜日
+
+  // 進歩指標
+  float learning_velocity = 13; // 学習速度
+  float retention_rate = 14; // 保持率
+  float improvement_rate = 15; // 改善率
+}
+
+// 時間帯別統計
+message HourlyStatistics {
+  uint32 hour = 1; // 0-23
+  uint32 session_count = 2;
+  float accuracy_rate = 3;
+  google.protobuf.Duration total_time = 4;
+}
+
+// 曜日別統計
+message WeekdayStatistics {
+  uint32 weekday = 1; // 0-6 (0 = 日曜日)
+  uint32 session_count = 2;
+  float accuracy_rate = 3;
+  google.protobuf.Duration average_time = 4;
+}
+
+// 進捗レポート生成リクエスト
+message GenerateProgressReportRequest {
+  string user_id = 1;
+  ReportType report_type = 2;
+  ReportPeriod period = 3;
+  optional string language = 4; // レポート言語（デフォルト: "ja"）
+}
+
+// レポートタイプ
+enum ReportType {
+  REPORT_TYPE_UNSPECIFIED = 0;
+  REPORT_TYPE_SUMMARY = 1; // サマリー
+  REPORT_TYPE_DETAILED = 2; // 詳細
+  REPORT_TYPE_ACHIEVEMENT = 3; // 達成
+  REPORT_TYPE_RECOMMENDATION = 4; // 推奨
+}
+
+// レポート期間
+message ReportPeriod {
+  google.protobuf.Timestamp start_date = 1;
+  google.protobuf.Timestamp end_date = 2;
+}
+
+// 進捗レポート生成レスポンス
+message GenerateProgressReportResponse {
+  ProgressReport report = 1;
+  string download_url = 2; // ダウンロードURL（PDF）
+}
+
+// 進捗レポート
+message ProgressReport {
+  string report_id = 1;
+  string user_id = 2;
+  ReportType type = 3;
+  google.protobuf.Timestamp generated_at = 4;
+
+  // レポート内容
+  string summary = 5; // サマリー
+  repeated ReportSection sections = 6; // セクション
+  repeated string recommendations = 7; // 推奨事項
+
+  // 次のステップ
+  repeated string next_steps = 8; // 次のステップ
+  optional string motivational_message = 9; // 励ましのメッセージ
+}
+
+// レポートセクション
+message ReportSection {
+  string title = 1;
+  string content = 2; // Markdown 形式
+  repeated Chart charts = 3; // グラフ
+  repeated Metric metrics = 4; // メトリクス
+}
+
+// グラフ
+message Chart {
+  string chart_type = 1; // "line", "bar", "pie" など
+  string title = 2;
+  string data_json = 3; // グラフデータ（JSON）
+}
+
+// メトリクス
+message Metric {
+  string name = 1;
+  string value = 2;
+  optional string change = 3; // 変化（例："+15%"）
+  optional string status = 4; // "good", "warning", "bad"
+}
+
+// 目標達成予測取得リクエスト
+message GetGoalPredictionRequest {
+  string user_id = 1;
+}
+
+// 目標達成予測取得レスポンス
+message GetGoalPredictionResponse {
+  GoalPrediction prediction = 1;
+}
+
+// 目標達成予測
+message GoalPrediction {
+  optional effect.common.CefrLevel target_level = 1; // 目標レベル
+  optional google.protobuf.Timestamp predicted_achievement_date = 2; // 予測達成日
+  float confidence_score = 3; // 信頼度スコア (0.0 - 1.0)
+
+  // 必要な条件
+  uint32 required_study_days = 4; // 必要な学習日数
+  uint32 required_items_to_master = 5; // 習得が必要な項目数
+  google.protobuf.Duration required_study_time = 6; // 必要な学習時間
+
+  // リスク要因
+  repeated RiskFactor risk_factors = 7;
+
+  // 加速要因
+  repeated AccelerationFactor acceleration_factors = 8;
+}
+
+// リスク要因
+message RiskFactor {
+  string factor_type = 1; // "irregular_schedule", "low_accuracy" など
+  string description = 2;
+  float impact_score = 3; // 影響度 (0.0 - 1.0)
+  string mitigation = 4; // 緩和策
+}
+
+// 加速要因
+message AccelerationFactor {
+  string factor_type = 1; // "high_engagement", "good_retention" など
+  string description = 2;
+  float boost_factor = 3; // 加速係数 (1.0+)
+}
+
+// 弱点分析取得リクエスト
+message GetWeaknessAnalysisRequest {
+  string user_id = 1;
+  uint32 limit = 2; // 取得する弱点の最大数（デフォルト: 5）
+}
+
+// 弱点分析取得レスポンス
+message GetWeaknessAnalysisResponse {
+  repeated Weakness weaknesses = 1;
+  repeated ImprovementPlan improvement_plans = 2;
+}
+
+// 弱点
+message Weakness {
+  string weakness_id = 1;
+  WeaknessType type = 2;
+  string description = 3;
+  float severity_score = 4; // 深刻度 (0.0 - 1.0)
+
+  // 影響を受けている項目
+  repeated string affected_item_ids = 5; // 影響を受けている語彙項目
+  uint32 affected_count = 6; // 影響を受けている項目数
+
+  // 統計
+  float error_rate = 7; // エラー率
+  uint32 occurrence_count = 8; // 発生回数
+  google.protobuf.Timestamp first_detected = 9; // 初回検出日
+}
+
+// 弱点タイプ
+enum WeaknessType {
+  WEAKNESS_TYPE_UNSPECIFIED = 0;
+  WEAKNESS_TYPE_SPELLING = 1; // スペリング
+  WEAKNESS_TYPE_PRONUNCIATION = 2; // 発音
+  WEAKNESS_TYPE_MEANING = 3; // 意味
+  WEAKNESS_TYPE_USAGE = 4; // 使用法
+  WEAKNESS_TYPE_GRAMMAR = 5; // 文法
+  WEAKNESS_TYPE_RETENTION = 6; // 記憶保持
+}
+
+// 改善計画
+message ImprovementPlan {
+  string plan_id = 1;
+  string weakness_id = 2; // 対象の弱点
+  string title = 3;
+  string description = 4;
+
+  // 推奨アクション
+  repeated RecommendedAction actions = 5;
+
+  // 期待される結果
+  uint32 estimated_days = 6; // 改善に必要な推定日数
+  float expected_improvement = 7; // 期待される改善率
+}
+
+// 推奨アクション
+message RecommendedAction {
+  string action_type = 1; // "practice", "review", "learn" など
+  string description = 2;
+  repeated string target_item_ids = 3; // 対象項目
+  uint32 recommended_frequency = 4; // 推奨頻度（日次）
+}
+
+// ランキング取得リクエスト
+message GetLeaderboardRequest {
+  LeaderboardType type = 1;
+  LeaderboardScope scope = 2;
+  uint32 limit = 3; // 取得数（デフォルト: 10）
+  optional string user_id = 4; // 特定ユーザーの順位も取得
+}
+
+// ランキングタイプ
+enum LeaderboardType {
+  LEADERBOARD_TYPE_UNSPECIFIED = 0;
+  LEADERBOARD_TYPE_STREAK = 1; // 連続学習日数
+  LEADERBOARD_TYPE_VOCABULARY = 2; // 語彙数
+  LEADERBOARD_TYPE_ACCURACY = 3; // 正答率
+  LEADERBOARD_TYPE_STUDY_TIME = 4; // 学習時間
+  LEADERBOARD_TYPE_ACHIEVEMENT_POINTS = 5; // 達成ポイント
+}
+
+// ランキング範囲
+enum LeaderboardScope {
+  LEADERBOARD_SCOPE_UNSPECIFIED = 0;
+  LEADERBOARD_SCOPE_GLOBAL = 1; // 全体
+  LEADERBOARD_SCOPE_WEEKLY = 2; // 週間
+  LEADERBOARD_SCOPE_MONTHLY = 3; // 月間
+  LEADERBOARD_SCOPE_FRIENDS = 4; // フレンド間
+}
+
+// ランキング取得レスポンス
+message GetLeaderboardResponse {
+  repeated LeaderboardEntry entries = 1;
+  optional UserRanking user_ranking = 2; // リクエストしたユーザーの順位
+}
+
+// ランキングエントリー
+message LeaderboardEntry {
+  uint32 rank = 1; // 順位
+  string user_id = 2;
+  string display_name = 3;
+  string value = 4; // 値（タイプに応じて）
+  optional string badge_url = 5; // バッジURL
+  optional string title = 6; // 称号
+  bool is_current_user = 7; // 現在のユーザーか
+}
+
+// ユーザーランキング
+message UserRanking {
+  uint32 rank = 1;
+  string value = 2;
+  uint32 total_participants = 3; // 総参加者数
+  float percentile = 4; // パーセンタイル (0.0 - 100.0)
+}

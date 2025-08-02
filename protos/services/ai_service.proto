@@ -1,0 +1,393 @@
+syntax = "proto3";
+
+package effect.services.ai;
+
+import "common/types.proto";
+import "events/ai_events.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// AI サービス
+// 語彙項目の AI 生成、チャット機能、コンテンツ生成を提供
+service AIService {
+  // 語彙項目の詳細を生成
+  rpc GenerateVocabularyDetails(GenerateVocabularyDetailsRequest) returns (GenerateVocabularyDetailsResponse);
+
+  // 生成タスクの状態を取得
+  rpc GetGenerationTask(GetGenerationTaskRequest) returns (GetGenerationTaskResponse);
+
+  // 生成タスクをキャンセル
+  rpc CancelGenerationTask(CancelGenerationTaskRequest) returns (CancelGenerationTaskResponse);
+
+  // チャットセッションを開始
+  rpc StartChatSession(StartChatSessionRequest) returns (StartChatSessionResponse);
+
+  // チャットメッセージを送信
+  rpc SendChatMessage(SendChatMessageRequest) returns (SendChatMessageResponse);
+
+  // チャット履歴を取得
+  rpc GetChatHistory(GetChatHistoryRequest) returns (GetChatHistoryResponse);
+
+  // 学習ヒントを生成
+  rpc GenerateLearningHints(GenerateLearningHintsRequest) returns (GenerateLearningHintsResponse);
+
+  // 例文を生成
+  rpc GenerateExampleSentences(GenerateExampleSentencesRequest) returns (GenerateExampleSentencesResponse);
+
+  // エラー説明を生成
+  rpc GenerateErrorExplanation(GenerateErrorExplanationRequest) returns (GenerateErrorExplanationResponse);
+
+  // AI 使用統計を取得
+  rpc GetAIUsageStatistics(GetAIUsageStatisticsRequest) returns (GetAIUsageStatisticsResponse);
+}
+
+// AI タスク
+message AITask {
+  string task_id = 1; // UUID
+  string user_id = 2; // リクエストしたユーザー
+
+  // タスク情報
+  AITaskType task_type = 3;
+  AITaskStatus status = 4;
+  optional string target_id = 5; // 対象の ID（語彙項目など）
+
+  // タイミング情報
+  google.protobuf.Timestamp created_at = 6;
+  optional google.protobuf.Timestamp started_at = 7;
+  optional google.protobuf.Timestamp completed_at = 8;
+  optional google.protobuf.Duration estimated_duration = 9;
+
+  // 結果情報
+  optional string result_json = 10; // 生成結果（JSON）
+  optional string error_message = 11; // エラーメッセージ
+  optional uint32 retry_count = 12; // リトライ回数
+
+  // AI モデル情報
+  string model_name = 13; // 使用モデル名
+  optional float temperature = 14; // 生成温度
+  optional uint32 max_tokens = 15; // 最大トークン数
+}
+
+// AI タスクタイプ
+enum AITaskType {
+  AI_TASK_TYPE_UNSPECIFIED = 0;
+  AI_TASK_TYPE_VOCABULARY_GENERATION = 1; // 語彙項目生成
+  AI_TASK_TYPE_HINT_GENERATION = 2; // ヒント生成
+  AI_TASK_TYPE_EXAMPLE_GENERATION = 3; // 例文生成
+  AI_TASK_TYPE_ERROR_EXPLANATION = 4; // エラー説明
+  AI_TASK_TYPE_CHAT_RESPONSE = 5; // チャット応答
+}
+
+// AI タスクステータス
+enum AITaskStatus {
+  AI_TASK_STATUS_UNSPECIFIED = 0;
+  AI_TASK_STATUS_PENDING = 1; // 待機中
+  AI_TASK_STATUS_RUNNING = 2; // 実行中
+  AI_TASK_STATUS_COMPLETED = 3; // 完了
+  AI_TASK_STATUS_FAILED = 4; // 失敗
+  AI_TASK_STATUS_CANCELLED = 5; // キャンセル済み
+}
+
+// 語彙詳細生成リクエスト
+message GenerateVocabularyDetailsRequest {
+  string item_id = 1; // 語彙項目ID
+  string spelling = 2; // 綴り
+  string part_of_speech = 3; // 品詞
+  optional string disambiguation = 4; // 曖昧さ回避
+
+  // 生成オプション
+  repeated string fields_to_generate = 5; // 生成するフィールド
+  bool regenerate = 6; // 再生成かどうか
+  string requested_by = 7; // リクエスト者ID
+
+  // モデル設定
+  optional string preferred_model = 8; // 優先モデル
+  optional float temperature = 9; // 生成温度 (0.0 - 1.0)
+}
+
+// 語彙詳細生成レスポンス
+message GenerateVocabularyDetailsResponse {
+  AITask task = 1;
+  string message = 2; // ユーザーへのメッセージ
+}
+
+// 生成タスク取得リクエスト
+message GetGenerationTaskRequest {
+  string task_id = 1;
+  string user_id = 2; // 権限確認用
+}
+
+// 生成タスク取得レスポンス
+message GetGenerationTaskResponse {
+  AITask task = 1;
+  optional GeneratedVocabularyDetails result = 2; // タスクが完了している場合
+}
+
+// 生成された語彙詳細
+message GeneratedVocabularyDetails {
+  optional string pronunciation = 1; // IPA 発音記号
+  repeated string definitions = 2; // 定義
+  repeated string example_sentences = 3; // 例文
+  repeated string synonyms = 4; // 同義語
+  repeated string antonyms = 5; // 反対語
+  optional string etymology = 6; // 語源
+  optional string usage_notes = 7; // 使用法の注意
+  optional effect.common.CefrLevel difficulty_level = 8; // 難易度
+  repeated string test_tips = 9; // 試験対策のヒント
+  repeated string common_mistakes = 10; // よくある間違い
+
+  // メタデータ
+  string generated_by_model = 11; // 生成に使用したモデル
+  float confidence_score = 12; // 信頼度スコア (0.0 - 1.0)
+}
+
+// タスクキャンセルリクエスト
+message CancelGenerationTaskRequest {
+  string task_id = 1;
+  string user_id = 2; // 権限確認用
+  string reason = 3; // キャンセル理由
+}
+
+// タスクキャンセルレスポンス
+message CancelGenerationTaskResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// チャットセッション
+message ChatSession {
+  string session_id = 1; // UUID
+  string user_id = 2;
+
+  // セッション情報
+  ChatSessionType session_type = 3;
+  ChatSessionStatus status = 4;
+  optional string context_id = 5; // コンテキスト ID（語彙項目など）
+
+  // タイミング情報
+  google.protobuf.Timestamp started_at = 6;
+  optional google.protobuf.Timestamp last_activity_at = 7;
+  optional google.protobuf.Timestamp ended_at = 8;
+
+  // 統計情報
+  uint32 message_count = 9;
+  uint32 total_tokens_used = 10;
+}
+
+// チャットセッションタイプ
+enum ChatSessionType {
+  CHAT_SESSION_TYPE_UNSPECIFIED = 0;
+  CHAT_SESSION_TYPE_GENERAL = 1; // 一般的な学習相談
+  CHAT_SESSION_TYPE_VOCABULARY = 2; // 語彙に関する質問
+  CHAT_SESSION_TYPE_GRAMMAR = 3; // 文法に関する質問
+  CHAT_SESSION_TYPE_PRACTICE = 4; // 練習問題
+}
+
+// チャットセッションステータス
+enum ChatSessionStatus {
+  CHAT_SESSION_STATUS_UNSPECIFIED = 0;
+  CHAT_SESSION_STATUS_ACTIVE = 1; // アクティブ
+  CHAT_SESSION_STATUS_IDLE = 2; // アイドル
+  CHAT_SESSION_STATUS_ENDED = 3; // 終了
+}
+
+// チャットメッセージ
+message ChatMessage {
+  string message_id = 1; // UUID
+  string session_id = 2;
+
+  // メッセージ情報
+  ChatMessageRole role = 3;
+  string content = 4;
+  google.protobuf.Timestamp sent_at = 5;
+
+  // AI 応答の場合の追加情報
+  optional string model_used = 6;
+  optional uint32 tokens_used = 7;
+  optional float response_time_seconds = 8;
+}
+
+// チャットメッセージの役割
+enum ChatMessageRole {
+  CHAT_MESSAGE_ROLE_UNSPECIFIED = 0;
+  CHAT_MESSAGE_ROLE_USER = 1; // ユーザー
+  CHAT_MESSAGE_ROLE_ASSISTANT = 2; // AI アシスタント
+  CHAT_MESSAGE_ROLE_SYSTEM = 3; // システム
+}
+
+// チャットセッション開始リクエスト
+message StartChatSessionRequest {
+  string user_id = 1;
+  ChatSessionType session_type = 2;
+  optional string context_id = 3; // コンテキスト ID
+  optional string initial_prompt = 4; // 初期プロンプト
+}
+
+// チャットセッション開始レスポンス
+message StartChatSessionResponse {
+  ChatSession session = 1;
+  string welcome_message = 2; // ウェルカムメッセージ
+}
+
+// チャットメッセージ送信リクエスト
+message SendChatMessageRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string content = 3;
+
+  // オプション
+  optional bool include_context = 4; // コンテキスト情報を含めるか
+  optional uint32 max_response_tokens = 5; // 最大応答トークン数
+}
+
+// チャットメッセージ送信レスポンス
+message SendChatMessageResponse {
+  ChatMessage user_message = 1; // ユーザーのメッセージ
+  ChatMessage assistant_response = 2; // AI の応答
+  bool session_ended = 3; // セッションが終了したか
+}
+
+// チャット履歴取得リクエスト
+message GetChatHistoryRequest {
+  string session_id = 1;
+  string user_id = 2;
+  optional uint32 limit = 3; // 最大取得件数
+  optional uint32 offset = 4; // オフセット
+}
+
+// チャット履歴取得レスポンス
+message GetChatHistoryResponse {
+  repeated ChatMessage messages = 1;
+  ChatSession session = 2;
+  uint32 total_messages = 3;
+}
+
+// 学習ヒント生成リクエスト
+message GenerateLearningHintsRequest {
+  string user_id = 1;
+  string item_id = 2; // 語彙項目ID
+
+  // ヒントの種類
+  HintType hint_type = 3;
+  optional effect.common.CorrectnessJudgment previous_judgment = 4; // 前回の判定
+  optional uint32 attempt_count = 5; // 試行回数
+}
+
+// ヒントタイプ
+enum HintType {
+  HINT_TYPE_UNSPECIFIED = 0;
+  HINT_TYPE_MEMORY = 1; // 記憶のヒント
+  HINT_TYPE_USAGE = 2; // 使用法のヒント
+  HINT_TYPE_ETYMOLOGY = 3; // 語源のヒント
+  HINT_TYPE_ASSOCIATION = 4; // 連想のヒント
+}
+
+// 学習ヒント生成レスポンス
+message GenerateLearningHintsResponse {
+  repeated LearningHint hints = 1;
+}
+
+// 学習ヒント
+message LearningHint {
+  HintType type = 1;
+  string content = 2;
+  float relevance_score = 3; // 関連性スコア (0.0 - 1.0)
+}
+
+// 例文生成リクエスト
+message GenerateExampleSentencesRequest {
+  string item_id = 1; // 語彙項目ID
+  string spelling = 2;
+  string part_of_speech = 3;
+  effect.common.CefrLevel target_level = 4; // ターゲットレベル
+
+  // オプション
+  uint32 count = 5; // 生成する例文数（デフォルト: 3）
+  repeated string contexts = 6; // コンテキスト（ビジネス、日常など）
+}
+
+// 例文生成レスポンス
+message GenerateExampleSentencesResponse {
+  repeated ExampleSentence sentences = 1;
+}
+
+// 例文
+message ExampleSentence {
+  string sentence = 1;
+  string translation = 2; // 日本語訳
+  string context = 3; // コンテキスト
+  effect.common.CefrLevel difficulty_level = 4;
+  repeated string highlighted_words = 5; // ハイライトする単語
+}
+
+// エラー説明生成リクエスト
+message GenerateErrorExplanationRequest {
+  string user_id = 1;
+  string error_type = 2; // エラーの種類
+  string user_answer = 3; // ユーザーの回答
+  string correct_answer = 4; // 正解
+  optional string context = 5; // 文脈
+}
+
+// エラー説明生成レスポンス
+message GenerateErrorExplanationResponse {
+  ErrorExplanation explanation = 1;
+}
+
+// エラー説明
+message ErrorExplanation {
+  string error_type = 1; // エラーの種類
+  string explanation = 2; // 説明
+  repeated string common_causes = 3; // よくある原因
+  repeated string correction_tips = 4; // 修正のヒント
+  repeated string similar_cases = 5; // 類似のケース
+}
+
+// AI 使用統計取得リクエスト
+message GetAIUsageStatisticsRequest {
+  string user_id = 1;
+  optional google.protobuf.Timestamp since = 2; // この日時以降
+  optional google.protobuf.Timestamp until = 3; // この日時以前
+}
+
+// AI 使用統計取得レスポンス
+message GetAIUsageStatisticsResponse {
+  AIUsageStatistics statistics = 1;
+}
+
+// AI 使用統計
+message AIUsageStatistics {
+  string user_id = 1;
+
+  // タスク統計
+  uint32 total_tasks = 2; // 総タスク数
+  uint32 completed_tasks = 3; // 完了タスク数
+  uint32 failed_tasks = 4; // 失敗タスク数
+  float success_rate = 5; // 成功率
+
+  // チャット統計
+  uint32 total_chat_sessions = 6; // 総チャットセッション数
+  uint32 total_chat_messages = 7; // 総チャットメッセージ数
+  google.protobuf.Duration average_session_duration = 8; // 平均セッション時間
+
+  // トークン使用量
+  uint64 total_tokens_used = 9; // 総トークン使用量
+  uint64 vocabulary_generation_tokens = 10; // 語彙生成トークン
+  uint64 chat_tokens = 11; // チャットトークン
+  uint64 other_tokens = 12; // その他のトークン
+
+  // モデル別使用量
+  repeated ModelUsage model_usage = 13;
+
+  // コスト情報（オプション）
+  optional float estimated_cost_usd = 14; // 推定コスト（USD）
+}
+
+// モデル使用量
+message ModelUsage {
+  string model_name = 1;
+  uint32 request_count = 2;
+  uint64 tokens_used = 3;
+  float average_response_time_seconds = 4;
+}
