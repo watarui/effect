@@ -60,10 +60,6 @@ impl Entity for Product {
         &self.id
     }
 
-    fn id_as_bytes(&self) -> Vec<u8> {
-        self.id.as_bytes().to_vec()
-    }
-
     fn version(&self) -> u64 {
         self.version
     }
@@ -118,7 +114,7 @@ impl Repository<Product> for ProductRepository {
         let exists = exists!(
             table: "products",
             id_column: "id",
-            id: entity.id().as_bytes(),
+            id: entity.id(),
             pool: &self.pool
         )?;
 
@@ -144,7 +140,7 @@ impl Repository<Product> for ProductRepository {
         select_by_id!(
             table: "products",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id,
             pool: &self.pool,
             mapper: |row| map_row_to_product(&row)
         )
@@ -154,7 +150,7 @@ impl Repository<Product> for ProductRepository {
         delete!(
             table: "products",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id,
             pool: &self.pool
         )
     }
@@ -163,17 +159,16 @@ impl Repository<Product> for ProductRepository {
         exists!(
             table: "products",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id,
             pool: &self.pool
         )
     }
 
     async fn find_by_ids(&self, ids: &[Uuid]) -> Result<Vec<Product>, Error> {
-        let id_bytes: Vec<&[u8]> = ids.iter().map(|id| id.as_bytes().as_slice()).collect();
         select_by_ids!(
             table: "products",
             id_column: "id",
-            ids: &id_bytes,
+            ids: ids,
             pool: &self.pool,
             mapper: |row| map_row_to_product(&row)
         )
@@ -198,7 +193,7 @@ impl SoftDeletable<Product> for ProductRepository {
         soft_delete!(
             table: "products",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id,
             pool: &self.pool
         )
     }
@@ -207,7 +202,7 @@ impl SoftDeletable<Product> for ProductRepository {
         restore!(
             table: "products",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id,
             pool: &self.pool
         )
     }
@@ -216,7 +211,7 @@ impl SoftDeletable<Product> for ProductRepository {
         select_by_id_with_deleted!(
             table: "products",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id,
             pool: &self.pool,
             mapper: |row| map_row_to_product(&row)
         )
@@ -233,13 +228,7 @@ impl SoftDeletable<Product> for ProductRepository {
 
 // Row から Product への変換
 fn map_row_to_product(row: &sqlx::postgres::PgRow) -> Result<Product, sqlx::Error> {
-    let id_bytes: Vec<u8> = row.try_get("id")?;
-    let id = Uuid::from_slice(&id_bytes).map_err(|e| {
-        sqlx::Error::Decode(Box::new(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            format!("Invalid UUID: {e}"),
-        )))
-    })?;
+    let id: Uuid = row.try_get("id")?;
 
     Ok(Product {
         id,
@@ -277,7 +266,7 @@ async fn setup_test_db() -> Result<PgPool, Box<dyn std::error::Error>> {
     sqlx::query(
         r"
         CREATE TABLE products (
-            id BYTEA PRIMARY KEY,
+            id UUID PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             price INTEGER NOT NULL,
             stock INTEGER NOT NULL,

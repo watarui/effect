@@ -58,10 +58,6 @@ impl Entity for User {
         self.id()
     }
 
-    fn id_as_bytes(&self) -> Vec<u8> {
-        self.id().as_bytes().to_vec()
-    }
-
     fn created_at(&self) -> DateTime<Utc> {
         self.created_at()
     }
@@ -89,13 +85,7 @@ impl Entity for User {
 
 /// `sqlx::Row` から User への変換
 fn map_row_to_user(row: &sqlx::postgres::PgRow) -> Result<User, sqlx::Error> {
-    let id_bytes: Vec<u8> = row.try_get("id")?;
-    let id_uuid = Uuid::from_slice(&id_bytes).map_err(|e| {
-        sqlx::Error::Decode(Box::new(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            format!("Invalid UUID: {e}"),
-        )))
-    })?;
+    let id_uuid: Uuid = row.try_get("id")?;
     let id = UserId::from(id_uuid);
 
     let email_str: String = row.try_get("email")?;
@@ -175,10 +165,6 @@ impl Repository<User> for PostgresUserRepository {
                 self.user.id()
             }
 
-            fn id_as_bytes(&self) -> Vec<u8> {
-                self.user.id_as_bytes()
-            }
-
             fn version(&self) -> u64 {
                 self.user.version()
             }
@@ -217,7 +203,7 @@ impl Repository<User> for PostgresUserRepository {
         let exists = exists!(
             table: "users",
             id_column: "id",
-            id: entity.id_as_bytes(),
+            id: entity.id().as_uuid(),
             pool: &self.pool
         )?;
 
@@ -243,7 +229,7 @@ impl Repository<User> for PostgresUserRepository {
         select_by_id!(
             table: "users",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id.as_uuid(),
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )
@@ -253,7 +239,7 @@ impl Repository<User> for PostgresUserRepository {
         delete!(
             table: "users",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id.as_uuid(),
             pool: &self.pool
         )
     }
@@ -262,17 +248,17 @@ impl Repository<User> for PostgresUserRepository {
         exists!(
             table: "users",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id.as_uuid(),
             pool: &self.pool
         )
     }
 
     async fn find_by_ids(&self, ids: &[UserId]) -> Result<Vec<User>, RepoError> {
-        let id_bytes: Vec<&[u8]> = ids.iter().map(common_types::UserId::as_bytes).collect();
+        let uuids: Vec<&Uuid> = ids.iter().map(common_types::UserId::as_uuid).collect();
         select_by_ids!(
             table: "users",
             id_column: "id",
-            ids: &id_bytes,
+            ids: &uuids,
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )
@@ -297,7 +283,7 @@ impl SoftDeletable<User> for PostgresUserRepository {
         soft_delete!(
             table: "users",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id.as_uuid(),
             pool: &self.pool
         )
     }
@@ -306,7 +292,7 @@ impl SoftDeletable<User> for PostgresUserRepository {
         restore!(
             table: "users",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id.as_uuid(),
             pool: &self.pool
         )
     }
@@ -315,7 +301,7 @@ impl SoftDeletable<User> for PostgresUserRepository {
         select_by_id_with_deleted!(
             table: "users",
             id_column: "id",
-            id: id.as_bytes(),
+            id: id.as_uuid(),
             pool: &self.pool,
             mapper: |row| map_row_to_user(&row)
         )

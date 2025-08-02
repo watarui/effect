@@ -1,10 +1,10 @@
 -- Create user_progress_summaries table (Read Model)
 CREATE TABLE IF NOT EXISTS user_progress_summaries (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- User association
-    user_id VARCHAR(255) NOT NULL UNIQUE,
+    user_id UUID NOT NULL UNIQUE,
     
     -- Overall statistics
     total_vocabularies_learned INTEGER NOT NULL DEFAULT 0,
@@ -40,10 +40,10 @@ CREATE TABLE IF NOT EXISTS user_progress_summaries (
 -- Create daily_progress_snapshots table
 CREATE TABLE IF NOT EXISTS daily_progress_snapshots (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- User and date
-    user_id VARCHAR(255) NOT NULL,
+    user_id UUID NOT NULL,
     snapshot_date DATE NOT NULL,
     
     -- Daily metrics
@@ -70,11 +70,11 @@ CREATE TABLE IF NOT EXISTS daily_progress_snapshots (
 -- Create vocabulary_mastery_levels table
 CREATE TABLE IF NOT EXISTS vocabulary_mastery_levels (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- Associations
-    user_id VARCHAR(255) NOT NULL,
-    vocabulary_id VARCHAR(255) NOT NULL,
+    user_id UUID NOT NULL,
+    vocabulary_id UUID NOT NULL,
     
     -- Mastery data
     mastery_level INTEGER NOT NULL DEFAULT 0 CHECK (mastery_level BETWEEN 0 AND 5),

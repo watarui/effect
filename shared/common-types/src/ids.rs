@@ -10,6 +10,7 @@ use uuid::Uuid;
 
 /// ユーザー ID 値オブジェクト
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type), sqlx(transparent))]
 pub struct UserId(Uuid);
 
 impl UserId {
@@ -65,6 +66,7 @@ impl FromStr for UserId {
 
 /// 語彙項目 ID 値オブジェクト
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type), sqlx(transparent))]
 pub struct ItemId(Uuid);
 
 impl ItemId {
@@ -120,6 +122,7 @@ impl FromStr for ItemId {
 
 /// 学習セッション ID 値オブジェクト
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type), sqlx(transparent))]
 pub struct SessionId(Uuid);
 
 impl SessionId {
@@ -163,6 +166,7 @@ impl FromStr for SessionId {
 
 /// 語彙エントリー ID 値オブジェクト
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type), sqlx(transparent))]
 pub struct EntryId(Uuid);
 
 impl EntryId {
@@ -218,6 +222,7 @@ impl FromStr for EntryId {
 
 /// イベント ID 値オブジェクト
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type), sqlx(transparent))]
 pub struct EventId(Uuid);
 
 impl EventId {

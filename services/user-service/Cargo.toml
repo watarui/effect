@@ -9,7 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Shared modules from workspace
-common-types = { path = "../../shared/common-types" }
+common-types = { path = "../../shared/common-types", features = ["sqlx"] }
 domain-events = { path = "../../shared/domain-events" }
 infrastructure = { path = "../../shared/infrastructure" }
 

@@ -1,7 +1,7 @@
 -- Create ai_generation_requests table
 CREATE TABLE IF NOT EXISTS ai_generation_requests (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- Request details
     request_type VARCHAR(100) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS ai_generation_requests (
     retry_count INTEGER NOT NULL DEFAULT 0,
     
     -- User association
-    requested_by VARCHAR(255) NOT NULL,
+    requested_by UUID NOT NULL,
     
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS ai_generation_requests (
 -- Create ai_templates table
 CREATE TABLE IF NOT EXISTS ai_templates (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- Template details
     template_name VARCHAR(255) NOT NULL UNIQUE,

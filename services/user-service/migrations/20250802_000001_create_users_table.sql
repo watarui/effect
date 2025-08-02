@@ -1,7 +1,7 @@
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- User information
     email VARCHAR(255) NOT NULL UNIQUE,

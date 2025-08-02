@@ -1,10 +1,10 @@
 -- Create learning_sessions table
 CREATE TABLE IF NOT EXISTS learning_sessions (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- User association
-    user_id VARCHAR(255) NOT NULL,
+    user_id UUID NOT NULL,
     
     -- Session information
     session_type VARCHAR(50) NOT NULL,
@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS learning_sessions (
 -- Create learning_records table
 CREATE TABLE IF NOT EXISTS learning_records (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- Associations
-    user_id VARCHAR(255) NOT NULL,
-    vocabulary_id VARCHAR(255) NOT NULL,
-    session_id VARCHAR(255),
+    user_id UUID NOT NULL,
+    vocabulary_id UUID NOT NULL,
+    session_id UUID,
     
     -- Learning data
     response_quality INTEGER CHECK (response_quality BETWEEN 0 AND 5),

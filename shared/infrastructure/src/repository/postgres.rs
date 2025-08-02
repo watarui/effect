@@ -5,7 +5,7 @@
 /// INSERT 文を生成するマクロ
 ///
 /// タイムスタンプ（`created_at`, `updated_at`）を自動的に現在時刻に設定する
-/// `id` フィールドは自動的に `id_as_bytes()` を使用して変換される
+/// `id` フィールドは自動的に変換される
 #[macro_export]
 macro_rules! insert {
     (
@@ -60,7 +60,7 @@ macro_rules! insert {
         );
 
         sqlx::query(&query)
-            .bind($entity.id_as_bytes())
+            .bind($entity.id())
             $(
                 .bind(&$entity.$column)
             )*
@@ -135,7 +135,7 @@ macro_rules! update {
             )*
             .bind(now)
             .bind(new_version_i64)
-            .bind($entity.id_as_bytes())
+            .bind($entity.id())
             .bind(current_version_i64)
             .fetch_optional($pool)
             .await
@@ -150,7 +150,7 @@ macro_rules! update {
                     "SELECT version FROM {} WHERE {} = $1 AND deleted_at IS NULL",
                     $table, $id_column
                 ))
-                .bind($entity.id_as_bytes())
+                .bind($entity.id())
                 .fetch_optional($pool)
                 .await
                 .map_err(Error::from_sqlx)?;
@@ -217,7 +217,7 @@ macro_rules! delete {
         if result.rows_affected() == 0 {
             Err($crate::repository::Error::not_found(
                 $table,
-                &$crate::hex::encode($id),
+                &format!("{:?}", $id),
             ))
         } else {
             Ok(())
@@ -279,7 +279,7 @@ macro_rules! soft_delete {
             if !exists {
                 Err($crate::repository::Error::not_found(
                     $table,
-                    &$crate::hex::encode($id),
+                    &format!("{:?}", $id),
                 ))
             } else {
                 // 既に削除済み
@@ -328,7 +328,7 @@ macro_rules! restore {
             if !exists {
                 Err($crate::repository::Error::not_found(
                     $table,
-                    &$crate::hex::encode($id),
+                    &format!("{:?}", $id),
                 ))
             } else {
                 // 削除されていない
@@ -522,10 +522,6 @@ mod tests {
             &self.id
         }
 
-        fn id_as_bytes(&self) -> Vec<u8> {
-            self.id.as_bytes().to_vec()
-        }
-
         fn version(&self) -> u64 {
             self.version
         }
@@ -580,7 +576,7 @@ mod tests {
             let exists = exists!(
                 table: "mock_entities",
                 id_column: "id",
-                id: entity.id().as_bytes(),
+                id: entity.id(),
                 pool: &self.pool
             )?;
 
@@ -606,7 +602,7 @@ mod tests {
             select_by_id!(
                 table: "mock_entities",
                 id_column: "id",
-                id: id.as_bytes(),
+                id: id,
                 pool: &self.pool,
                 mapper: |row| map_row_to_mock(&row)
             )
@@ -616,7 +612,7 @@ mod tests {
             delete!(
                 table: "mock_entities",
                 id_column: "id",
-                id: id.as_bytes(),
+                id: id,
                 pool: &self.pool
             )
         }
@@ -625,17 +621,16 @@ mod tests {
             exists!(
                 table: "mock_entities",
                 id_column: "id",
-                id: id.as_bytes(),
+                id: id,
                 pool: &self.pool
             )
         }
 
         async fn find_by_ids(&self, ids: &[Uuid]) -> Result<Vec<MockEntity>, Error> {
-            let id_bytes: Vec<&[u8]> = ids.iter().map(|id| id.as_bytes().as_ref()).collect();
             select_by_ids!(
                 table: "mock_entities",
                 id_column: "id",
-                ids: &id_bytes,
+                ids: ids,
                 pool: &self.pool,
                 mapper: |row| map_row_to_mock(&row)
             )
@@ -660,7 +655,7 @@ mod tests {
             soft_delete!(
                 table: "mock_entities",
                 id_column: "id",
-                id: id.as_bytes(),
+                id: id,
                 pool: &self.pool
             )
         }
@@ -669,7 +664,7 @@ mod tests {
             restore!(
                 table: "mock_entities",
                 id_column: "id",
-                id: id.as_bytes(),
+                id: id,
                 pool: &self.pool
             )
         }
@@ -678,7 +673,7 @@ mod tests {
             select_by_id_with_deleted!(
                 table: "mock_entities",
                 id_column: "id",
-                id: id.as_bytes(),
+                id: id,
                 pool: &self.pool,
                 mapper: |row| map_row_to_mock(&row)
             )
@@ -697,13 +692,7 @@ mod tests {
     fn map_row_to_mock(row: &sqlx::postgres::PgRow) -> Result<MockEntity, sqlx::Error> {
         use sqlx::Row;
 
-        let id_bytes: Vec<u8> = row.try_get("id")?;
-        let id = Uuid::from_slice(&id_bytes).map_err(|e| {
-            sqlx::Error::Decode(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("Invalid UUID: {e}"),
-            )))
-        })?;
+        let id: Uuid = row.try_get("id")?;
 
         Ok(MockEntity {
             id,
@@ -742,7 +731,7 @@ mod tests {
         sqlx::query(
             r"
             CREATE TABLE mock_entities (
-                id BYTEA PRIMARY KEY,
+                id UUID PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 value INTEGER NOT NULL,
                 version BIGINT NOT NULL DEFAULT 1,

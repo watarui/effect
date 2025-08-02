@@ -1,11 +1,11 @@
 -- Event Store table for Event Sourcing
 CREATE TABLE IF NOT EXISTS events (
     -- Event identification
-    event_id VARCHAR(255) PRIMARY KEY,
+    event_id UUID PRIMARY KEY,
     event_type VARCHAR(255) NOT NULL,
     
     -- Aggregate information
-    aggregate_id VARCHAR(255) NOT NULL,
+    aggregate_id UUID NOT NULL,
     aggregate_type VARCHAR(255) NOT NULL,
     aggregate_version BIGINT NOT NULL,
     
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_metadata JSONB NOT NULL DEFAULT '{}',
     
     -- User tracking
-    user_id VARCHAR(255),
+    user_id UUID,
     
     -- Timestamp
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -48,10 +48,10 @@ COMMENT ON COLUMN events.occurred_at IS 'When the event occurred';
 -- Event snapshots table for performance optimization
 CREATE TABLE IF NOT EXISTS event_snapshots (
     -- Snapshot identification
-    snapshot_id VARCHAR(255) PRIMARY KEY,
+    snapshot_id UUID PRIMARY KEY,
     
     -- Aggregate information
-    aggregate_id VARCHAR(255) NOT NULL,
+    aggregate_id UUID NOT NULL,
     aggregate_type VARCHAR(255) NOT NULL,
     aggregate_version BIGINT NOT NULL,
     

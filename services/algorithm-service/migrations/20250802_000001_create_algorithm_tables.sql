@@ -1,7 +1,7 @@
 -- Create algorithm_configurations table
 CREATE TABLE IF NOT EXISTS algorithm_configurations (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- Configuration details
     algorithm_name VARCHAR(100) NOT NULL,
@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS algorithm_configurations (
 -- Create learning_parameters table
 CREATE TABLE IF NOT EXISTS learning_parameters (
     -- Primary key
-    id VARCHAR(255) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     
     -- User association
-    user_id VARCHAR(255) NOT NULL UNIQUE,
+    user_id UUID NOT NULL UNIQUE,
     
     -- SM-2 parameters
     initial_interval INTEGER NOT NULL DEFAULT 1,

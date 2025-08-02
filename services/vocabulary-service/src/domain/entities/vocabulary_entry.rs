@@ -204,10 +204,6 @@ impl Entity for VocabularyEntry {
         &self.id
     }
 
-    fn id_as_bytes(&self) -> Vec<u8> {
-        self.id.as_bytes().to_vec()
-    }
-
     fn version(&self) -> u64 {
         self.version
     }
@@ -334,7 +330,7 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!entry.id_as_bytes().is_empty());
+        assert_ne!(entry.id(), &EntryId::default());
         assert_eq!(entry.version(), 1);
         assert!(entry.created_at() <= Utc::now());
         assert!(entry.updated_at() <= Utc::now());

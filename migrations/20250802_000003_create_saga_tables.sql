@@ -1,7 +1,7 @@
 -- Saga instances table
 CREATE TABLE IF NOT EXISTS saga_instances (
     -- Saga identification
-    saga_id VARCHAR(255) PRIMARY KEY,
+    saga_id UUID PRIMARY KEY,
     saga_type VARCHAR(255) NOT NULL,
     
     -- State management
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS saga_instances (
     retry_count INTEGER NOT NULL DEFAULT 0,
     
     -- Correlation
-    correlation_id VARCHAR(255) NOT NULL,
+    correlation_id UUID NOT NULL,
     
     -- Versioning for optimistic locking
     version BIGINT NOT NULL DEFAULT 1,
@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS saga_instances (
 -- Saga steps table
 CREATE TABLE IF NOT EXISTS saga_steps (
     -- Step identification
-    step_id VARCHAR(255) PRIMARY KEY,
-    saga_id VARCHAR(255) NOT NULL REFERENCES saga_instances(saga_id),
+    step_id UUID PRIMARY KEY,
+    saga_id UUID NOT NULL REFERENCES saga_instances(saga_id),
     
     -- Step details
     step_name VARCHAR(255) NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS saga_steps (
 CREATE TABLE IF NOT EXISTS saga_timeouts (
     -- Timeout identification
     timeout_id VARCHAR(255) PRIMARY KEY,
-    saga_id VARCHAR(255) NOT NULL REFERENCES saga_instances(saga_id),
+    saga_id UUID NOT NULL REFERENCES saga_instances(saga_id),
     
     -- Timeout details
     timeout_type VARCHAR(100) NOT NULL,
