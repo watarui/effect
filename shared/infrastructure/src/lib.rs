@@ -23,3 +23,7 @@ pub use config::{
 pub use database::{Config as DatabaseConfig, Error as DatabaseError, create_pool, health_check};
 pub use event_bus::PubSubEventBus;
 pub use event_store::{PostgresEventStore, SnapshotStore};
+// Re-export hex for macros
+pub use hex;
+// Re-export repository types
+pub use repository::{Entity, Error as RepositoryError, Repository, SoftDeletable};

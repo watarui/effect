@@ -24,6 +24,18 @@ impl UserId {
     pub const fn as_uuid(&self) -> &Uuid {
         &self.0
     }
+
+    /// バイト配列として取得
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8] {
+        self.0.as_bytes()
+    }
+}
+
+impl From<Uuid> for UserId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
 }
 
 impl Default for UserId {

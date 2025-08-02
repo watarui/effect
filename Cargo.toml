@@ -81,6 +81,9 @@ redis = { version = "0.32.4", features = [
   "connection-manager",
 ] }
 
+# Utilities
+hex = "0.4"
+
 [workspace.lints.clippy]
 # エラーレベルのリント
 unwrap_used = "deny"

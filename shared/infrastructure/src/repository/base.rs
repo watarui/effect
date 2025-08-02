@@ -84,7 +84,7 @@ pub trait Repository<T: Entity>: Send + Sync {
 ///
 /// 論理削除をサポートするリポジトリが実装する追加のトレイト
 #[async_trait]
-pub trait SoftDeletableRepository<T: Entity>: Repository<T> {
+pub trait SoftDeletable<T: Entity>: Repository<T> {
     /// ソフトデリート（論理削除）を実行
     ///
     /// `deleted_at` フィールドに現在時刻を設定する。

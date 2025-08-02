@@ -1346,6 +1346,7 @@ dependencies = [
  "domain-events",
  "google-cloud-googleapis",
  "google-cloud-pubsub",
+ "hex",
  "redis",
  "serde",
  "serde_json",

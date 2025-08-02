@@ -16,14 +16,28 @@ macro_rules! insert {
         use chrono::Utc;
 
         let now = Utc::now();
+
+        // VALUESプレースホルダーを生成
+        let mut placeholders = Vec::new();
+        let mut idx = 1;
+        $(
+            placeholders.push(format!("${}", idx));
+            idx += 1;
+            let _ = stringify!($column); // 使用していることを示す
+        )*
+        let values_clause = placeholders.join(", ");
+
         let query = format!(
             r#"
             INSERT INTO {} ({}, created_at, updated_at, version)
-            VALUES ({}, $1, $2, $3)
+            VALUES ({}, ${}, ${}, ${})
             "#,
             $table,
             stringify!($($column),*),
-            (1..=count_tts!($($column)*)).map(|i| format!("${}", i + 3)).collect::<Vec<_>>().join(", ")
+            values_clause,
+            idx,
+            idx + 1,
+            idx + 2
         );
 
         sqlx::query(&query)
@@ -63,13 +77,21 @@ macro_rules! update {
         #[allow(clippy::cast_possible_wrap)]
         let current_version_i64 = current_version as i64;
 
-        let set_clause = vec![
-            $(
-                format!("{} = ${}", stringify!($column), index_of!($column, $($column)*) + 1),
-            )*
-            format!("updated_at = ${}", count_tts!($($column)*) + 1),
-            format!("version = ${}", count_tts!($($column)*) + 2),
-        ].join(", ");
+        // カラムをセット句に変換
+        let mut set_clauses = Vec::new();
+        let mut idx = 1;
+        $(
+            set_clauses.push(format!("{} = ${}", stringify!($column), idx));
+            idx += 1;
+        )*
+        set_clauses.push(format!("updated_at = ${}", idx));
+        idx += 1;
+        set_clauses.push(format!("version = ${}", idx));
+        let set_clause = set_clauses.join(", ");
+
+        let id_idx = idx;
+        idx += 1;
+        let version_idx = idx;
 
         let query = format!(
             r#"
@@ -81,8 +103,8 @@ macro_rules! update {
             $table,
             set_clause,
             $id_column,
-            count_tts!($($column)*) + 3,
-            count_tts!($($column)*) + 4
+            id_idx,
+            version_idx
         );
 
         let result = sqlx::query_scalar::<_, i64>(&query)
@@ -121,8 +143,8 @@ macro_rules! update {
                         ))
                     },
                     None => Err(Error::not_found(
-                        std::any::type_name::<T>(),
-                        $entity.id()
+                        $table,
+                        &format!("{:?}", $entity.id())
                     )),
                 }
             }
@@ -171,7 +193,7 @@ macro_rules! delete {
         if result.rows_affected() == 0 {
             Err($crate::repository::Error::not_found(
                 $table,
-                $id.to_string(),
+                &$crate::hex::encode($id),
             ))
         } else {
             Ok(())
@@ -233,7 +255,7 @@ macro_rules! soft_delete {
             if !exists {
                 Err($crate::repository::Error::not_found(
                     $table,
-                    $id.to_string(),
+                    &$crate::hex::encode($id),
                 ))
             } else {
                 // 既に削除済み
@@ -282,7 +304,7 @@ macro_rules! restore {
             if !exists {
                 Err($crate::repository::Error::not_found(
                     $table,
-                    $id.to_string(),
+                    &$crate::hex::encode($id),
                 ))
             } else {
                 // 削除されていない
