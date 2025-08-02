@@ -56,3 +56,5 @@ pgadmin_data/
 volumes/
 
 docs/archive/
+
+.serena/
