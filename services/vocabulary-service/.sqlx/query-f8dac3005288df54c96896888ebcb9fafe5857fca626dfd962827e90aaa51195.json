@@ -1,0 +1,29 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO vocabulary_items (\n                id, entry_id, spelling, disambiguation, pronunciation,\n                phonetic_respelling, audio_url, register, cefr_level,\n                status, created_by_type, created_by_id, created_at,\n                last_modified_at, last_modified_by, version\n            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)\n            ON CONFLICT (spelling, disambiguation) WHERE deleted_at IS NULL\n            DO UPDATE SET\n                pronunciation = EXCLUDED.pronunciation,\n                phonetic_respelling = EXCLUDED.phonetic_respelling,\n                audio_url = EXCLUDED.audio_url,\n                register = EXCLUDED.register,\n                cefr_level = EXCLUDED.cefr_level,\n                last_modified_at = EXCLUDED.last_modified_at,\n                last_modified_by = EXCLUDED.last_modified_by,\n                version = vocabulary_items.version + 1\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Uuid",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Uuid",
+				"Timestamptz",
+				"Timestamptz",
+				"Uuid",
+				"Int4"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "f8dac3005288df54c96896888ebcb9fafe5857fca626dfd962827e90aaa51195"
+}

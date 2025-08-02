@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n                INSERT INTO vocabulary_examples (\n                    id, definition_id, example_text, example_translation, display_order\n                ) VALUES ($1, $2, $3, $4, $5)\n                ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid", "Uuid", "Text", "Text", "Int4"]
+		},
+		"nullable": []
+	},
+	"hash": "47dd3e7e5e8a8db618f66ce39e74ebb2ec98c6c64163ca12d931d1dc234fe441"
+}

@@ -2,9 +2,10 @@
 //!
 //! 語彙が使用される専門分野やコンテキストを表現
 
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// 専門分野ドメイン
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -158,6 +159,44 @@ impl fmt::Display for Domain {
             Self::Other(name) => name,
         };
         write!(f, "{name}")
+    }
+}
+
+/// ドメインのパースエラー
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// 無効なドメイン
+    #[error("Invalid domain: {0}")]
+    InvalidDomain(String),
+}
+
+impl FromStr for Domain {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "general" => Ok(Self::General),
+            "business" => Ok(Self::Business),
+            "science" => Ok(Self::Science),
+            "medicine" => Ok(Self::Medicine),
+            "law" => Ok(Self::Law),
+            "education" => Ok(Self::Education),
+            "technology" => Ok(Self::Technology),
+            "arts" => Ok(Self::Arts),
+            "sports" => Ok(Self::Sports),
+            "culinary" => Ok(Self::Culinary),
+            "travel" => Ok(Self::Travel),
+            "environment" => Ok(Self::Environment),
+            "finance" => Ok(Self::Finance),
+            "psychology" => Ok(Self::Psychology),
+            "philosophy" => Ok(Self::Philosophy),
+            "literature" => Ok(Self::Literature),
+            "music" => Ok(Self::Music),
+            "entertainment" => Ok(Self::Entertainment),
+            "engineering" => Ok(Self::Engineering),
+            "agriculture" => Ok(Self::Agriculture),
+            other => Ok(Self::Other(other.to_string())),
+        }
     }
 }
 

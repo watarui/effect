@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n                INSERT INTO vocabulary_synonyms (\n                    definition_id, synonym, display_order\n                ) VALUES ($1, $2, $3)\n                ON CONFLICT (definition_id, synonym) DO NOTHING\n                ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid", "Varchar", "Int4"]
+		},
+		"nullable": []
+	},
+	"hash": "a919aa8ca83981b62cf2abdf48fdeb06db262da7180ec5568157a1fd1e23328d"
+}

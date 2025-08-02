@@ -2,9 +2,10 @@
 //!
 //! 語彙の使用される文脈やフォーマリティレベルを表現
 
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// レジスター（言語使用域）
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -80,6 +81,32 @@ impl fmt::Display for Register {
             Self::Regional => "regional",
         };
         write!(f, "{name}")
+    }
+}
+
+/// レジスターのパースエラー
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// 無効なレジスター
+    #[error("Invalid register: {0}")]
+    InvalidRegister(String),
+}
+
+impl FromStr for Register {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "very formal" | "very_formal" => Ok(Self::VeryFormal),
+            "formal" => Ok(Self::Formal),
+            "neutral" => Ok(Self::Neutral),
+            "informal" => Ok(Self::Informal),
+            "slang" => Ok(Self::Slang),
+            "technical" => Ok(Self::Technical),
+            "archaic" => Ok(Self::Archaic),
+            "regional" => Ok(Self::Regional),
+            _ => Err(Error::InvalidRegister(s.to_string())),
+        }
     }
 }
 

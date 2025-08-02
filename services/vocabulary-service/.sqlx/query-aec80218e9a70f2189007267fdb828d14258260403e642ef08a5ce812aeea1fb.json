@@ -1,0 +1,28 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT collocation_type, pattern, example\n            FROM vocabulary_collocations\n            WHERE definition_id = $1\n            ORDER BY display_order\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "collocation_type",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 1,
+				"name": "pattern",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 2,
+				"name": "example",
+				"type_info": "Text"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": [false, false, true]
+	},
+	"hash": "aec80218e9a70f2189007267fdb828d14258260403e642ef08a5ce812aeea1fb"
+}

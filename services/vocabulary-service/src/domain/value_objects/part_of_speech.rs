@@ -2,9 +2,10 @@
 //!
 //! 語彙エントリーの品詞情報を管理する値オブジェクト
 
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// 名詞の種類
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -133,6 +134,44 @@ impl PartOfSpeech {
 impl fmt::Display for PartOfSpeech {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.full_name())
+    }
+}
+
+/// 品詞のパースエラー
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// 無効な品詞
+    #[error("Invalid part of speech: {0}")]
+    InvalidPartOfSpeech(String),
+}
+
+impl FromStr for PartOfSpeech {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "noun" | "noun (countable)" => Ok(Self::Noun(NounType::Countable)),
+            "noun (uncountable)" => Ok(Self::Noun(NounType::Uncountable)),
+            "noun (both)" => Ok(Self::Noun(NounType::Both)),
+            "verb" | "verb (transitive)" => Ok(Self::Verb(VerbType::Transitive)),
+            "verb (intransitive)" => Ok(Self::Verb(VerbType::Intransitive)),
+            "verb (both)" => Ok(Self::Verb(VerbType::Both)),
+            "adjective" | "adjective (predicative)" => {
+                Ok(Self::Adjective(AdjectiveType::Predicative))
+            },
+            "adjective (attributive)" => Ok(Self::Adjective(AdjectiveType::Attributive)),
+            "adjective (both)" => Ok(Self::Adjective(AdjectiveType::Both)),
+            "adverb" => Ok(Self::Adverb),
+            "preposition" => Ok(Self::Preposition),
+            "conjunction" => Ok(Self::Conjunction),
+            "article" => Ok(Self::Article),
+            "pronoun" => Ok(Self::Pronoun),
+            "interjection" => Ok(Self::Interjection),
+            "modal" => Ok(Self::Modal),
+            "phrasal_verb" => Ok(Self::PhrasalVerb),
+            "idiom" => Ok(Self::Idiom),
+            _ => Err(Error::InvalidPartOfSpeech(s.to_string())),
+        }
     }
 }
 
