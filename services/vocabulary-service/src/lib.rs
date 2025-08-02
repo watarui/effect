@@ -53,6 +53,10 @@ pub mod adapters {
 
         pub mod repository {
             //! リポジトリ実装
+
+            /// Redis キャッシュ付きリポジトリ
+            pub mod cached;
+            /// PostgreSQL リポジトリ
             pub mod postgres;
         }
     }
