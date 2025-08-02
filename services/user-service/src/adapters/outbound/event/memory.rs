@@ -155,6 +155,7 @@ mod tests {
                     session_id: common_types::SessionId::new().to_string(),
                     user_id:    user_id.to_string(),
                     item_count: 0,
+                    strategy:   0, // SelectionStrategy::SELECTION_STRATEGY_UNSPECIFIED
                 },
             )),
         });
