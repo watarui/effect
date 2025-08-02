@@ -8,6 +8,7 @@ pub mod config;
 pub mod database;
 pub mod event_bus;
 pub mod event_store;
+pub mod repository;
 
 // Re-export commonly used types
 pub use cache::{Client as CacheClient, Error as CacheError};
