@@ -108,7 +108,7 @@ audit: ## セキュリティ監査
 
 .PHONY: db-migrate
 db-migrate: ## データベースマイグレーション実行
-	@echo "マイグレーションは未実装です"
+	./scripts/run-migrations.sh
 
 .PHONY: db-reset
 db-reset: ## データベースをリセット（各サービスのデータベースを個別にリセット）
