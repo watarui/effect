@@ -11,17 +11,10 @@ use crate::{
     application::errors::ApplicationError,
     domain::{
         aggregates::user::User,
-        commands::{
-            ChangeUserRole,
-            CreateUser,
-            DeleteUser,
-            SetLearningGoal,
-            UpdateUserEmail,
-            UpdateUserProfile,
-        },
+        commands::{ChangeUserRole, CreateUser, DeleteUser, SetLearningGoal, UpdateUserProfile},
         value_objects::{
             account_status::AccountStatus,
-            learning_goal::{EikenLevel, IeltsScore, LearningGoal, ToeflScore, ToeicScore},
+            learning_goal::LearningGoal,
             user_profile::CefrLevel,
             user_role::UserRole,
         },
@@ -75,13 +68,8 @@ use proto::{
         ChangeRoleRequest,
         CreateUserRequest,
         DeleteUserRequest,
-        EikenLevel as ProtoEikenLevel,
-        IeltsScore as ProtoIeltsScore,
         LearningGoal as ProtoLearningGoal,
         SetLearningGoalRequest,
-        ToeflScore as ProtoToeflScore,
-        ToeicScore as ProtoToeicScore,
-        UpdateEmailRequest,
         UpdateProfileRequest,
         User as ProtoUser,
         UserProfile as ProtoUserProfile,
@@ -171,66 +159,11 @@ impl TryFrom<ProtoAccountStatus> for AccountStatus {
     }
 }
 
-/// ドメインの `EikenLevel` から Proto への変換
-impl From<EikenLevel> for ProtoEikenLevel {
-    fn from(level: EikenLevel) -> Self {
-        match level {
-            EikenLevel::Level5 => Self::EikenLevel5,
-            EikenLevel::Level4 => Self::EikenLevel4,
-            EikenLevel::Level3 => Self::EikenLevel3,
-            EikenLevel::PreLevel2 => Self::Pre2,
-            EikenLevel::Level2 => Self::EikenLevel2,
-            EikenLevel::PreLevel1 => Self::Pre1,
-            EikenLevel::Level1 => Self::EikenLevel1,
-        }
-    }
-}
-
-/// Proto の `EikenLevel` からドメインへの変換
-impl TryFrom<ProtoEikenLevel> for EikenLevel {
-    type Error = Status;
-
-    fn try_from(level: ProtoEikenLevel) -> Result<Self, Self::Error> {
-        match level {
-            ProtoEikenLevel::Unspecified => {
-                Err(Status::invalid_argument("Eiken level must be specified"))
-            },
-            ProtoEikenLevel::EikenLevel5 => Ok(Self::Level5),
-            ProtoEikenLevel::EikenLevel4 => Ok(Self::Level4),
-            ProtoEikenLevel::EikenLevel3 => Ok(Self::Level3),
-            ProtoEikenLevel::Pre2 => Ok(Self::PreLevel2),
-            ProtoEikenLevel::EikenLevel2 => Ok(Self::Level2),
-            ProtoEikenLevel::Pre1 => Ok(Self::PreLevel1),
-            ProtoEikenLevel::EikenLevel1 => Ok(Self::Level1),
-        }
-    }
-}
-
 /// ドメインの `LearningGoal` から Proto への変換
 fn learning_goal_to_proto(goal: &LearningGoal) -> ProtoLearningGoal {
     use proto::services::user::learning_goal::Goal;
 
     let goal = match goal {
-        LearningGoal::IeltsScore(score) => Goal::IeltsScore(ProtoIeltsScore {
-            overall:   score.overall,
-            reading:   score.reading,
-            listening: score.listening,
-            writing:   score.writing,
-            speaking:  score.speaking,
-        }),
-        LearningGoal::ToeflScore(score) => Goal::ToeflScore(ProtoToeflScore {
-            total:     u32::from(score.total),
-            reading:   score.reading.map(u32::from),
-            listening: score.listening.map(u32::from),
-            speaking:  score.speaking.map(u32::from),
-            writing:   score.writing.map(u32::from),
-        }),
-        LearningGoal::ToeicScore(score) => Goal::ToeicScore(ProtoToeicScore {
-            total:     u32::from(score.total),
-            listening: score.listening.map(u32::from),
-            reading:   score.reading.map(u32::from),
-        }),
-        LearningGoal::EikenLevel(level) => Goal::EikenLevel(ProtoEikenLevel::from(*level) as i32),
         LearningGoal::GeneralLevel(level) => {
             Goal::GeneralLevel(ProtoCefrLevel::from(*level) as i32)
         },
@@ -259,45 +192,6 @@ fn proto_learning_goal_to_domain(
     };
 
     let domain_goal = match goal_type {
-        Goal::IeltsScore(score) => {
-            let ielts = IeltsScore::new(
-                score.overall,
-                score.reading,
-                score.listening,
-                score.writing,
-                score.speaking,
-            )
-            .map_err(|e| Status::invalid_argument(e.to_string()))?;
-            LearningGoal::IeltsScore(ielts)
-        },
-        Goal::ToeflScore(score) => {
-            let toefl = ToeflScore::new(
-                u8::try_from(score.total)
-                    .map_err(|_| Status::invalid_argument("Invalid TOEFL total score"))?,
-                score.reading.map(|s| u8::try_from(s).unwrap_or(0)),
-                score.listening.map(|s| u8::try_from(s).unwrap_or(0)),
-                score.speaking.map(|s| u8::try_from(s).unwrap_or(0)),
-                score.writing.map(|s| u8::try_from(s).unwrap_or(0)),
-            )
-            .map_err(|e| Status::invalid_argument(e.to_string()))?;
-            LearningGoal::ToeflScore(toefl)
-        },
-        Goal::ToeicScore(score) => {
-            let toeic = ToeicScore::new(
-                u16::try_from(score.total)
-                    .map_err(|_| Status::invalid_argument("Invalid TOEIC total score"))?,
-                score.listening.map(|s| u16::try_from(s).unwrap_or(0)),
-                score.reading.map(|s| u16::try_from(s).unwrap_or(0)),
-            )
-            .map_err(|e| Status::invalid_argument(e.to_string()))?;
-            LearningGoal::ToeicScore(toeic)
-        },
-        Goal::EikenLevel(level) => {
-            let eiken = ProtoEikenLevel::try_from(level)
-                .map_err(|_| Status::invalid_argument("Invalid Eiken level"))?
-                .try_into()?;
-            LearningGoal::EikenLevel(eiken)
-        },
         Goal::GeneralLevel(level) => {
             let cefr = ProtoCefrLevel::try_from(level)
                 .map_err(|_| Status::invalid_argument("Invalid CEFR level"))?
@@ -413,21 +307,6 @@ pub fn change_role_request_to_command(req: &ChangeRoleRequest) -> Result<ChangeU
         user_id,
         new_role,
         executed_by,
-    })
-}
-
-/// Proto リクエストからドメインコマンドへの変換
-///
-/// # Errors
-///
-/// ユーザー ID が無効な場合は `Status::invalid_argument` を返します
-pub fn update_email_request_to_command(req: UpdateEmailRequest) -> Result<UpdateUserEmail, Status> {
-    let user_id =
-        UserId::from_str(&req.user_id).map_err(|_| Status::invalid_argument("Invalid user ID"))?;
-
-    Ok(UpdateUserEmail {
-        user_id,
-        new_email: req.new_email,
     })
 }
 

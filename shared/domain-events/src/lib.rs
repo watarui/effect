@@ -46,7 +46,7 @@ mod proto {
 pub use proto::effect::{
     common::{CefrLevel, CorrectnessJudgment, EventMetadata, UserRole},
     events::{ai::*, algorithm::*, learning::*, user::*, vocabulary::*},
-    services::user::{EikenLevel, IeltsScore, LearningGoal, ToeflScore, ToeicScore, learning_goal},
+    services::user::{LearningGoal, learning_goal},
 };
 
 // EventMetadata のヘルパー関数
@@ -149,7 +149,6 @@ impl DomainEvent {
                 Some(user_event::Event::ProfileUpdated(e)) => e.metadata.as_ref(),
                 Some(user_event::Event::LearningGoalSet(e)) => e.metadata.as_ref(),
                 Some(user_event::Event::UserRoleChanged(e)) => e.metadata.as_ref(),
-                Some(user_event::Event::UserEmailUpdated(e)) => e.metadata.as_ref(),
                 Some(user_event::Event::UserDeleted(e)) => e.metadata.as_ref(),
                 Some(user_event::Event::UserSignedIn(e)) => e.metadata.as_ref(),
                 Some(user_event::Event::UserSignedOut(e)) => e.metadata.as_ref(),

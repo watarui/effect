@@ -12,7 +12,7 @@ use crate::domain::value_objects::{
 };
 
 /// User 集約ルート
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct User {
     /// ユーザー ID
     id:         UserId,
@@ -122,15 +122,6 @@ impl User {
     pub fn change_role(&mut self, new_role: UserRole) {
         if self.role != new_role {
             self.role = new_role;
-            self.updated_at = Utc::now();
-            self.version += 1;
-        }
-    }
-
-    /// Email を更新
-    pub fn update_email(&mut self, new_email: Email) {
-        if self.email != new_email {
-            self.email = new_email;
             self.updated_at = Utc::now();
             self.version += 1;
         }
@@ -275,31 +266,6 @@ mod tests {
 
         // Then
         assert_eq!(user.role(), UserRole::Admin);
-        assert!(user.updated_at() > original_updated_at);
-    }
-
-    #[test]
-    fn user_update_email_should_update_timestamp() {
-        // Given
-        let mut user = User::create(
-            UserId::new(),
-            Email::new("old@example.com").unwrap(),
-            "Test User",
-            false,
-        )
-        .unwrap();
-
-        let original_updated_at = user.updated_at();
-        let new_email = Email::new("new@example.com").unwrap();
-
-        // Wait a bit to ensure timestamp difference
-        std::thread::sleep(std::time::Duration::from_millis(10));
-
-        // When
-        user.update_email(new_email.clone());
-
-        // Then
-        assert_eq!(user.email(), &new_email);
         assert!(user.updated_at() > original_updated_at);
     }
 }

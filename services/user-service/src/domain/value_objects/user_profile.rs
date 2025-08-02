@@ -51,7 +51,7 @@ impl std::fmt::Display for CefrLevel {
 }
 
 /// ユーザープロフィール
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserProfile {
     /// 表示名
     display_name:          String,

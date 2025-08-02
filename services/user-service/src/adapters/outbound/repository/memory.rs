@@ -214,33 +214,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn update_email_should_work() {
-        // Given
-        let repo = InMemoryRepository::new();
-        let mut user = create_test_user("old@example.com");
-        repo.save(&user).await.unwrap();
-
-        // When
-        user.update_email(Email::new("new@example.com").unwrap());
-        let update_result = repo.save(&user).await;
-
-        // Then
-        assert!(update_result.is_ok());
-        assert!(
-            repo.find_by_email("old@example.com")
-                .await
-                .unwrap()
-                .is_none()
-        );
-        assert!(
-            repo.find_by_email("new@example.com")
-                .await
-                .unwrap()
-                .is_some()
-        );
-    }
-
-    #[tokio::test]
     async fn delete_should_remove_user() {
         // Given
         let repo = InMemoryRepository::new();

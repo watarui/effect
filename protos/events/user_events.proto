@@ -51,15 +51,6 @@ message UserRoleChanged {
   google.protobuf.Timestamp changed_at = 6;
 }
 
-// Email 更新イベント
-message UserEmailUpdated {
-  effect.common.EventMetadata metadata = 1;
-  string user_id = 2;
-  string old_email = 3;
-  string new_email = 4;
-  google.protobuf.Timestamp updated_at = 5;
-}
-
 // ユーザー削除イベント
 message UserDeleted {
   effect.common.EventMetadata metadata = 1;
@@ -99,10 +90,9 @@ message UserEvent {
     ProfileUpdated profile_updated = 2;
     LearningGoalSet learning_goal_set = 3;
     UserRoleChanged user_role_changed = 4;
-    UserEmailUpdated user_email_updated = 5;
-    UserDeleted user_deleted = 6;
-    UserSignedIn user_signed_in = 7;
-    UserSignedOut user_signed_out = 8;
-    SessionRefreshed session_refreshed = 9;
+    UserDeleted user_deleted = 5;
+    UserSignedIn user_signed_in = 6;
+    UserSignedOut user_signed_out = 7;
+    SessionRefreshed session_refreshed = 8;
   }
 }

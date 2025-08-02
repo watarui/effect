@@ -10,14 +10,7 @@ use crate::{
     application::errors::ApplicationError,
     domain::{
         aggregates::user::User,
-        commands::{
-            ChangeUserRole,
-            CreateUser,
-            DeleteUser,
-            SetLearningGoal,
-            UpdateUserEmail,
-            UpdateUserProfile,
-        },
+        commands::{ChangeUserRole, CreateUser, DeleteUser, SetLearningGoal, UpdateUserProfile},
         events::UserEventBuilder,
         services::{UserDomainService, UserDomainServiceImpl},
         value_objects::email::Email,
@@ -203,38 +196,6 @@ where
             .map_err(|e| ApplicationError::Repository(e.to_string()))?;
 
         // TODO: ロール変更イベントを発行（domain-events に追加後）
-
-        Ok(user)
-    }
-
-    async fn update_email(&self, command: UpdateUserEmail) -> Result<User, Self::Error> {
-        // 新しい Email を検証
-        let new_email = Email::new(&command.new_email)?;
-
-        // Email の重複チェック
-        if let Some(existing_user) = self
-            .repository
-            .find_by_email(new_email.as_str())
-            .await
-            .map_err(|e| ApplicationError::Repository(e.to_string()))?
-            && existing_user.id() != &command.user_id
-        {
-            return Err(ApplicationError::EmailAlreadyExists);
-        }
-
-        // ユーザーを取得
-        let mut user = self.get_user(&command.user_id).await?;
-
-        // Email を更新
-        user.update_email(new_email);
-
-        // リポジトリに保存
-        self.repository
-            .save(&user)
-            .await
-            .map_err(|e| ApplicationError::Repository(e.to_string()))?;
-
-        // TODO: Email 更新イベントを発行（domain-events に追加後）
 
         Ok(user)
     }

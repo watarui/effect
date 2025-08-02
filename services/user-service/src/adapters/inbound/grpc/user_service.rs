@@ -22,14 +22,11 @@ use super::converters::{
         GetUserResponse,
         SetLearningGoalRequest,
         SetLearningGoalResponse,
-        UpdateEmailRequest,
-        UpdateEmailResponse,
         UpdateProfileRequest,
         UpdateProfileResponse,
         user_service_server::UserService,
     },
     set_learning_goal_request_to_command,
-    update_email_request_to_command,
     update_profile_request_to_command,
     user_to_proto,
 };
@@ -149,23 +146,6 @@ where
             .map_err(Into::into)?;
 
         Ok(Response::new(ChangeRoleResponse {
-            user: Some(user_to_proto(&user)),
-        }))
-    }
-
-    async fn update_email(
-        &self,
-        request: Request<UpdateEmailRequest>,
-    ) -> Result<Response<UpdateEmailResponse>, Status> {
-        let command = update_email_request_to_command(request.into_inner())?;
-
-        let user = self
-            .use_case
-            .update_email(command)
-            .await
-            .map_err(Into::into)?;
-
-        Ok(Response::new(UpdateEmailResponse {
             user: Some(user_to_proto(&user)),
         }))
     }

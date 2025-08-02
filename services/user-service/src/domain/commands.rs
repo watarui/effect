@@ -44,15 +44,6 @@ pub struct ChangeUserRole {
     pub executed_by: UserId,
 }
 
-/// Email 更新コマンド
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct UpdateUserEmail {
-    /// 対象ユーザー ID
-    pub user_id:   UserId,
-    /// 新しい Email アドレス
-    pub new_email: String,
-}
-
 /// ユーザー削除コマンド
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DeleteUser {
@@ -63,7 +54,7 @@ pub struct DeleteUser {
 }
 
 /// 学習目標設定コマンド
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SetLearningGoal {
     /// 対象ユーザー ID
     pub user_id: UserId,

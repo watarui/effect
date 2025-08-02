@@ -28,62 +28,17 @@ service UserService {
   // ロールを変更（Admin のみ実行可能）
   rpc ChangeRole(ChangeRoleRequest) returns (ChangeRoleResponse);
 
-  // Email を更新
-  rpc UpdateEmail(UpdateEmailRequest) returns (UpdateEmailResponse);
-
   // ユーザーを削除
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
 }
 
 // 学習目標
-// 設計ドキュメントに基づき、IELTS スコアや CEFR レベルなど
-// 様々な形式の目標設定をサポート
+// 設計ドキュメントに基づき、シンプルな目標設定をサポート
 message LearningGoal {
   oneof goal {
-    IeltsScore ielts_score = 1;
-    ToeflScore toefl_score = 2;
-    ToeicScore toeic_score = 3;
-    EikenLevel eiken_level = 4;
-    effect.common.CefrLevel general_level = 5;
-    bool no_specific_goal = 6;
+    effect.common.CefrLevel general_level = 1; // CEFR レベル (A1-C2)
+    bool no_specific_goal = 2; // 特定の目標なし
   }
-}
-
-// IELTS スコア目標
-message IeltsScore {
-  float overall = 1; // 1.0 - 9.0 (0.5 刻み)
-  optional float reading = 2; // 各セクション 1.0 - 9.0 (0.5 刻み)
-  optional float listening = 3;
-  optional float writing = 4;
-  optional float speaking = 5;
-}
-
-// TOEFL スコア目標
-message ToeflScore {
-  uint32 total = 1; // 0 - 120
-  optional uint32 reading = 2; // 各セクション 0 - 30
-  optional uint32 listening = 3; // 各セクション 0 - 30
-  optional uint32 speaking = 4; // 各セクション 0 - 30
-  optional uint32 writing = 5; // 各セクション 0 - 30
-}
-
-// TOEIC スコア目標
-message ToeicScore {
-  uint32 total = 1; // 10 - 990
-  optional uint32 listening = 2; // リスニング 5 - 495
-  optional uint32 reading = 3; // リーディング 5 - 495
-}
-
-// 英検レベル
-enum EikenLevel {
-  EIKEN_LEVEL_UNSPECIFIED = 0;
-  EIKEN_LEVEL_5 = 1; // 5級
-  EIKEN_LEVEL_4 = 2; // 4級
-  EIKEN_LEVEL_3 = 3; // 3級
-  EIKEN_LEVEL_PRE_2 = 4; // 準2級
-  EIKEN_LEVEL_2 = 5; // 2級
-  EIKEN_LEVEL_PRE_1 = 6; // 準1級
-  EIKEN_LEVEL_1 = 7; // 1級
 }
 
 // ユーザープロフィール
@@ -174,17 +129,6 @@ message ChangeRoleRequest {
 
 // ロール変更レスポンス
 message ChangeRoleResponse {
-  User user = 1;
-}
-
-// Email 更新リクエスト
-message UpdateEmailRequest {
-  string user_id = 1;
-  string new_email = 2;
-}
-
-// Email 更新レスポンス
-message UpdateEmailResponse {
   User user = 1;
 }
 

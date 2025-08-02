@@ -17,14 +17,7 @@ pub mod ports;
 // Re-export main types
 pub use domain::{
     aggregates::user::User,
-    commands::{
-        ChangeUserRole,
-        CreateUser,
-        DeleteUser,
-        SetLearningGoal,
-        UpdateUserEmail,
-        UpdateUserProfile,
-    },
+    commands::{ChangeUserRole, CreateUser, DeleteUser, SetLearningGoal, UpdateUserProfile},
     events::UserEventBuilder,
     value_objects::{email::Email, user_profile::UserProfile, user_role::UserRole},
 };

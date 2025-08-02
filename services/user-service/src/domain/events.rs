@@ -99,58 +99,12 @@ impl UserEventBuilder {
     }
 
     /// ローカルの `LearningGoal` を proto の `LearningGoal` に変換
-    fn convert_learning_goal(
+    const fn convert_learning_goal(
         goal: &crate::domain::value_objects::learning_goal::LearningGoal,
     ) -> LearningGoal {
         use domain_events::learning_goal;
 
         match goal {
-            crate::domain::value_objects::learning_goal::LearningGoal::IeltsScore(ielts) => {
-                LearningGoal {
-                    goal: Some(learning_goal::Goal::IeltsScore(domain_events::IeltsScore {
-                        overall:   ielts.overall,
-                        reading:   ielts.reading,
-                        listening: ielts.listening,
-                        writing:   ielts.writing,
-                        speaking:  ielts.speaking,
-                    })),
-                }
-            },
-            crate::domain::value_objects::learning_goal::LearningGoal::ToeflScore(toefl) => {
-                LearningGoal {
-                    goal: Some(learning_goal::Goal::ToeflScore(domain_events::ToeflScore {
-                        total:     u32::from(toefl.total),
-                        reading:   None,
-                        listening: None,
-                        speaking:  None,
-                        writing:   None,
-                    })),
-                }
-            },
-            crate::domain::value_objects::learning_goal::LearningGoal::ToeicScore(toeic) => {
-                LearningGoal {
-                    goal: Some(learning_goal::Goal::ToeicScore(domain_events::ToeicScore {
-                        total:     u32::from(toeic.total),
-                        listening: None,
-                        reading:   None,
-                    })),
-                }
-            },
-            crate::domain::value_objects::learning_goal::LearningGoal::EikenLevel(level) => {
-                let eiken_level = match level.to_string().as_str() {
-                    "5" => domain_events::EikenLevel::EikenLevel5 as i32,
-                    "4" => domain_events::EikenLevel::EikenLevel4 as i32,
-                    "3" => domain_events::EikenLevel::EikenLevel3 as i32,
-                    "Pre-2" => domain_events::EikenLevel::Pre2 as i32,
-                    "2" => domain_events::EikenLevel::EikenLevel2 as i32,
-                    "Pre-1" => domain_events::EikenLevel::Pre1 as i32,
-                    "1" => domain_events::EikenLevel::EikenLevel1 as i32,
-                    _ => domain_events::EikenLevel::Unspecified as i32,
-                };
-                LearningGoal {
-                    goal: Some(learning_goal::Goal::EikenLevel(eiken_level)),
-                }
-            },
             crate::domain::value_objects::learning_goal::LearningGoal::GeneralLevel(level) => {
                 LearningGoal {
                     goal: Some(learning_goal::Goal::GeneralLevel(
@@ -258,7 +212,7 @@ mod tests {
 
     #[test]
     fn user_event_builder_should_create_profile_updated_event_with_learning_goal() {
-        use crate::domain::value_objects::learning_goal::{IeltsScore, LearningGoal};
+        use crate::domain::value_objects::learning_goal::LearningGoal;
 
         // Given
         let mut user = User::create(
@@ -270,11 +224,12 @@ mod tests {
         .unwrap();
 
         // プロフィールを更新して学習目標を設定
-        let ielts_goal = IeltsScore::new(7.5, Some(8.0), Some(7.0), Some(6.5), Some(7.5)).unwrap();
         user.update_profile(|profile| {
             profile.update_display_name("Updated Name")?;
             profile.update_current_level(crate::domain::value_objects::user_profile::CefrLevel::B2);
-            profile.set_learning_goal(Some(LearningGoal::IeltsScore(ielts_goal.clone())));
+            profile.set_learning_goal(Some(LearningGoal::GeneralLevel(
+                crate::domain::value_objects::user_profile::CefrLevel::C1,
+            )));
             profile.update_questions_per_session(30)
         })
         .unwrap();
@@ -296,12 +251,12 @@ mod tests {
 
                     // 学習目標の確認
                     if let Some(learning_goal) = &profile_updated.learning_goal {
-                        if let Some(domain_events::learning_goal::Goal::IeltsScore(ielts)) =
+                        if let Some(domain_events::learning_goal::Goal::GeneralLevel(level)) =
                             &learning_goal.goal
                         {
-                            assert!((ielts.overall - 7.5).abs() < f32::EPSILON);
+                            assert_eq!(*level, CefrLevel::C1 as i32);
                         } else {
-                            unreachable!("Should be IeltsScore learning goal");
+                            unreachable!("Should be GeneralLevel learning goal");
                         }
                     } else {
                         unreachable!("Learning goal should be present");
