@@ -631,7 +631,7 @@ mod tests {
         }
 
         async fn find_by_ids(&self, ids: &[Uuid]) -> Result<Vec<MockEntity>, Error> {
-            let id_bytes: Vec<&[u8]> = ids.iter().map(|id| id.as_bytes() as &[u8]).collect();
+            let id_bytes: Vec<&[u8]> = ids.iter().map(|id| id.as_bytes().as_ref()).collect();
             select_by_ids!(
                 table: "mock_entities",
                 id_column: "id",
