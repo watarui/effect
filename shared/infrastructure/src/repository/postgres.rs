@@ -559,20 +559,73 @@ mod tests {
             )?;
 
             if exists {
-                update!(
-                    table: "mock_entities",
-                    entity: entity,
-                    id_column: "id",
-                    columns: [name, value],
-                    pool: &self.pool
-                )
+                // 更新処理も id のバイト配列変換を考慮
+                let query = r"
+                    UPDATE mock_entities
+                    SET name = $1, value = $2, updated_at = $3, version = version + 1
+                    WHERE id = $4 AND version = $5 AND deleted_at IS NULL
+                    RETURNING version
+                ";
+
+                let now = Utc::now();
+                #[allow(clippy::cast_possible_wrap)]
+                let version_i64 = entity.version as i64;
+
+                let new_version: Option<i64> = sqlx::query_scalar(query)
+                    .bind(&entity.name)
+                    .bind(entity.value)
+                    .bind(now)
+                    .bind(entity.id.as_bytes().as_slice())
+                    .bind(version_i64)
+                    .fetch_optional(&self.pool)
+                    .await
+                    .map_err(Error::from_sqlx)?;
+
+                if new_version.is_some() {
+                    Ok(())
+                } else {
+                    // バージョン不一致または存在しない
+                    let check_query =
+                        "SELECT version FROM mock_entities WHERE id = $1 AND deleted_at IS NULL";
+                    let actual_version: Option<i64> = sqlx::query_scalar(check_query)
+                        .bind(entity.id.as_bytes().as_slice())
+                        .fetch_optional(&self.pool)
+                        .await
+                        .map_err(Error::from_sqlx)?;
+
+                    actual_version.map_or_else(
+                        || {
+                            Err(Error::not_found(
+                                "mock_entities",
+                                &format!("{:?}", entity.id),
+                            ))
+                        },
+                        |v| {
+                            #[allow(clippy::cast_sign_loss)]
+                            let actual = v as u64;
+                            Err(Error::optimistic_lock_failure(entity.version, actual))
+                        },
+                    )
+                }
             } else {
-                insert!(
-                    table: "mock_entities",
-                    entity: entity,
-                    columns: [id, name, value],
-                    pool: &self.pool
-                )
+                // id をバイト配列として扱うための特別な処理
+                let query = r"
+                    INSERT INTO mock_entities (id, name, value, created_at, updated_at, version)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                ";
+
+                let now = Utc::now();
+                sqlx::query(query)
+                    .bind(entity.id.as_bytes().as_slice())
+                    .bind(&entity.name)
+                    .bind(entity.value)
+                    .bind(now)
+                    .bind(now)
+                    .bind(1_i64)
+                    .execute(&self.pool)
+                    .await
+                    .map(|_| ())
+                    .map_err(Error::from_sqlx)
             }
         }
 
@@ -706,10 +759,16 @@ mod tests {
             .await
             .unwrap();
 
+        // 既存のテーブルをクリーンアップ
+        sqlx::query("DROP TABLE IF EXISTS mock_entities")
+            .execute(&pool)
+            .await
+            .unwrap();
+
         // テスト用テーブルを作成
         sqlx::query(
             r"
-            CREATE TABLE IF NOT EXISTS mock_entities (
+            CREATE TABLE mock_entities (
                 id BYTEA PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 value INTEGER NOT NULL,
@@ -763,6 +822,9 @@ mod tests {
 
         // INSERT の実行
         let result = repo.save(&entity).await;
+        if let Err(e) = &result {
+            eprintln!("Save failed: {e:?}");
+        }
         assert!(result.is_ok());
 
         // 確認
@@ -794,6 +856,9 @@ mod tests {
         entity.name = "updated".to_string();
         entity.value = 100;
         let result = repo.save(&entity).await;
+        if let Err(e) = &result {
+            eprintln!("Update failed: {e:?}");
+        }
         assert!(result.is_ok());
 
         // 確認

@@ -1,7 +1,5 @@
 //! `PostgreSQL` リポジトリのインテグレーションテスト
 #![cfg(test)]
-#![allow(clippy::expect_used)]
-#![allow(clippy::unwrap_used)]
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -13,7 +11,6 @@ use infrastructure::{
     count,
     delete,
     exists,
-    insert,
     restore,
     select_all,
     select_by_id,
@@ -21,7 +18,6 @@ use infrastructure::{
     select_by_ids,
     select_deleted,
     soft_delete,
-    update,
 };
 use sqlx::{PgPool, Row, postgres::PgPoolOptions};
 use uuid::Uuid;
@@ -121,20 +117,69 @@ impl Repository<Product> for ProductRepository {
         )?;
 
         if exists {
-            update!(
-                table: "products",
-                entity: entity,
-                id_column: "id",
-                columns: [name, price, stock],
-                pool: &self.pool
-            )
+            // UPDATE も id のバイト配列変換を考慮
+            let query = r"
+                UPDATE products
+                SET name = $1, price = $2, stock = $3, updated_at = $4, version = version + 1
+                WHERE id = $5 AND version = $6 AND deleted_at IS NULL
+                RETURNING version
+            ";
+
+            let now = Utc::now();
+            #[allow(clippy::cast_possible_wrap)]
+            let version_i64 = entity.version as i64;
+
+            let new_version: Option<i64> = sqlx::query_scalar(query)
+                .bind(&entity.name)
+                .bind(entity.price)
+                .bind(entity.stock)
+                .bind(now)
+                .bind(entity.id.as_bytes().as_slice())
+                .bind(version_i64)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(Error::from_sqlx)?;
+
+            if new_version.is_some() {
+                Ok(())
+            } else {
+                let check_query =
+                    "SELECT version FROM products WHERE id = $1 AND deleted_at IS NULL";
+                let actual_version: Option<i64> = sqlx::query_scalar(check_query)
+                    .bind(entity.id.as_bytes().as_slice())
+                    .fetch_optional(&self.pool)
+                    .await
+                    .map_err(Error::from_sqlx)?;
+
+                actual_version.map_or_else(
+                    || Err(Error::not_found("products", &format!("{:?}", entity.id))),
+                    |v| {
+                        #[allow(clippy::cast_sign_loss)]
+                        let actual = v as u64;
+                        Err(Error::optimistic_lock_failure(entity.version, actual))
+                    },
+                )
+            }
         } else {
-            insert!(
-                table: "products",
-                entity: entity,
-                columns: [id, name, price, stock],
-                pool: &self.pool
-            )
+            // INSERT も id のバイト配列変換を考慮
+            let query = r"
+                INSERT INTO products (id, name, price, stock, created_at, updated_at, version)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ";
+
+            let now = Utc::now();
+            sqlx::query(query)
+                .bind(entity.id.as_bytes().as_slice())
+                .bind(&entity.name)
+                .bind(entity.price)
+                .bind(entity.stock)
+                .bind(now)
+                .bind(now)
+                .bind(1_i64)
+                .execute(&self.pool)
+                .await
+                .map(|_| ())
+                .map_err(Error::from_sqlx)
         }
     }
 
@@ -167,7 +212,7 @@ impl Repository<Product> for ProductRepository {
     }
 
     async fn find_by_ids(&self, ids: &[Uuid]) -> Result<Vec<Product>, Error> {
-        let id_bytes: Vec<&[u8]> = ids.iter().map(|id| id.as_bytes() as &[u8]).collect();
+        let id_bytes: Vec<&[u8]> = ids.iter().map(|id| id.as_bytes().as_slice()).collect();
         select_by_ids!(
             table: "products",
             id_column: "id",
@@ -266,10 +311,15 @@ async fn setup_test_db() -> Result<PgPool, Box<dyn std::error::Error>> {
         .connect(&database_url)
         .await?;
 
+    // 既存のテーブルをクリーンアップ
+    sqlx::query("DROP TABLE IF EXISTS products")
+        .execute(&pool)
+        .await?;
+
     // テーブルを作成
     sqlx::query(
         r"
-        CREATE TABLE IF NOT EXISTS products (
+        CREATE TABLE products (
             id BYTEA PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             price INTEGER NOT NULL,
