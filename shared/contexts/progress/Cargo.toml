@@ -1,10 +1,10 @@
 [package]
-name = "shared-progress-context"
+name = "shared_progress_context"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-shared-kernel = { path = "../../kernel" }
+shared_kernel = { path = "../../kernel" }
 chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 uuid = { version = "1.11", features = ["v4", "serde"] }

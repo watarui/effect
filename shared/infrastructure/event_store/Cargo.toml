@@ -1,5 +1,5 @@
 [package]
-name = "shared-event-store"
+name = "shared_event_store"
 version = "0.1.0"
 edition = "2024"
 

@@ -1,5 +1,5 @@
 [package]
-name = "shared-telemetry"
+name = "shared_telemetry"
 version = "0.1.0"
 edition = "2024"
 

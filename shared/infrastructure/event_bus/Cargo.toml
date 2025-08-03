@@ -1,12 +1,12 @@
 [package]
-name = "shared-event-bus"
+name = "shared_event_bus"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 async-trait = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
-domain-events = { path = "../../domain-events" }
+domain_events = { path = "../../domain_events" }
 futures = "0.3"
 google-cloud-googleapis = "0.16.1"
 google-cloud-pubsub = "0.30"

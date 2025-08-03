@@ -1,9 +1,9 @@
 [package]
-name = "shared-error"
+name = "shared_error"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 thiserror = "2.0"
 serde = { version = "1.0", features = ["derive"] }
-shared-kernel = { path = "../../kernel" }
+shared_kernel = { path = "../../kernel" }

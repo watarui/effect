@@ -1,0 +1,44 @@
+[package]
+name = "user_service"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "user_service"
+path = "src/main.rs"
+
+[dependencies]
+# Shared modules from workspace
+shared_kernel = { path = "../../shared/kernel", features = ["sqlx"] }
+domain_events = { path = "../../shared/domain_events" }
+shared_repository = { path = "../../shared/infrastructure/repository" }
+
+# Workspace dependencies
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tonic = { workspace = true }
+tonic-prost = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+sqlx = { workspace = true }
+config = { workspace = true }
+
+# Service specific dependencies
+validator = { version = "0.20.0", features = ["derive"] }
+
+[dev-dependencies]
+mockall = { workspace = true }
+tokio-test = { workspace = true }
+
+[build-dependencies]
+tonic-prost-build = { workspace = true }
+
+[lints]
+workspace = true

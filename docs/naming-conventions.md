@@ -73,24 +73,40 @@ src/event-store.rs
 
 ## 移行計画
 
-### 現状（要修正）
+### 現状
+
+#### 完了した移行
 
 ```
 services/
-├── ai-service/          → ai_service/
-├── api-gateway/         → api_gateway/
-├── algorithm-service/   → algorithm_service/
-├── saga-orchestrator/   → saga_orchestrator/
-├── event-processor/     → event_processor/
-├── learning-service/    → learning_service/
-├── user-service/        → user_service/
-├── progress-service/    → progress_service/
-└── vocabulary-service/  → vocabulary_service/
+├── ai_service/          ✓
+├── api_gateway/         ✓
+├── algorithm_service/   ✓
+├── saga_orchestrator/   ✓
+├── event_processor/     ✓
+├── learning_service/    ✓
+├── user_service/        ✓
+├── progress_service/    ✓
+└── vocabulary_service/  ✓
 
 shared/
-├── common-types/        → common_types/
-├── domain-events/       → domain_events/
-└── cross_cutting/       ✓ (既に正しい)
+├── common-types/        削除済み
+├── domain_events/       ✓ (移行済み、Proto 分散は保留)
+├── cross_cutting/       ✓ (既に正しい)
+│   ├── cache/          ✓ (新規作成)
+│   └── config/         ✓ (新規作成)
+└── infrastructure/      (サブディレクトリのみ残存)
+```
+
+#### 未完了の移行
+
+```
+# パッケージ名の更新が必要
+shared-kernel         → shared_kernel
+shared-database       → shared_database
+shared-repository     → shared_repository
+shared-event-bus      → shared_event_bus
+shared-event-store    → shared_event_store
 ```
 
 ### 移行手順
@@ -179,3 +195,4 @@ shared/
 ## 更新履歴
 
 - 2025-08-03: 初版作成（Rust Edition 2024 対応）
+- 2025-08-03: ディレクトリ名とパッケージ名の一部を snake_case に移行

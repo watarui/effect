@@ -21,22 +21,22 @@ members = [
   "shared/cross_cutting/error",
   "shared/cross_cutting/telemetry",
   "shared/cross_cutting/security",
+  "shared/cross_cutting/cache",
+  "shared/cross_cutting/config",
 
   # Legacy shared (移行中)
-  "shared/common-types",
-  "shared/domain-events",
-  "shared/infrastructure",
+  "shared/domain_events",
 
   # Microservices
-  "services/learning-service",
-  "services/algorithm-service",
-  "services/vocabulary-service",
-  "services/user-service",
-  "services/progress-service",
-  "services/ai-service",
-  "services/api-gateway",
-  "services/event-processor",
-  "services/saga-orchestrator",
+  "services/learning_service",
+  "services/algorithm_service",
+  "services/vocabulary_service",
+  "services/user_service",
+  "services/progress_service",
+  "services/ai_service",
+  "services/api_gateway",
+  "services/event_processor",
+  "services/saga_orchestrator",
 ]
 resolver = "2"
 
