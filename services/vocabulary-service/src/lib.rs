@@ -2,6 +2,8 @@
 //!
 //! 語彙エントリーの管理を担当するコンテキスト
 
+pub mod proto;
+
 pub mod domain {
     //! ドメイン層
 
@@ -24,9 +26,7 @@ pub mod domain {
         //! ドメインイベント
     }
 
-    pub mod commands {
-        //! コマンド
-    }
+    pub mod commands;
 }
 
 pub mod application {
@@ -34,19 +34,29 @@ pub mod application {
 
     pub mod command_handlers {
         //! コマンドハンドラー
+        pub mod create_item;
+        pub mod delete_item;
+        pub mod update_item;
     }
+
+    pub mod queries;
 
     pub mod query_handlers {
         //! クエリハンドラー
+        pub mod get_item;
+        pub mod search_entries;
     }
 
-    pub mod services {
-        //! アプリケーションサービス
-    }
+    pub mod services;
 }
 
 pub mod adapters {
     //! アダプター層
+
+    pub mod inbound {
+        //! インバウンドアダプター
+        pub mod grpc;
+    }
 
     pub mod outbound {
         //! アウトバウンドアダプター

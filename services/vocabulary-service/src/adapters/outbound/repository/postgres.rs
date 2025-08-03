@@ -59,6 +59,7 @@ struct ItemBuildParams {
 }
 
 /// `PostgreSQL` vocabulary repository
+#[derive(Clone)]
 pub struct Repository {
     pool: PgPool,
 }

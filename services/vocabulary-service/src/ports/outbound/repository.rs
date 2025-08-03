@@ -41,6 +41,25 @@ pub trait Repository: Send + Sync {
 }
 
 #[cfg(test)]
+mockall::mock! {
+    pub Repository {}
+
+    impl Clone for Repository {
+        fn clone(&self) -> Self;
+    }
+
+    #[async_trait]
+    impl Repository for Repository {
+        type Error = Error;
+
+        async fn save(&self, item: &VocabularyItem) -> Result<(), Error>;
+        async fn find_by_id(&self, id: &ItemId) -> Result<Option<VocabularyItem>, Error>;
+        async fn find_by_word(&self, word: &str) -> Result<Option<VocabularyItem>, Error>;
+        async fn soft_delete(&self, id: &ItemId) -> Result<(), Error>;
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

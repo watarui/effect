@@ -31,15 +31,25 @@ pub async fn start(config: ServiceConfig) -> Result<(), Box<dyn std::error::Erro
         vocabulary_service::adapters::outbound::repository::postgres::Repository::new(db_pool);
 
     // キャッシュ付きリポジトリを作成
-    let _cached_repo = vocabulary_service::adapters::outbound::repository::cached::Repository::new(
+    let cached_repo = vocabulary_service::adapters::outbound::repository::cached::Repository::new(
         postgres_repo,
         cache_client,
     );
 
-    // TODO: gRPC サーバーの実装
-    // ここで _cached_repo を使用してサービスを構築
+    // アプリケーションサービスを作成
+    let app_service =
+        vocabulary_service::application::services::VocabularyService::new(cached_repo);
 
-    // 現時点では、シグナルを待つだけ
+    // gRPC サービスを作成
+    let _grpc_service =
+        vocabulary_service::adapters::inbound::grpc::VocabularyGrpcService::new(app_service);
+
+    // TODO: gRPC サーバーの起動
+    // 現時点では、proto ファイルからの生成が必要
+
+    info!("Vocabulary Service is ready to handle requests");
+
+    // シグナルを待つ
     tokio::signal::ctrl_c().await?;
 
     info!("Vocabulary Service shutting down...");

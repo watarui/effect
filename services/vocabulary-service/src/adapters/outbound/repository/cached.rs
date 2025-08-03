@@ -11,6 +11,7 @@ use crate::{
 const CACHE_TTL_SECONDS: u64 = 3600; // 1時間
 
 /// キャッシュ付き語彙リポジトリ
+#[derive(Clone)]
 pub struct Repository<R> {
     inner: R,
     cache: cache::Client,
