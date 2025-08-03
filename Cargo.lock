@@ -4081,6 +4081,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "vocabulary_projection_service"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "google-cloud-pubsub",
+ "mockall",
+ "serde",
+ "serde_json",
+ "shared_config",
+ "shared_database",
+ "shared_error",
+ "shared_event_bus",
+ "shared_event_store",
+ "shared_kernel",
+ "shared_repository",
+ "shared_telemetry",
+ "shared_vocabulary_context",
+ "sqlx",
+ "thiserror 2.0.12",
+ "tokio",
+ "tokio-test",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "vocabulary_service"
 version = "0.1.0"
 dependencies = [
