@@ -8,6 +8,8 @@ Vocabulary Context
 
 Wikipedia スタイルの語彙データベースを管理し、同一スペリングで複数の意味を持つ項目を効率的に管理する。
 AI と連携して豊富な語彙情報を自動生成し、全ユーザーが共有するグローバル辞書を提供する。
+Vocabulary Context は CQRS/Event Sourcing パターンを採用し、4 つのマイクロサービスに分解されることで、
+高い可用性とスケーラビリティを実現する。
 
 ## 3. Strategic Classification
 
@@ -151,10 +153,51 @@ Wikipedia 方式により、1 つのスペリングに複数の意味を持た�
 - AI 生成コンテンツの品質
 - 検索結果の関連性
 
-## 11. Open Questions
+## 11. Service Architecture
+
+### マイクロサービス構成
+
+Vocabulary Context は以下の 4 つのサービスに分解される：
+
+1. **vocabulary-command-service**
+   - VocabularyEntry/VocabularyItem 集約の管理
+   - コマンドの検証と実行
+   - ドメインイベントの生成
+   - Event Store への永続化
+
+2. **vocabulary-query-service**
+   - 基本的な読み取り操作
+   - 項目詳細の取得
+   - エントリー一覧の取得
+   - シンプルなフィルタリング
+
+3. **vocabulary-search-service**
+   - Meilisearch を活用した全文検索
+   - ファセット検索
+   - オートコンプリート
+   - 関連語の提案
+
+4. **vocabulary-projection-service**
+   - イベントの消費と処理
+   - Read Model の更新
+   - Search Index の更新
+   - イベント順序の保証
+
+### 技術選定
+
+- **Event Store**: PostgreSQL（イベント永続化）
+- **Event Bus**: Google Pub/Sub（サービス間通信）
+- **Read Model**: PostgreSQL（基本データ）
+- **Search Engine**: Meilisearch（高度な検索）
+- **Cache**: Redis（クエリ結果キャッシュ）
+- **Deployment**: Google Cloud Run
+
+## 12. Open Questions
 
 ### 設計上の疑問
 
+- [x] 大規模データでの検索性能の最適化方法は？→ Meilisearch 採用
+- [x] 変更履歴の保持期間とアーカイブ戦略は？→ Event Sourcing で全履歴保持
 - [ ] 画像（イラスト）の管理をどうするか？
 - [ ] 発音音声ファイルの管理方法は？
 - [ ] 例文の難易度判定は必要か？
@@ -162,15 +205,14 @@ Wikipedia 方式により、1 つのスペリングに複数の意味を持た�
 
 ### 実装上の課題
 
-- [ ] 大規模データでの検索性能の最適化方法は？
+- [x] AI タスク ID と生成状態の永続化方法は？→ Event Store に記録
 - [ ] AI 生成の優先順位付けアルゴリズムは？
-- [ ] AI タスク ID と生成状態の永続化方法は？
-- [ ] 変更履歴の保持期間とアーカイブ戦略は？
 - [ ] 外部辞書 API との連携は必要か？
 
 ---
 
 ## 改訂履歴
 
-- 2025-07-30: 初版作成
+- 2025-08-03: CQRS/Event Sourcing 実装詳細を追加
 - 2025-07-30: AI Integration Context の非同期化に伴う更新（TaskCreatedAck 追加、AI タスク ID 管理を明記）
+- 2025-07-30: 初版作成

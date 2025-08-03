@@ -248,6 +248,87 @@
 2. 各コンテキストの詳細設計
 3. コンテキスト間の統合パターン決定
 
+## Read Model とプロジェクション 📊
+
+### CQRS/Event Sourcing の適用
+
+Progress Context と Vocabulary Context では、CQRS/Event Sourcing パターンを採用し、
+イベントから様々な Read Model を生成する。
+
+### Progress Context の Read Model
+
+#### DailyStatsProjection
+
+```
+[学習イベント] → [日別統計として集計] → [DailyStats Read Model]
+                                            ↓
+                                    - 学習項目数
+                                    - 正答率
+                                    - 学習時間
+                                    - 達成スコア
+```
+
+#### CategoryProgressProjection
+
+```
+[正誤判定イベント] → [カテゴリ別に集計] → [CategoryProgress Read Model]
+                                                ↓
+                                        - CEFR レベル分布
+                                        - カテゴリ別正答率
+                                        - 難易度分布
+```
+
+#### UserSummaryProjection
+
+```
+[全イベント] → [ユーザー別サマリー生成] → [UserSummary Read Model]
+                                                ↓
+                                        - 総学習時間
+                                        - 習得項目数
+                                        - 進捗スコア (0-100)
+                                        - 連続学習日数
+```
+
+### Vocabulary Context の Read Model
+
+#### VocabularyReadModel
+
+```
+[語彙イベント] → [基本情報として投影] → [Vocabulary Read Model]
+                                            ↓
+                                    - エントリー一覧
+                                    - 項目詳細
+                                    - 統計情報
+```
+
+#### VocabularySearchIndex
+
+```
+[語彙イベント] → [検索インデックスに投影] → [Meilisearch Index]
+                                                    ↓
+                                            - 全文検索
+                                            - ファセット検索
+                                            - オートコンプリート
+```
+
+### プロジェクションのタイミング
+
+#### リアルタイム投影
+
+- DailyStats（今日の統計）
+- 基本的な Read Model 更新
+
+#### バッチ投影（5分間隔）
+
+- CategoryProgress
+- 検索インデックス更新
+
+#### 遅延投影（アクセス時）
+
+- 月次トレンド
+- 複雑な統計計算
+
 ## 更新履歴
 
+- 2025-08-03: Read Model とプロジェクションのセクションを追加
 - 2025-07-27: ドメインエキスパートとの対話に基づき作成

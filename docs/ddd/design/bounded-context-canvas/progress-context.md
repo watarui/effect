@@ -7,7 +7,8 @@ Progress Context
 ## 2. Purpose
 
 学習活動の完全な履歴を保持し、あらゆる角度から学習進捗を可視化する「学習活動の鏡」として機能する。
-純粋な CQRS/イベントソーシングの実装により、過去の任意時点の状態再現と柔軟な統計分析を実現する。
+純粋な CQRS/Event Sourcing の実装により、過去の任意時点の状態再現と柔軟な統計分析を実現する。
+Progress Context は 3 つのマイクロサービスに分解され、書き込みと読み取りの独立したスケーリングを実現する。
 
 ## 3. Strategic Classification
 
@@ -155,21 +156,50 @@ Progress Context
 - イベント再生による監査可能性
 - システム全体の可観測性向上
 
-## 11. Open Questions
+## 11. Service Architecture
+
+### マイクロサービス構成
+
+Progress Context は以下の 3 つのサービスに分解される：
+
+1. **progress-command-service**
+   - イベント受信と Event Store への永続化
+   - イベント順序保証
+   - Google Pub/Sub へのイベント発行
+
+2. **progress-query-service**
+   - Read Model からの基本的な読み取り操作
+   - GraphQL API の提供
+   - Redis によるキャッシング
+
+3. **progress-projection-service**
+   - Event Store からのイベント消費
+   - Read Model の構築・更新
+   - 統計集計とマテリアライズドビューの管理
+
+### 技術選定
+
+- **Event Store**: PostgreSQL（イベント永続化）
+- **Event Bus**: Google Pub/Sub（サービス間通信）
+- **Read Model**: PostgreSQL（統計データ）
+- **Cache**: Redis（クエリ結果キャッシュ）
+- **Deployment**: Google Cloud Run
+
+## 12. Open Questions
 
 ### 設計上の疑問
 
-- [ ] イベントストアの永続化技術は何を使うか？（EventStore、PostgreSQL、Kafka）
+- [x] イベントストアの永続化技術は何を使うか？→ PostgreSQL に決定
+- [x] 投影の再構築時のダウンタイムをどう回避するか？→ Blue-Green デプロイメント
 - [ ] スナップショットの作成頻度とタイミングは？
 - [ ] 古いイベントのアーカイブ戦略は？
-- [ ] 投影の再構築時のダウンタイムをどう回避するか？
 - [ ] IELTS/TOEFL スコア推定機能は必要か？
 - [ ] CEFR レベル表示と進捗スコアで十分か？
 
 ### 実装上の課題
 
-- [ ] 大量イベントの効率的な処理方法は？
-- [ ] 複数の投影を並行更新する際の一貫性保証は？
+- [x] 大量イベントの効率的な処理方法は？→ バッチ処理とストリーミング
+- [x] 複数の投影を並行更新する際の一貫性保証は？→ 楽観的ロック
 - [ ] GraphQL のネストしたクエリの最適化は？
 - [ ] GDPR 対応（ユーザーデータ削除）はどう実装するか？
 
@@ -177,4 +207,5 @@ Progress Context
 
 ## 改訂履歴
 
+- 2025-08-03: CQRS/Event Sourcing 実装詳細を追加
 - 2025-07-30: 初版作成
