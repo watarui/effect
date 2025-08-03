@@ -31,6 +31,7 @@ members = [
   "services/learning_service",
   "services/algorithm_service",
   "services/vocabulary_service",
+  "services/vocabulary_command_service",
   "services/user_service",
   "services/progress_service",
   "services/ai_service",
@@ -51,6 +52,7 @@ serde_json = "1.0.142"
 
 # Error handling
 thiserror = "2.0"
+anyhow = "1.0"
 
 # Logging
 tracing = "0.1"
@@ -58,6 +60,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 # HTTP/GraphQL
 axum = "0.8"
+tower = "0.5"
+tower-http = "0.6"
 async-graphql = "7.0"
 async-graphql-axum = "7.0"
 
