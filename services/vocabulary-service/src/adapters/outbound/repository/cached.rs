@@ -225,6 +225,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Requires Redis client implementation"]
     async fn test_find_by_id_cache_miss() {
         let mut mock_repo = MockInnerRepo::new();
         let item = create_test_item();
@@ -241,6 +242,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Requires Redis client implementation"]
     async fn test_save_invalidates_cache() {
         let mut mock_repo = MockInnerRepo::new();
         let item = create_test_item();

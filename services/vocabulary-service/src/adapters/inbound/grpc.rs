@@ -34,7 +34,11 @@ mod tests {
 
     #[test]
     fn test_grpc_service_creation() {
-        let mock_repo = MockRepository::new();
+        let mut mock_repo = MockRepository::new();
+        mock_repo
+            .expect_clone()
+            .times(4)
+            .returning(MockRepository::new);
         let app_service = VocabularyService::new(mock_repo);
         let _grpc_service = VocabularyGrpcService::new(app_service);
     }
