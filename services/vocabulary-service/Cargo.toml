@@ -11,6 +11,7 @@ path = "src/main.rs"
 common-types = { path = "../../shared/common-types" }
 domain-events = { path = "../../shared/domain-events" }
 infrastructure = { path = "../../shared/infrastructure" }
+shared-repository = { path = "../../shared/infrastructure/repository" }
 async-trait = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }

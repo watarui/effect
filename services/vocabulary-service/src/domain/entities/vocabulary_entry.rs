@@ -5,8 +5,8 @@
 use chrono::{DateTime, Utc};
 use common_types::EntryId;
 use domain_events::CefrLevel;
-use infrastructure::repository::{Entity, entity::SoftDeletable};
 use serde::{Deserialize, Serialize};
+use shared_repository::{Entity, EntitySoftDeletable as SoftDeletable};
 use thiserror::Error;
 
 use crate::domain::value_objects::{

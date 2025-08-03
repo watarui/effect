@@ -1,0 +1,15 @@
+[package]
+name = "shared-telemetry"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-opentelemetry = "0.28"
+opentelemetry = "0.27"
+opentelemetry-otlp = "0.27"
+opentelemetry-stdout = "0.27"
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

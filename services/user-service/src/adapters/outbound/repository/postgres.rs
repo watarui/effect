@@ -3,10 +3,10 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use common_types::UserId;
-use infrastructure::{
+use shared_repository::{
     Entity,
+    Error as RepoError,
     Repository,
-    RepositoryError as RepoError,
     SoftDeletable,
     count,
     delete,

@@ -1,6 +1,28 @@
 [workspace]
 members = [
-  # Shared libraries
+  # Shared Kernel - 全コンテキスト共通
+  "shared/kernel",
+
+  # Bounded Context 共有
+  "shared/contexts/user",
+  "shared/contexts/vocabulary",
+  "shared/contexts/learning",
+  "shared/contexts/algorithm",
+  "shared/contexts/progress",
+  "shared/contexts/ai",
+
+  # Infrastructure - 技術的な共通コンポーネント
+  "shared/infrastructure/event_store",
+  "shared/infrastructure/event_bus",
+  "shared/infrastructure/repository",
+  "shared/infrastructure/database",
+
+  # Cross-cutting concerns - 横断的関心事
+  "shared/cross_cutting/error",
+  "shared/cross_cutting/telemetry",
+  "shared/cross_cutting/security",
+
+  # Legacy shared (移行中)
   "shared/common-types",
   "shared/domain-events",
   "shared/infrastructure",

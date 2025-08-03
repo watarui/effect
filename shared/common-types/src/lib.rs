@@ -1,13 +1,7 @@
-//! 全ての境界づけられたコンテキストで共有される共通型
+//! 一時的な互換性レイヤー
 //!
-//! このモジュールは Effect アプリケーション全体で使用される
-//! ID 値オブジェクトやその他の共通型を含みます。
+//! このモジュールは移行期間中の後方互換性のために存在します。
+//! 新しいコードでは直接 shared-kernel を使用してください。
 
-mod error;
-mod ids;
-mod timestamp;
-
-// Re-export all public types
-pub use error::{DomainError, DomainResult};
-pub use ids::{EntryId, EventId, ItemId, SessionId, UserId};
-pub use timestamp::{JstExt, Timestamp, now};
+// shared-kernel の内容を再エクスポート
+pub use shared_kernel::*;

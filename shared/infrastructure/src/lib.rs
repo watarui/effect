@@ -1,14 +1,19 @@
 //! 共有インフラストラクチャコンポーネント
 //!
-//! このクレートはデータベース接続、メッセージバス、キャッシュなどの
+//! このクレートはキャッシュと設定管理の基本的な
 //! インフラストラクチャコンポーネントを提供します。
+//!
+//! 注意: 他のインフラストラクチャコンポーネントは個別のクレートに
+//! 移動されました：
+//! - database → shared-database
+//! - `event_bus` → shared-event-bus
+//! - `event_store` → shared-event-store
+//! - repository → shared-repository
 
+/// キャッシュモジュール
 pub mod cache;
+/// 設定管理モジュール
 pub mod config;
-pub mod database;
-pub mod event_bus;
-pub mod event_store;
-pub mod repository;
 
 // Re-export commonly used types
 pub use cache::{Client as CacheClient, Error as CacheError};
@@ -20,10 +25,5 @@ pub use config::{
     get_env_parse,
     get_env_parse_or,
 };
-pub use database::{Config as DatabaseConfig, Error as DatabaseError, create_pool, health_check};
-pub use event_bus::PubSubEventBus;
-pub use event_store::{PostgresEventStore, SnapshotStore};
 // Re-export hex for macros
 pub use hex;
-// Re-export repository types
-pub use repository::{Entity, Error as RepositoryError, Repository, SoftDeletable};

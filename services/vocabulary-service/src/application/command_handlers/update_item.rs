@@ -1,7 +1,7 @@
 //! `UpdateItem` コマンドハンドラー
 
 use async_trait::async_trait;
-use infrastructure::repository::Entity;
+use shared_repository::Entity;
 use tracing::{error, info};
 
 use crate::{

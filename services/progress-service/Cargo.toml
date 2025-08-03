@@ -8,7 +8,7 @@ name = "progress-service"
 path = "src/main.rs"
 
 [dependencies]
-common-types = { path = "../../shared/common-types" }
+shared-kernel = { path = "../../shared/kernel", features = ["sqlx"] }
 domain-events = { path = "../../shared/domain-events" }
 async-trait = { workspace = true }
 chrono = { workspace = true }

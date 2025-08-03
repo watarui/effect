@@ -7,7 +7,6 @@ use std::str::FromStr;
 use async_trait::async_trait;
 use common_types::{EntryId, ItemId};
 use domain_events::CefrLevel;
-use infrastructure::repository::entity::Entity;
 use sqlx::PgPool;
 use uuid::Uuid;
 

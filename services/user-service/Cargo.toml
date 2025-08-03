@@ -12,6 +12,7 @@ path = "src/main.rs"
 common-types = { path = "../../shared/common-types", features = ["sqlx"] }
 domain-events = { path = "../../shared/domain-events" }
 infrastructure = { path = "../../shared/infrastructure" }
+shared-repository = { path = "../../shared/infrastructure/repository" }
 
 # Workspace dependencies
 tokio = { workspace = true }

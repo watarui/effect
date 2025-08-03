@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-common-types = { path = "../../shared/common-types" }
+shared-kernel = { path = "../../shared/kernel", features = ["sqlx"] }
 domain-events = { path = "../../shared/domain-events" }
 infrastructure = { path = "../../shared/infrastructure" }
 async-trait = { workspace = true }
