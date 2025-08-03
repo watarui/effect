@@ -38,7 +38,6 @@ tracing-subscriber = { workspace = true }
 
 # エラーハンドリング
 thiserror = { workspace = true }
-anyhow = { workspace = true }
 
 # その他
 uuid = { workspace = true, features = ["v4", "serde"] }

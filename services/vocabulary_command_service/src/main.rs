@@ -3,14 +3,12 @@
 //! CQRS+ES パターンにおける Write Model を担当するサービス。
 //! コマンドの処理、ドメインイベントの生成、Event Store への永続化を行う。
 
-use anyhow::Result;
 use tracing::info;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // テレメトリの初期化
-    let _tracer = shared_telemetry::init_telemetry("vocabulary_command_service", None)
-        .map_err(|e| anyhow::anyhow!("Failed to initialize telemetry: {}", e))?;
+    let _tracer = shared_telemetry::init_telemetry("vocabulary_command_service", None)?;
 
     info!("Starting Vocabulary Command Service");
 
