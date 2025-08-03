@@ -4,11 +4,14 @@
 //! 識別子、値オブジェクト、基本的な型定義のみを含めます。
 //! ビジネスロジックは含めず、データ構造のみを定義します。
 
+pub mod events;
 pub mod ids;
+pub mod proto;
 pub mod timestamp;
 pub mod value_objects;
 
 // Re-export commonly used items
+pub use events::*;
 pub use ids::*;
 pub use timestamp::*;
 pub use value_objects::*;

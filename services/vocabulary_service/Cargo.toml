@@ -9,7 +9,8 @@ path = "src/main.rs"
 
 [dependencies]
 shared_kernel = { path = "../../shared/kernel" }
-domain_events = { path = "../../shared/domain_events" }
+shared_vocabulary_context = { path = "../../shared/contexts/vocabulary" }
+domain_events = { path = "../../shared/domain_events" }                   # 移行中は一時的に保持
 shared_cache = { path = "../../shared/cross_cutting/cache" }
 shared_repository = { path = "../../shared/infrastructure/repository" }
 shared_database = { path = "../../shared/infrastructure/database" }

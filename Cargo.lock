@@ -2873,11 +2873,15 @@ dependencies = [
 name = "shared_kernel"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
+ "prost 0.14.1",
+ "prost-types 0.14.1",
  "serde",
  "serde_json",
  "sqlx",
  "thiserror 2.0.12",
+ "tonic-prost-build",
  "uuid",
 ]
 
@@ -2948,10 +2952,15 @@ dependencies = [
 name = "shared_user_context"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
+ "prost 0.14.1",
+ "prost-types 0.14.1",
  "serde",
+ "serde_json",
  "shared_kernel",
  "thiserror 2.0.12",
+ "tonic-prost-build",
  "uuid",
 ]
 
@@ -2959,10 +2968,15 @@ dependencies = [
 name = "shared_vocabulary_context"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
+ "prost 0.14.1",
+ "prost-types 0.14.1",
  "serde",
+ "serde_json",
  "shared_kernel",
  "thiserror 2.0.12",
+ "tonic-prost-build",
  "uuid",
 ]
 
@@ -4031,6 +4045,7 @@ dependencies = [
  "shared_database",
  "shared_kernel",
  "shared_repository",
+ "shared_vocabulary_context",
  "sqlx",
  "thiserror 2.0.12",
  "tokio",

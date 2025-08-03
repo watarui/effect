@@ -5,7 +5,14 @@ edition = "2024"
 
 [dependencies]
 shared_kernel = { path = "../../kernel" }
-chrono = { version = "0.4", features = ["serde"] }
-serde = { version = "1.0", features = ["derive"] }
-uuid = { version = "1.11", features = ["v4", "serde"] }
-thiserror = "2.0"
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+async-trait = { workspace = true }
+
+[build-dependencies]
+tonic-prost-build = { workspace = true }
