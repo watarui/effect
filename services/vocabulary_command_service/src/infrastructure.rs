@@ -1,3 +1,4 @@
 //! インフラストラクチャ層
 
-pub mod grpc;
+pub mod inbound;
+pub mod outbound;

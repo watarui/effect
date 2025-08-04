@@ -18,6 +18,7 @@ shared_config = { path = "../../shared/cross_cutting/config" }
 
 # 非同期ランタイム
 tokio = { workspace = true, features = ["full"] }
+async-trait = { workspace = true }
 
 # Web フレームワーク
 axum = { workspace = true }

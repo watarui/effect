@@ -4,5 +4,6 @@
 //! Read Model の管理を提供する。
 
 pub mod application;
+pub mod domain;
 pub mod infrastructure;
-pub mod projections;
+pub mod ports;

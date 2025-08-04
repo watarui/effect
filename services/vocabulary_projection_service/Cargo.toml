@@ -16,8 +16,12 @@ shared_event_bus = { path = "../../shared/infrastructure/event_bus" }
 shared_telemetry = { path = "../../shared/cross_cutting/telemetry" }
 shared_config = { path = "../../shared/cross_cutting/config" }
 
+# 非同期トレイト
+async-trait = { workspace = true }
+
 # 非同期ランタイム
 tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
 
 # データベース
 sqlx = { workspace = true, features = [

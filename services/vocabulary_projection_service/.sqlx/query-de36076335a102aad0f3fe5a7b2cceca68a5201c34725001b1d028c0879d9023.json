@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            DELETE FROM vocabulary_items_view\n            WHERE item_id = $1\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": []
+	},
+	"hash": "de36076335a102aad0f3fe5a7b2cceca68a5201c34725001b1d028c0879d9023"
+}

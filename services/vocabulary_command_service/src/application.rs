@@ -2,45 +2,85 @@
 //!
 //! コマンドハンドラーの実装
 
+use std::sync::Arc;
+
+use async_trait::async_trait;
 use shared_error::DomainResult;
 use shared_vocabulary_context::commands::*;
 use tracing::{info, instrument};
+use uuid::Uuid;
+
+use crate::{
+    domain::{aggregates::VocabularyEntry, services::VocabularyDomainService},
+    ports::{
+        inbound::CommandService,
+        outbound::{EventBus, EventStore, VocabularyRepository},
+    },
+};
 
 /// コマンドハンドラー
 pub struct CommandHandler {
-    // TODO: Event Store への参照を追加
-    // event_store: Arc<dyn EventStore>,
-    // TODO: Pub/Sub への参照を追加
-    // event_bus: Arc<dyn EventBus>,
+    event_store: Arc<dyn EventStore>,
+    event_bus:   Arc<dyn EventBus>,
+    repository:  Arc<dyn VocabularyRepository>,
 }
 
 impl CommandHandler {
     /// 新しいコマンドハンドラーを作成
-    pub fn new() -> Self {
+    pub fn new(
+        event_store: Arc<dyn EventStore>,
+        event_bus: Arc<dyn EventBus>,
+        repository: Arc<dyn VocabularyRepository>,
+    ) -> Self {
         Self {
-            // TODO: 依存関係を注入
+            event_store,
+            event_bus,
+            repository,
         }
     }
 
     /// 語彙項目作成コマンドを処理
-    #[instrument(skip(self))]
-    pub async fn handle_create_vocabulary_item(
+    async fn handle_create_vocabulary_item(
         &self,
         command: CreateVocabularyItem,
-    ) -> DomainResult<String> {
+    ) -> DomainResult<Uuid> {
         info!("Creating vocabulary item: {}", command.word);
 
-        // TODO: 実装
-        // 1. ドメインモデルを作成
-        // 2. ビジネスルールを検証
-        // 3. イベントを生成
-        // 4. Event Store に保存
-        // 5. Pub/Sub に発行
+        // 1. 重複チェック
+        if let Some(existing) = self.repository.find_by_word(&command.word).await? {
+            VocabularyDomainService::check_duplicate(&[existing], &command.word)?;
+        }
 
-        // 仮の実装
-        let item_id = uuid::Uuid::new_v4().to_string();
+        // 2. エントリを作成または取得
+        let mut entry = match self.repository.find_by_word(&command.word).await? {
+            Some(entry) => entry,
+            None => VocabularyEntry::create(command.word.clone())?,
+        };
+
+        // 3. 項目を追加
+        let item_id = entry.add_item(
+            command.definitions,
+            command.part_of_speech.into(),
+            command.register.into(),
+            command.domain.into(),
+            *command.user_id.as_uuid(),
+        )?;
+
+        // 4. イベントを取得
+        let events = entry.take_events();
+
+        // 5. Event Store に保存
+        self.event_store
+            .save_aggregate(entry.id(), events.clone(), Some(entry.version()))
+            .await?;
+
+        // 6. イベントを発行
+        self.event_bus.publish(events).await?;
+
+        // 7. リポジトリに保存
+        self.repository.save(&entry).await?;
+
         info!("Created vocabulary item with ID: {}", item_id);
-
         Ok(item_id)
     }
 
@@ -104,8 +144,31 @@ impl CommandHandler {
     }
 }
 
-impl Default for CommandHandler {
-    fn default() -> Self {
-        Self::new()
+// CommandService trait の実装
+#[async_trait]
+impl CommandService for CommandHandler {
+    #[instrument(skip(self))]
+    async fn create_vocabulary_item(&self, command: CreateVocabularyItem) -> DomainResult<Uuid> {
+        self.handle_create_vocabulary_item(command).await
+    }
+
+    #[instrument(skip(self))]
+    async fn update_vocabulary_item(&self, command: UpdateVocabularyItem) -> DomainResult<()> {
+        self.handle_update_vocabulary_item(command).await
+    }
+
+    #[instrument(skip(self))]
+    async fn delete_vocabulary_item(&self, command: DeleteVocabularyItem) -> DomainResult<()> {
+        self.handle_delete_vocabulary_item(command).await
+    }
+
+    #[instrument(skip(self))]
+    async fn add_example(&self, command: AddExample) -> DomainResult<()> {
+        self.handle_add_example(command).await
+    }
+
+    #[instrument(skip(self))]
+    async fn request_ai_enrichment(&self, command: RequestAiEnrichment) -> DomainResult<()> {
+        self.handle_request_ai_enrichment(command).await
     }
 }

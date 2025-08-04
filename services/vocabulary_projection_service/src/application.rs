@@ -2,4 +2,4 @@
 //!
 //! イベントハンドラーとプロジェクション更新ロジック
 
-pub mod event_handlers;
+pub mod event_handler;

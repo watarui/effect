@@ -1,3 +1,5 @@
 //! インフラストラクチャ層
+//!
+//! 外部システムとの連携実装
 
-pub mod pubsub;
+pub mod outbound;
