@@ -2885,6 +2885,7 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.12",
  "tokio",
+ "tracing",
  "uuid",
 ]
 
@@ -4071,10 +4072,12 @@ dependencies = [
  "shared_repository",
  "shared_telemetry",
  "shared_vocabulary_context",
+ "sqlx",
  "thiserror 2.0.12",
  "tokio",
  "tokio-test",
  "tonic 0.14.0",
+ "tonic-build",
  "tower 0.5.2",
  "tower-http",
  "tracing",

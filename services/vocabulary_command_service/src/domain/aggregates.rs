@@ -130,4 +130,69 @@ impl VocabularyEntry {
     pub fn created_at(&self) -> DateTime<Utc> {
         self.created_at
     }
+
+    /// イベントから集約を再構築
+    pub fn new_from_events(id: Uuid, events: Vec<VocabularyDomainEvent>) -> DomainResult<Self> {
+        let mut entry = Self {
+            id,
+            word: String::new(),
+            items: Vec::new(),
+            version: 0,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            pending_events: Vec::new(),
+        };
+
+        // イベントを適用
+        for event in events {
+            entry.apply_event(&event)?;
+        }
+
+        Ok(entry)
+    }
+
+    /// イベントを適用
+    fn apply_event(&mut self, event: &VocabularyDomainEvent) -> DomainResult<()> {
+        match event {
+            VocabularyDomainEvent::EntryCreated {
+                word, occurred_at, ..
+            } => {
+                self.word = word.clone();
+                self.created_at = *occurred_at;
+                self.updated_at = *occurred_at;
+            },
+            VocabularyDomainEvent::ItemCreated {
+                item_id,
+                word,
+                definitions,
+                part_of_speech,
+                register,
+                domain,
+                created_by,
+                occurred_at,
+                ..
+            } => {
+                let item = VocabularyItem::new_with_id(
+                    *item_id,
+                    self.id,
+                    word.clone(),
+                    definitions.clone(),
+                    part_of_speech.clone(),
+                    register.clone(),
+                    domain.clone(),
+                    *created_by,
+                )?;
+                self.items.push(item);
+                self.updated_at = *occurred_at;
+            },
+            VocabularyDomainEvent::ItemUpdated { occurred_at, .. } => {
+                self.updated_at = *occurred_at;
+            },
+            VocabularyDomainEvent::ItemPublished { occurred_at, .. } => {
+                self.updated_at = *occurred_at;
+            },
+        }
+        self.version += 1;
+        Ok(())
+    }
 }

@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package effect.services.vocabulary_command;
+
+import "common/commands.proto";
+import "common/types.proto";
+
+// 語彙コマンドサービス
+// CQRS パターンの Command 側を担当
+service VocabularyCommandService {
+  // 語彙項目を作成
+  rpc CreateVocabularyItem(CreateVocabularyItemRequest) returns (CreateVocabularyItemResponse);
+
+  // 語彙項目を更新
+  rpc UpdateVocabularyItem(UpdateVocabularyItemRequest) returns (UpdateVocabularyItemResponse);
+
+  // 語彙項目を削除
+  rpc DeleteVocabularyItem(DeleteVocabularyItemRequest) returns (DeleteVocabularyItemResponse);
+
+  // 例文を追加
+  rpc AddExample(AddExampleRequest) returns (AddExampleResponse);
+
+  // AI エンリッチメントを要求
+  rpc RequestAiEnrichment(RequestAiEnrichmentRequest) returns (RequestAiEnrichmentResponse);
+}
+
+// 語彙項目作成リクエスト
+message CreateVocabularyItemRequest {
+  effect.common.CommandMetadata metadata = 1;
+  string word = 2;
+  repeated string definitions = 3;
+  string part_of_speech = 4;
+  string register = 5;
+  string domain = 6;
+}
+
+// 語彙項目作成レスポンス
+message CreateVocabularyItemResponse {
+  string item_id = 1; // 作成された項目のID
+}
+
+// 語彙項目更新リクエスト
+message UpdateVocabularyItemRequest {
+  effect.common.CommandMetadata metadata = 1;
+  string item_id = 2;
+  repeated FieldUpdate updates = 3;
+  uint32 expected_version = 4; // 楽観的ロック用
+}
+
+// フィールド更新
+message FieldUpdate {
+  string field_name = 1;
+  string value_json = 2; // JSON 形式の値
+}
+
+// 語彙項目更新レスポンス
+message UpdateVocabularyItemResponse {
+  uint32 new_version = 1;
+}
+
+// 語彙項目削除リクエスト
+message DeleteVocabularyItemRequest {
+  effect.common.CommandMetadata metadata = 1;
+  string item_id = 2;
+}
+
+// 語彙項目削除レスポンス
+message DeleteVocabularyItemResponse {
+  // 空のレスポンス
+}
+
+// 例文追加リクエスト
+message AddExampleRequest {
+  effect.common.CommandMetadata metadata = 1;
+  string item_id = 2;
+  string example = 3;
+  string source = 4; // 例文の出典
+}
+
+// 例文追加レスポンス
+message AddExampleResponse {
+  // 空のレスポンス
+}
+
+// AI エンリッチメント要求リクエスト
+message RequestAiEnrichmentRequest {
+  effect.common.CommandMetadata metadata = 1;
+  string item_id = 2;
+  bool is_regeneration = 3; // 再生成かどうか
+}
+
+// AI エンリッチメント要求レスポンス
+message RequestAiEnrichmentResponse {
+  string task_id = 1; // 非同期タスクID
+}

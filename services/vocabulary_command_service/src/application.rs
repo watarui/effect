@@ -20,7 +20,9 @@ use crate::{
 
 /// コマンドハンドラー
 pub struct CommandHandler {
+    #[allow(dead_code)]
     event_store: Arc<dyn EventStore>,
+    #[allow(dead_code)]
     event_bus:   Arc<dyn EventBus>,
     repository:  Arc<dyn VocabularyRepository>,
 }
@@ -46,18 +48,23 @@ impl CommandHandler {
     ) -> DomainResult<Uuid> {
         info!("Creating vocabulary item: {}", command.word);
 
-        // 1. 重複チェック
-        if let Some(existing) = self.repository.find_by_word(&command.word).await? {
-            VocabularyDomainService::check_duplicate(&[existing], &command.word)?;
-        }
-
-        // 2. エントリを作成または取得
+        // 1. 既存エントリの確認
         let mut entry = match self.repository.find_by_word(&command.word).await? {
-            Some(entry) => entry,
-            None => VocabularyEntry::create(command.word.clone())?,
+            Some(existing) => {
+                // 既存エントリがある場合、重複チェック
+                VocabularyDomainService::check_duplicate(
+                    std::slice::from_ref(&existing),
+                    &command.word,
+                )?;
+                existing
+            },
+            None => {
+                // 新規エントリを作成
+                VocabularyEntry::create(command.word.clone())?
+            },
         };
 
-        // 3. 項目を追加
+        // 2. 項目を追加
         let item_id = entry.add_item(
             command.definitions,
             command.part_of_speech.into(),
@@ -66,19 +73,8 @@ impl CommandHandler {
             *command.user_id.as_uuid(),
         )?;
 
-        // 4. イベントを取得
-        let events = entry.take_events();
-
-        // 5. Event Store に保存
-        self.event_store
-            .save_aggregate(entry.id(), events.clone(), Some(entry.version()))
-            .await?;
-
-        // 6. イベントを発行
-        self.event_bus.publish(events).await?;
-
-        // 7. リポジトリに保存
-        self.repository.save(&entry).await?;
+        // 3. リポジトリに保存（Event Store への保存とイベント発行を含む）
+        self.repository.save(&mut entry).await?;
 
         info!("Created vocabulary item with ID: {}", item_id);
         Ok(item_id)

@@ -68,6 +68,40 @@ impl VocabularyItem {
         })
     }
 
+    /// 指定されたIDで新しい語彙項目を作成（イベントソーシング用）
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_id(
+        id: Uuid,
+        entry_id: Uuid,
+        word: String,
+        definitions: Vec<String>,
+        part_of_speech: PartOfSpeech,
+        register: Register,
+        domain: Domain,
+        created_by: Uuid,
+    ) -> DomainResult<Self> {
+        if definitions.is_empty() {
+            return Err(DomainError::Validation(
+                "At least one definition is required".to_string(),
+            ));
+        }
+
+        let now = Utc::now();
+        Ok(Self {
+            id,
+            entry_id,
+            word,
+            definitions,
+            part_of_speech,
+            register,
+            domain,
+            created_by,
+            is_published: false,
+            created_at: now,
+            updated_at: now,
+        })
+    }
+
     /// 定義を更新
     pub fn update_definitions(&mut self, definitions: Vec<String>) -> DomainResult<()> {
         if definitions.is_empty() {

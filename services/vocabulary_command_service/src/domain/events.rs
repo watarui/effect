@@ -62,4 +62,14 @@ impl VocabularyDomainEvent {
     pub fn event_id(&self) -> Uuid {
         Uuid::new_v4()
     }
+
+    /// イベントタイプを取得
+    pub fn event_type(&self) -> String {
+        match self {
+            Self::EntryCreated { .. } => "EntryCreated".to_string(),
+            Self::ItemCreated { .. } => "ItemCreated".to_string(),
+            Self::ItemUpdated { .. } => "ItemUpdated".to_string(),
+            Self::ItemPublished { .. } => "ItemPublished".to_string(),
+        }
+    }
 }

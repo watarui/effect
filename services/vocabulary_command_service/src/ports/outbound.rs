@@ -40,11 +40,14 @@ pub trait EventBus: Send + Sync {
 /// 語彙リポジトリのインターフェース
 #[async_trait]
 pub trait VocabularyRepository: Send + Sync {
+    /// エントリをIDで検索
+    async fn find_by_id(&self, id: Uuid) -> DomainResult<Option<VocabularyEntry>>;
+
     /// エントリを単語で検索
     async fn find_by_word(&self, word: &str) -> DomainResult<Option<VocabularyEntry>>;
 
     /// エントリを保存
-    async fn save(&self, entry: &VocabularyEntry) -> DomainResult<()>;
+    async fn save(&self, entry: &mut VocabularyEntry) -> DomainResult<()>;
 
     /// エントリを削除
     async fn delete(&self, id: Uuid) -> DomainResult<()>;

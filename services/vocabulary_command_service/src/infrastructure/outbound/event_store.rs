@@ -1,7 +1,15 @@
 //! Event Store 実装
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
-use shared_error::DomainResult;
+use shared_error::{DomainError, DomainResult};
+use shared_event_store::{
+    EventStore as SharedEventStore,
+    EventStoreError,
+    postgres::PostgresEventStore as SharedPostgresEventStore,
+};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{
@@ -11,21 +19,14 @@ use crate::{
 
 /// PostgreSQL ベースの Event Store 実装
 pub struct PostgresEventStore {
-    // TODO: PostgreSQL 接続プールを追加
-    // pool: sqlx::PgPool,
-}
-
-impl Default for PostgresEventStore {
-    fn default() -> Self {
-        Self::new()
-    }
+    inner: Arc<SharedPostgresEventStore>,
 }
 
 impl PostgresEventStore {
     /// 新しい Event Store を作成
-    pub fn new() -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self {
-            // TODO: pool を注入
+            inner: Arc::new(SharedPostgresEventStore::new(pool)),
         }
     }
 }
@@ -34,32 +35,95 @@ impl PostgresEventStore {
 impl EventStore for PostgresEventStore {
     async fn save_aggregate(
         &self,
-        _aggregate_id: Uuid,
-        _events: Vec<VocabularyDomainEvent>,
-        _expected_version: Option<u32>,
+        aggregate_id: Uuid,
+        events: Vec<VocabularyDomainEvent>,
+        expected_version: Option<u32>,
     ) -> DomainResult<()> {
-        // TODO: 実装
-        // 1. 楽観的ロックのチェック
-        // 2. イベントを events テーブルに保存
-        // 3. スナップショットの更新（必要に応じて）
+        // イベントを JSON に変換
+        let event_jsons: Vec<serde_json::Value> = events
+            .into_iter()
+            .map(|event| {
+                let mut value = serde_json::to_value(&event)?;
+                // event_type を追加
+                if let Some(obj) = value.as_object_mut() {
+                    obj.insert(
+                        "event_type".to_string(),
+                        serde_json::Value::String(event.event_type()),
+                    );
+                    obj.insert(
+                        "occurred_at".to_string(),
+                        serde_json::Value::String(event.occurred_at().to_rfc3339()),
+                    );
+                }
+                Ok(value)
+            })
+            .collect::<Result<Vec<_>, serde_json::Error>>()
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+
+        // Event Store に保存
+        self.inner
+            .save_events(
+                aggregate_id,
+                "VocabularyEntry",
+                event_jsons,
+                expected_version,
+            )
+            .await
+            .map_err(|e| match e {
+                EventStoreError::VersionConflict {
+                    expected: _,
+                    actual: _,
+                } => DomainError::OptimisticLockError,
+                _ => DomainError::Internal(e.to_string()),
+            })?;
+
         Ok(())
     }
 
-    async fn load_aggregate(&self, _aggregate_id: Uuid) -> DomainResult<Option<VocabularyEntry>> {
-        // TODO: 実装
-        // 1. スナップショットを読み込み（あれば）
-        // 2. スナップショット以降のイベントを読み込み
-        // 3. イベントを適用して現在の状態を再構築
-        Ok(None)
+    async fn load_aggregate(&self, aggregate_id: Uuid) -> DomainResult<Option<VocabularyEntry>> {
+        // イベントを読み込み
+        let stored_events = self
+            .inner
+            .load_events(aggregate_id, "VocabularyEntry", None)
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+
+        if stored_events.is_empty() {
+            return Ok(None);
+        }
+
+        // イベントをドメインイベントに変換
+        let domain_events: Vec<VocabularyDomainEvent> = stored_events
+            .into_iter()
+            .map(|stored| {
+                serde_json::from_value(stored.event_data.clone())
+                    .map_err(|e| DomainError::Internal(format!("Failed to deserialize event: {e}")))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        // 集約を再構築
+        let entry = VocabularyEntry::new_from_events(aggregate_id, domain_events)?;
+
+        Ok(Some(entry))
     }
 
     async fn get_events(
         &self,
-        _aggregate_id: Uuid,
-        _from_version: Option<u32>,
+        aggregate_id: Uuid,
+        from_version: Option<u32>,
     ) -> DomainResult<Vec<VocabularyDomainEvent>> {
-        // TODO: 実装
-        // events テーブルから指定されたバージョン以降のイベントを取得
-        Ok(Vec::new())
+        let stored_events = self
+            .inner
+            .load_events(aggregate_id, "VocabularyEntry", from_version)
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+
+        stored_events
+            .into_iter()
+            .map(|stored| {
+                serde_json::from_value(stored.event_data)
+                    .map_err(|e| DomainError::Internal(format!("Failed to deserialize event: {e}")))
+            })
+            .collect()
     }
 }
