@@ -33,6 +33,7 @@ members = [
   "services/vocabulary_service",
   "services/vocabulary_command_service",
   "services/vocabulary_projection_service",
+  "services/vocabulary_query_service",
   "services/user_service",
   "services/progress_service",
   "services/ai_service",

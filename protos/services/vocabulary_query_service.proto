@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package effect.services.vocabulary_query;
+
+import "common/types.proto";
+
+// Vocabulary Query Service
+service VocabularyQueryService {
+  // 項目を取得
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+
+  // エントリーを取得
+  rpc GetEntry(GetEntryRequest) returns (GetEntryResponse);
+
+  // 統計情報を取得
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+}
+
+// リクエスト・レスポンス定義
+message GetItemRequest {
+  string item_id = 1;
+}
+
+message GetItemResponse {
+  VocabularyItem item = 1;
+}
+
+message GetEntryRequest {
+  string entry_id = 1;
+}
+
+message GetEntryResponse {
+  VocabularyEntry entry = 1;
+}
+
+message GetStatsRequest {}
+
+message GetStatsResponse {
+  VocabularyStats stats = 1;
+}
+
+// データモデル
+message VocabularyItem {
+  string item_id = 1;
+  string entry_id = 2;
+  string spelling = 3;
+  string disambiguation = 4;
+  int32 definition_count = 5;
+  int32 example_count = 6;
+  float quality_score = 7;
+  string status = 8;
+  string created_at = 9;
+  string last_modified_at = 10;
+  int64 version = 11;
+}
+
+message VocabularyEntry {
+  string entry_id = 1;
+  string spelling = 2;
+  string part_of_speech = 3;
+  int32 item_count = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message VocabularyStats {
+  int64 total_entries = 1;
+  int64 total_items = 2;
+  int64 total_examples = 3;
+  string last_updated = 4;
+}

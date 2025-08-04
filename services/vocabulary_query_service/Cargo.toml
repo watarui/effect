@@ -1,0 +1,69 @@
+[package]
+name = "vocabulary_query_service"
+version = "0.1.0"
+edition = "2024"
+authors = ["Effect Team"]
+
+[dependencies]
+# 共有クレート
+shared_kernel = { path = "../../shared/kernel" }
+shared_vocabulary_context = { path = "../../shared/contexts/vocabulary" }
+shared_error = { path = "../../shared/cross_cutting/error" }
+shared_database = { path = "../../shared/infrastructure/database" }
+shared_repository = { path = "../../shared/infrastructure/repository" }
+shared_telemetry = { path = "../../shared/cross_cutting/telemetry" }
+shared_config = { path = "../../shared/cross_cutting/config" }
+
+# 非同期トレイト
+async-trait = { workspace = true }
+
+# 非同期ランタイム
+tokio = { workspace = true, features = ["full"] }
+
+# Web/gRPC
+axum = { workspace = true }
+tonic = { workspace = true }
+prost = { workspace = true }
+tower = { workspace = true }
+
+# データベース
+sqlx = { workspace = true, features = [
+  "runtime-tokio-rustls",
+  "postgres",
+  "uuid",
+  "chrono",
+  "json",
+] }
+
+# Redis
+redis = { workspace = true, features = [
+  "aio",
+  "tokio-comp",
+  "connection-manager",
+] }
+
+# シリアライゼーション
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# ロギング・トレーシング
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# エラーハンドリング
+thiserror = { workspace = true }
+
+# その他
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true, features = ["serde"] }
+
+[dev-dependencies]
+mockall = { workspace = true }
+tokio-test = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+
+[[bin]]
+name = "vocabulary_query_service"
+path = "src/main.rs"
