@@ -277,28 +277,30 @@ impl EventStore for PostgresEventStore {
     }
 }
 
-// infrastructure/event_publisher/kafka_publisher.rs
-pub struct KafkaEventPublisher {
-    producer: FutureProducer,
+// infrastructure/event_publisher/pubsub_publisher.rs
+pub struct PubSubEventPublisher {
+    publisher: Publisher,
+    topic_name: String,
 }
 
 #[async_trait]
-impl EventPublisher for KafkaEventPublisher {
+impl EventPublisher for PubSubEventPublisher {
     async fn publish(&self, event: DomainEvent) -> Result<(), PublisherError> {
-        let topic = "vocabulary-events";
-        let key = event.aggregate_id().to_string();
-        let value = serde_json::to_vec(&event)?;
+        let message_data = serde_json::to_vec(&event)?;
         
-        let record = FutureRecord::to(topic)
-            .key(&key)
-            .payload(&value)
-            .headers(OwnedHeaders::new().add("event_type", event.event_type()));
-            
-        self.producer
-            .send(record, Duration::from_secs(5))
-            .await
-            .map_err(|(e, _)| PublisherError::from(e))?;
-            
+        let pubsub_message = PubsubMessage {
+            data: message_data,
+            attributes: HashMap::from([
+                ("event_type".to_string(), event.event_type().to_string()),
+                ("aggregate_id".to_string(), event.aggregate_id().to_string()),
+                ("occurred_at".to_string(), event.occurred_at().to_rfc3339()),
+            ]),
+            ..Default::default()
+        };
+        
+        let topic = self.publisher.topic(&self.topic_name);
+        topic.publish(pubsub_message).await?;
+        
         Ok(())
     }
 }
@@ -311,7 +313,8 @@ impl EventPublisher for KafkaEventPublisher {
 ```yaml
 # 環境設定
 DATABASE_URL: postgres://user:pass@postgres:5432/event_store
-KAFKA_BROKERS: kafka:9092
+PUBSUB_PROJECT_ID: effect-project
+PUBSUB_TOPIC: vocabulary-events
 SERVICE_PORT: 50051
 LOG_LEVEL: info
 TRACE_ENDPOINT: http://jaeger:14268/api/traces

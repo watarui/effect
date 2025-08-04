@@ -321,7 +321,7 @@ impl SearchEngine for MeilisearchEngine {
     async fn search(
         &self,
         index: &str,
-        query: ElasticsearchQuery,
+        query: MeilisearchQuery,
         pagination: Pagination,
     ) -> Result<SearchResult> {
         let index = self.client.index(index);

@@ -29,10 +29,10 @@ graph TB
         
         EventStore[(Event Store)]
         ReadDB[(Read DB)]
-        SearchIndex[(Elasticsearch)]
+        SearchIndex[(Meilisearch)]
     end
     
-    EventBus[Event Bus/Kafka]
+    EventBus[Event Bus/Pub/Sub]
     
     Client --> Gateway
     Gateway --> Command
@@ -60,7 +60,7 @@ graph TB
    - ビジネスロジック実行
    - ドメインイベント生成
    - Event Store に永続化
-   - Kafka に発行
+   - Pub/Sub に発行
 3. Event Bus → 他の Context に通知
 ```
 
@@ -69,14 +69,14 @@ graph TB
 ```
 1. Client → API Gateway → Query/Search Service
 2. Query Service → Read DB から取得
-3. Search Service → Elasticsearch から検索
+3. Search Service → Meilisearch から検索
 4. レスポンスを返却
 ```
 
 ### 3. プロジェクションフロー（非同期）
 
 ```
-1. Kafka からイベント受信
+1. Pub/Sub からイベント受信
 2. Projection Service:
    - イベントを Read Model に変換
    - Read DB を更新
@@ -100,7 +100,7 @@ graph TB
 - Language: Rust
 - Framework: Axum (gRPC)
 - Database: PostgreSQL (Event Store)
-- Message Broker: Kafka Producer
+- Message Broker: Google Pub/Sub Publisher
 
 ### vocabulary-query-service
 
@@ -131,7 +131,7 @@ graph TB
 
 - Language: Rust
 - Framework: Axum (gRPC)
-- Search Engine: Elasticsearch
+- Search Engine: Meilisearch
 - Cache: Redis
 
 ### vocabulary-projection-service
@@ -147,8 +147,8 @@ graph TB
 
 - Language: Rust
 - Framework: Tokio (非同期処理)
-- Message Broker: Kafka Consumer
-- Databases: PostgreSQL, Elasticsearch
+- Message Broker: Google Pub/Sub Subscriber
+- Databases: PostgreSQL, Meilisearch
 
 ## スケーリング戦略
 
@@ -166,14 +166,14 @@ graph TB
 
 ### Search Service
 
-- Elasticsearch クラスタでスケール
+- Meilisearch インスタンスでスケール
 - 検索負荷に応じてノード追加
 - インデックスの最適化
 
 ### Projection Service
 
-- Kafka パーティションに基づくスケール
-- Consumer Group で並列処理
+- Pub/Sub の並列処理でスケール
+- 複数のサブスクライバーで並列処理
 - バックプレッシャー制御
 
 ## 障害対策
@@ -191,7 +191,7 @@ graph TB
 
 3. **Projection Service 障害**:
    - Read Model の更新遅延
-   - Kafka のオフセット管理により再開可能
+   - Pub/Sub のメッセージ確認応答により再開可能
    - 最終的に整合性を保証
 
 ## 監視ポイント
@@ -254,7 +254,7 @@ services:
 ### テスト戦略
 
 1. **単体テスト**: 各サービス個別
-2. **統合テスト**: Event Store/Kafka との連携
+2. **統合テスト**: Event Store/Pub/Sub との連携
 3. **E2E テスト**: 全サービス連携
 4. **カオステスト**: 障害シナリオ
 
