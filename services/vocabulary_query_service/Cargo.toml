@@ -62,7 +62,7 @@ mockall = { workspace = true }
 tokio-test = { workspace = true }
 
 [build-dependencies]
-tonic-build = { workspace = true }
+tonic-prost-build = { workspace = true }
 
 [[bin]]
 name = "vocabulary_query_service"

@@ -2,4 +2,4 @@
 //!
 //! gRPC サーバーの実装
 
-// TODO: gRPC サーバーの実装
+pub mod grpc;

@@ -8,7 +8,7 @@ use shared_error::{DomainError, DomainResult};
 use uuid::Uuid;
 
 use crate::{
-    domain::read_models::VocabularyItemView,
+    domain::read_models::{VocabularyEntryView, VocabularyItemView, VocabularyStats},
     ports::outbound::{CacheService, ReadModelRepository},
 };
 
@@ -50,5 +50,83 @@ impl GetItemHandler {
         }
 
         Ok(item)
+    }
+}
+
+/// エントリー取得ハンドラー
+pub struct GetEntryHandler {
+    repository: Arc<dyn ReadModelRepository>,
+    cache:      Arc<dyn CacheService>,
+}
+
+impl GetEntryHandler {
+    /// 新しいハンドラーを作成
+    pub fn new(repository: Arc<dyn ReadModelRepository>, cache: Arc<dyn CacheService>) -> Self {
+        Self { repository, cache }
+    }
+
+    /// エントリーを取得
+    pub async fn handle(&self, entry_id: Uuid) -> DomainResult<VocabularyEntryView> {
+        // キャッシュから取得を試みる
+        let cache_key = format!("entry:{entry_id}");
+        if let Ok(Some(json)) = self.cache.get_json(&cache_key).await
+            && let Ok(entry) = serde_json::from_str::<VocabularyEntryView>(&json)
+        {
+            return Ok(entry);
+        }
+
+        // データベースから取得
+        let entry = self
+            .repository
+            .get_entry(entry_id)
+            .await?
+            .ok_or_else(|| DomainError::not_found("VocabularyEntry", entry_id))?;
+
+        // キャッシュに保存
+        if let Ok(json) = serde_json::to_string(&entry) {
+            let _ = self
+                .cache
+                .set_json(&cache_key, &json, std::time::Duration::from_secs(300))
+                .await;
+        }
+
+        Ok(entry)
+    }
+}
+
+/// 統計情報取得ハンドラー
+pub struct GetStatsHandler {
+    repository: Arc<dyn ReadModelRepository>,
+    cache:      Arc<dyn CacheService>,
+}
+
+impl GetStatsHandler {
+    /// 新しいハンドラーを作成
+    pub fn new(repository: Arc<dyn ReadModelRepository>, cache: Arc<dyn CacheService>) -> Self {
+        Self { repository, cache }
+    }
+
+    /// 統計情報を取得
+    pub async fn handle(&self) -> DomainResult<VocabularyStats> {
+        // キャッシュから取得を試みる
+        let cache_key = "vocabulary:stats";
+        if let Ok(Some(json)) = self.cache.get_json(cache_key).await
+            && let Ok(stats) = serde_json::from_str::<VocabularyStats>(&json)
+        {
+            return Ok(stats);
+        }
+
+        // データベースから取得
+        let stats = self.repository.get_stats().await?;
+
+        // キャッシュに保存（統計情報は60秒間キャッシュ）
+        if let Ok(json) = serde_json::to_string(&stats) {
+            let _ = self
+                .cache
+                .set_json(cache_key, &json, std::time::Duration::from_secs(60))
+                .await;
+        }
+
+        Ok(stats)
     }
 }

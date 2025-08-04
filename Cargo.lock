@@ -4135,7 +4135,7 @@ dependencies = [
  "tokio",
  "tokio-test",
  "tonic 0.14.0",
- "tonic-build",
+ "tonic-prost-build",
  "tower 0.5.2",
  "tracing",
  "tracing-subscriber",
