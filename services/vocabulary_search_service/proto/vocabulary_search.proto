@@ -1,0 +1,204 @@
+syntax = "proto3";
+
+package vocabulary_search.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Vocabulary Search Service API
+service VocabularySearchService {
+  // 基本的な検索
+  rpc SearchItems(SearchItemsRequest) returns (SearchItemsResponse);
+
+  // サジェスト機能
+  rpc GetSuggestions(GetSuggestionsRequest) returns (GetSuggestionsResponse);
+
+  // ファセット検索
+  rpc SearchWithFacets(SearchWithFacetsRequest) returns (SearchWithFacetsResponse);
+
+  // 関連項目の取得
+  rpc GetRelatedItems(GetRelatedItemsRequest) returns (GetRelatedItemsResponse);
+}
+
+// 検索リクエスト
+message SearchItemsRequest {
+  string query = 1;
+  SearchFilters filters = 2;
+  SearchOptions options = 3;
+  Pagination pagination = 4;
+}
+
+// 検索フィルター
+message SearchFilters {
+  repeated string part_of_speech = 1;
+  repeated string cefr_levels = 2;
+  repeated string domains = 3;
+  DateRange created_range = 4;
+  DateRange updated_range = 5;
+  bool ai_generated_only = 6;
+  repeated string tags = 7;
+}
+
+// 日付範囲
+message DateRange {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+}
+
+// 検索オプション
+message SearchOptions {
+  SearchMode mode = 1;
+  repeated string search_fields = 2;
+  float fuzziness = 3; // 0.0-1.0
+  string highlight_tag = 4;
+  SortOrder sort_by = 5;
+  bool include_synonyms = 6;
+}
+
+// 検索モード
+enum SearchMode {
+  EXACT = 0;
+  FUZZY = 1;
+  WILDCARD = 2;
+  PHRASE = 3;
+  SEMANTIC = 4; // 将来の拡張用
+}
+
+// ソート順
+message SortOrder {
+  SortField field = 1;
+  bool descending = 2;
+}
+
+// ソートフィールド
+enum SortField {
+  RELEVANCE = 0;
+  SPELLING = 1;
+  CREATED_AT = 2;
+  UPDATED_AT = 3;
+  POPULARITY = 4;
+  QUALITY = 5;
+}
+
+// ページネーション
+message Pagination {
+  uint32 offset = 1;
+  uint32 limit = 2;
+}
+
+// 検索レスポンス
+message SearchItemsResponse {
+  repeated SearchResultItem items = 1;
+  uint32 total_hits = 2;
+  float max_score = 3;
+  uint32 took_ms = 4;
+  repeated SpellingSuggestion suggestions = 5;
+}
+
+// 検索結果アイテム
+message SearchResultItem {
+  string item_id = 1;
+  string entry_id = 2;
+  string spelling = 3;
+  string disambiguation = 4;
+  float score = 5;
+  map<string, string> highlights = 6; // field -> highlighted text
+  MatchExplanation explanation = 7;
+}
+
+// マッチ説明
+message MatchExplanation {
+  repeated FieldMatch field_matches = 1;
+  float total_score = 2;
+}
+
+// フィールドマッチ
+message FieldMatch {
+  string field_name = 1;
+  float score = 2;
+  string matched_text = 3;
+}
+
+// スペリングサジェスト
+message SpellingSuggestion {
+  string text = 1;
+  float score = 2;
+  uint64 frequency = 3;
+}
+
+// サジェストリクエスト
+message GetSuggestionsRequest {
+  string prefix = 1;
+  uint32 limit = 2;
+  SuggestionType type = 3;
+}
+
+// サジェストタイプ
+enum SuggestionType {
+  SPELLING = 0;
+  DEFINITION = 1;
+  EXAMPLE = 2;
+}
+
+// サジェストレスポンス
+message GetSuggestionsResponse {
+  repeated Suggestion suggestions = 1;
+}
+
+// サジェスト
+message Suggestion {
+  string text = 1;
+  string display_text = 2;
+  float score = 3;
+  SuggestionType type = 4;
+}
+
+// ファセット検索リクエスト
+message SearchWithFacetsRequest {
+  string query = 1;
+  SearchFilters filters = 2;
+  repeated string facet_fields = 3;
+  Pagination pagination = 4;
+}
+
+// ファセット検索レスポンス
+message SearchWithFacetsResponse {
+  repeated SearchResultItem items = 1;
+  uint32 total_hits = 2;
+  map<string, FacetDistribution> facets = 3;
+  uint32 took_ms = 4;
+}
+
+// ファセット分布
+message FacetDistribution {
+  map<string, uint64> values = 1;
+}
+
+// 関連項目リクエスト
+message GetRelatedItemsRequest {
+  string item_id = 1;
+  RelationType relation_type = 2;
+  uint32 limit = 3;
+}
+
+// 関連タイプ
+enum RelationType {
+  SYNONYMS = 0;
+  ANTONYMS = 1;
+  SIMILAR_USAGE = 2;
+  SAME_DOMAIN = 3;
+  SAME_LEVEL = 4;
+}
+
+// 関連項目レスポンス
+message GetRelatedItemsResponse {
+  repeated RelatedItem items = 1;
+}
+
+// 関連項目
+message RelatedItem {
+  string item_id = 1;
+  string spelling = 2;
+  string disambiguation = 3;
+  float relation_score = 4;
+  RelationType relation_type = 5;
+}

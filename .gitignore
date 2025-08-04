@@ -58,3 +58,4 @@ volumes/
 docs/archive/
 
 .serena/
+.mcp.json

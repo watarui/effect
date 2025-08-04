@@ -167,6 +167,26 @@ services:
   # 共通インフラストラクチャ
   # ========================================
 
+  # Meilisearch - 検索エンジン
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    container_name: effect-meilisearch
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_MASTER_KEY:-masterKey}
+      MEILI_ENV: ${MEILISEARCH_ENV:-development}
+      MEILI_DB_PATH: /meili_data
+    ports:
+      - "${MEILISEARCH_PORT:-7700}:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
   # Redis - キャッシュ専用
   redis:
     image: redis:8.2-rc1-alpine3.22
@@ -518,6 +538,37 @@ services:
     networks:
       - effect-network
 
+  # Vocabulary Search Service - 検索専門サービス
+  vocabulary-search-service:
+    build:
+      context: .
+      dockerfile: services/vocabulary_search_service/Dockerfile
+      target: development
+    container_name: effect-vocabulary-search-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50058
+      MEILISEARCH_URL: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILISEARCH_MASTER_KEY:-masterKey}
+      REDIS_URL: redis://redis:6379
+      INDEX_NAME: vocabulary_items
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary:5432/vocabulary_db
+    volumes:
+      - ./services/vocabulary_search_service:/app/services/vocabulary_search_service
+      - ./shared:/app/shared
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      meilisearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres-vocabulary:
+        condition: service_healthy
+    networks:
+      - effect-network
+
   # ========================================
   # 開発ツール（オプション）
   # ========================================
@@ -640,6 +691,7 @@ volumes:
 
   # その他のボリューム
   redis_data:
+  meilisearch_data:
   pgadmin_data:
   redis_insight_data:
   prometheus_data:
