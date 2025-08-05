@@ -55,7 +55,7 @@ pgadmin_data/
 # Docker ボリューム
 volumes/
 
-docs/archive/
+.archive/
 
 .serena/
 .mcp.json

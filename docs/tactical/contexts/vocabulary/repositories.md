@@ -2,121 +2,202 @@
 
 ## 概要
 
-Vocabulary Context には 2 つの集約が存在し、それぞれに対応するリポジトリを定義します：
+Vocabulary Context は CQRS パターンを採用しており、Command 側と Query 側で異なるリポジトリを使用します。
 
-- `VocabularyEntry`：語彙エントリ（スペリング単位の管理）
-- `VocabularyItem`：語彙項目（意味や品詞単位の詳細情報）
+## Command 側のリポジトリ
 
-## VocabularyEntryRepository
+### EventStoreVocabularyRepository
 
-語彙エントリの永続化を担当するリポジトリです。
+Event Sourcing パターンに基づき、集約の状態をイベントとして保存します。
 
-### 主要な責務
+**主要な責務**:
 
-- エントリの基本的な CRUD 操作
-- スペリングによる検索
-- キーワード検索とオートコンプリート
-- AI 生成関連のクエリ
-- 統計情報の取得
+- 集約のイベントストリームの読み込み
+- 新しいイベントの追記
+- スナップショットの管理
+- 楽観的ロックの実装
 
-### インターフェース設計
+**インターフェース**:
 
-**基本的な CRUD 操作**:
+```rust
+trait EventStoreRepository {
+    // 集約の読み込み
+    async fn find_by_spelling(&self, spelling: &str) -> Result<Option<VocabularyEntry>>;
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<VocabularyEntry>>;
+    
+    // イベントの保存
+    async fn save(&self, entry: &mut VocabularyEntry) -> Result<()>;
+    
+    // スナップショット
+    async fn save_snapshot(&self, entry: &VocabularyEntry) -> Result<()>;
+    async fn load_from_snapshot(&self, id: Uuid) -> Result<Option<VocabularyEntry>>;
+}
+```
 
-- `find_by_id`: ID でエントリを取得
-- `find_by_spelling`: スペリングでエントリを取得
-- `save`: エントリを保存（新規作成または更新）
-- `delete`: エントリを削除（論理削除推奨）
+**実装の詳細**:
 
-**検索関連のクエリ**:
+1. **イベントストリームの読み込み**
+   - スナップショットがあれば、そこから開始
+   - スナップショット以降のイベントを適用
+   - 集約の現在の状態を再構築
 
-- `search`: キーワードでエントリを検索
-- `find_by_prefix`: プレフィックス検索（オートコンプリート用）
-- `find_all_paginated`: 全エントリをページネーションで取得
+2. **イベントの保存**
+   - 集約から発生したイベントを取得
+   - Event Store に追記
+   - Event Bus にイベントを発行
 
-**AI 生成関連**:
+3. **検索用の補助テーブル**
+   - `vocabulary_entries` テーブルで spelling → entry_id のマッピングを管理
+   - Event Store での検索を効率化
 
-- `find_failed_generation_entries`: AI 生成失敗のエントリを取得（リトライ用）
+## Query 側のリポジトリ
 
-**統計関連**:
+### ReadModelRepository
 
-- `count_total`: エントリ総数を取得
-- `count_generated`: AI 生成済みエントリ数を取得
+非正規化されたビューから高速に読み取ります。
 
-## VocabularyItemRepository
+**主要な責務**:
 
-語彙項目の詳細情報の永続化を担当するリポジトリです。
+- 項目情報の高速取得
+- 検索・フィルタリング
+- 統計情報の提供
 
-### 主要な責務
+**インターフェース**:
 
-- 項目の基本的な CRUD 操作
-- エントリに紐づく項目の管理
-- 楽観的ロックによる同時更新制御
-- バージョン管理
-- ステータス別のクエリ
-- タグによる検索
+```rust
+trait ReadModelRepository {
+    // 基本的な取得
+    async fn get_item(&self, item_id: Uuid) -> Result<Option<VocabularyItemView>>;
+    async fn get_entry(&self, entry_id: Uuid) -> Result<Option<VocabularyEntryView>>;
+    
+    // 検索
+    async fn search_items(&self, query: &str, filters: SearchFilters) -> Result<Vec<VocabularyItemView>>;
+    async fn get_items_by_status(&self, status: &str) -> Result<Vec<VocabularyItemView>>;
+    async fn get_items_by_cefr(&self, level: &str) -> Result<Vec<VocabularyItemView>>;
+    
+    // 統計
+    async fn get_stats(&self) -> Result<VocabularyStats>;
+}
+```
 
-### インターフェース設計
+**データ構造**:
 
-**基本的な CRUD 操作**:
+```rust
+// 非正規化されたビュー
+struct VocabularyItemView {
+    item_id: Uuid,
+    entry_id: Uuid,
+    spelling: String,
+    definitions: serde_json::Value,  // JSONB
+    synonyms: serde_json::Value,     // JSONB
+    antonyms: serde_json::Value,     // JSONB
+    // フィルタリング用の個別カラム
+    status: String,
+    cefr_level: Option<String>,
+    definition_count: i32,
+    example_count: i32,
+}
+```
 
-- `find_by_id`: ID で項目を取得
-- `find_by_entry_id`: エントリ ID に紐づく全項目を取得
-- `save`: 項目を保存（新規作成または更新）
-- `delete`: 項目を削除（論理削除推奨）
+## Projection 側のリポジトリ
 
-**楽観的ロックサポート**:
+### ProjectionRepository
 
-- `find_by_id_with_version`: ID とバージョンで項目を取得
-- `update_with_version`: バージョンチェック付きで更新
+イベントから Read Model への投影を管理します。
 
-**バッチ操作**:
+**主要な責務**:
 
-- `find_by_ids`: 複数の ID で項目を一括取得
-- `save_batch`: 複数の項目を一括保存
+- イベントハンドリング
+- Read Model の更新
+- 投影状態の管理
 
-**検索関連のクエリ**:
+**インターフェース**:
 
-- `search`: キーワードで項目を検索
-- `find_by_status`: ステータスで項目を検索
-- `find_by_tag`: タグで項目を検索
-- `find_by_cefr_level`: CEFR レベルで項目を検索
-
-**AI 生成関連**:
-
-- `find_pending_ai`: AI 生成待ちの項目を取得
-- `find_failed_generation`: AI 生成失敗の項目を取得
-
-**統計関連**:
-
-- `count_by_status`: ステータス別の項目数を取得
-- `count_by_entry_id`: エントリ ID に紐づく項目数を取得
-- `generate_statistics`: 語彙統計を生成
+```rust
+trait ProjectionRepository {
+    // Read Model の更新
+    async fn apply_entry_created(&self, event: EntryCreated) -> Result<()>;
+    async fn apply_item_created(&self, event: ItemCreated) -> Result<()>;
+    async fn apply_item_updated(&self, event: ItemUpdated) -> Result<()>;
+    
+    // 投影状態の管理
+    async fn get_projection_state(&self) -> Result<ProjectionState>;
+    async fn update_projection_state(&self, state: ProjectionState) -> Result<()>;
+}
+```
 
 ## 実装上の考慮事項
 
-### トランザクション境界
+### 1. トランザクション境界
 
-- 各リポジトリメソッドは単一のトランザクション内で実行
-- 複数の集約を跨ぐ操作は、アプリケーションサービス層でトランザクションを管理
+**Command 側**:
 
-### 楽観的ロック
+- Event Store への書き込みと Event Bus への発行は同一トランザクション
+- 失敗時は全体をロールバック
 
-- `VocabularyItem` の更新時は必ずバージョンチェックを実施
-- 競合発生時は `UpdateConflicted` イベントを発行
+**Query 側**:
 
-### キャッシング戦略
+- 読み取り専用のため、トランザクションは最小限
+- キャッシュとの整合性を考慮
 
-- 読み取り頻度の高いエントリはキャッシュを考慮
-- 更新時はキャッシュの無効化を確実に実施
+**Projection 側**:
 
-### パフォーマンス最適化
+- イベント単位でトランザクション
+- 冪等性を保証
 
-- 検索クエリはインデックスを活用
-- バッチ操作で N+1 問題を回避
-- ページネーションで大量データの取得を制御
+### 2. 楽観的ロック
 
-### エラーハンドリング
+Event Store でのバージョン管理：
 
-- リポジトリ層でのエラーは適切な型に変換
-- データベース固有のエラーをドメインエラーにマッピング
+```sql
+-- イベント保存時のチェック
+INSERT INTO events (stream_id, event_version, ...)
+VALUES (?, ?, ...)
+ON CONFLICT (stream_id, event_version) DO NOTHING;
+```
+
+### 3. キャッシング戦略
+
+**Query Service**:
+
+- Redis で Read Model をキャッシュ
+- TTL: 5分（頻繁に更新されるデータ）
+- キャッシュキー: `vocabulary:item:{item_id}`
+
+**Command Service**:
+
+- キャッシュは使用しない（整合性重視）
+
+### 4. パフォーマンス最適化
+
+**Event Store**:
+
+- aggregate_id にインデックス
+- occurred_at にインデックス（時系列クエリ用）
+
+**Read Model**:
+
+- spelling, status, cefr_level にインデックス
+- JSONB の GIN インデックス（全文検索用）
+
+### 5. エラーハンドリング
+
+```rust
+// リポジトリエラーの統一的な処理
+enum RepositoryError {
+    NotFound,
+    VersionConflict,
+    DatabaseError(String),
+    SerializationError(String),
+}
+```
+
+## まとめ
+
+CQRS パターンにより：
+
+- **Write 側**: イベントの完全性と監査証跡を保証
+- **Read 側**: 高速な読み取りと柔軟な検索
+- **Projection**: 非同期での最終的一貫性
+
+各リポジトリは単一責任原則に従い、それぞれの役割に特化した実装となっています。

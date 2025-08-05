@@ -10,6 +10,7 @@ Vocabulary Context は、Effect プロジェクトにおける語彙コンテン
 2. **楽観的ロック + 自動マージ**: 並行編集に対して可能な限り自動マージを試みる
 3. **イベントソーシング**: すべての変更を記録し、完全な履歴とバージョン管理を実現
 4. **AI との非同期連携**: 項目情報の生成を AI に委譲し、非同期で処理
+5. **CQRS アーキテクチャ**: 書き込み（Command）と読み取り（Query）を分離し、それぞれ最適化
 
 ### 主要な責務
 
@@ -49,15 +50,28 @@ Vocabulary Context は、Effect プロジェクトにおける語彙コンテン
 
 - pronunciation: 発音記号
 - phonetic_respelling: 音声表記
-- definitions: 定義のリスト
-- parts_of_speech: 品詞のリスト
-- examples: 例文のリスト
+- definitions: 定義のリスト（Definition 値オブジェクトの配列）
 - synonyms: 類義語のリスト
 - antonyms: 対義語のリスト
 - collocations: コロケーション
 - register: レジスター（formal, informal など）
 - cefr_level: CEFR レベル
-- tags: タグのリスト
+
+**Definition（定義）- 値オブジェクト**:
+
+- definition_id: 定義の識別子
+- part_of_speech: 品詞（noun, verb, adjective など）
+- meaning: 英語の定義
+- meaning_translation: 日本語訳
+- domain: 分野（medical, computing, legal など、NULL = general）
+- register: この定義特有の使用域（項目レベルを上書き）
+- examples: 例文のリスト（Example 値オブジェクトの配列）
+
+**Example（例文）- 値オブジェクト**:
+
+- example_text: 例文
+- example_translation: 例文の日本語訳
+- source: 出典（オプション）
 
 **メタ情報**:
 
@@ -82,3 +96,46 @@ Vocabulary Context は、Effect プロジェクトにおける語彙コンテン
 2. **EntryId の整合性**: VocabularyItem は必ず VocabularyEntry に所属する
 3. **バージョン管理**: 更新時は必ずバージョンチェックを行う
 4. **ステータス遷移**: Draft → PendingAI → Published の順序を守る
+
+## CQRS による実装
+
+### Write Model（Command Service）
+
+Event Store にイベントとして保存される：
+
+- **VocabularyEntryCreated**: 新しい見出し語の作成
+- **VocabularyItemAdded**: 見出し語に新しい項目（意味）を追加
+- **DefinitionAdded**: 項目に新しい定義を追加
+- **ExampleAdded**: 定義に新しい例文を追加
+- **ItemPublished**: 項目を公開状態に変更
+
+各イベントは集約の状態変更を表し、Event Store に追記される。
+
+### Read Model（Query Service）
+
+非正規化された投影として保存される：
+
+```json
+{
+  "item_id": "uuid",
+  "spelling": "apple",
+  "definitions": [
+    {
+      "definition_id": "uuid",
+      "part_of_speech": "noun",
+      "meaning": "A round fruit...",
+      "domain": null,
+      "examples": [
+        {
+          "example_text": "I ate an apple for lunch.",
+          "example_translation": "昼食にりんごを食べました。"
+        }
+      ]
+    }
+  ],
+  "synonyms": {...},
+  "antonyms": {...}
+}
+```
+
+この構造により、1回のクエリで画面表示に必要なすべての情報を取得できる。
