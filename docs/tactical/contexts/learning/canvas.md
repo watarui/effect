@@ -8,6 +8,8 @@ Learning Context
 
 ハイブリッド UI（解答表示 →3 秒自動確認）による「覚えた感」を実現し、効果的な学習体験を提供する。
 ユーザーが設定した問題数で学習セッションを管理し、ユーザーの学習プロセスを最適化する。
+CQRS/Event Sourcing パターンを採用し、4つのマイクロサービス（Command、Query、Projection、Analytics）に分解されることで、
+高い可用性とスケーラビリティを実現する。
 
 ## 3. Strategic Classification（戦略的分類）
 
@@ -130,7 +132,46 @@ Learning Context
 - 学習効果: 長期記憶への移行率
 - UI の使いやすさ: ユーザビリティテスト
 
-## 11. Open Questions
+## 11. Service Architecture
+
+### マイクロサービス構成
+
+Learning Context は以下の 4 つのサービスに分解される：
+
+1. **learning-command-service**
+   - LearningSession/UserItemRecord 集約の管理
+   - セッション制御とコマンド実行
+   - ドメインイベントの生成
+   - Event Store への永続化
+
+2. **learning-query-service**
+   - セッション情報の取得
+   - 学習記録の検索
+   - 統計情報の提供
+   - Redis キャッシュ活用
+
+3. **learning-projection-service**
+   - イベントの消費と処理
+   - Read Model の更新
+   - Progress Context への転送
+   - 習熟度計算
+
+4. **learning-analytics-service**
+   - 学習パターン分析
+   - パフォーマンス指標
+   - 推奨事項生成
+   - レポート機能
+
+### 技術選定
+
+- **Event Store**: PostgreSQL（イベント永続化）
+- **Event Bus**: Google Pub/Sub（サービス間通信）
+- **Read Model**: PostgreSQL（学習データ）
+- **Cache**: Redis（クエリ結果キャッシュ、5分-1時間 TTL）
+- **Analytics**: Apache Arrow/DataFusion（分析処理）
+- **Deployment**: Google Cloud Run
+
+## 12. Open Questions
 
 ### 設計上の疑問
 
@@ -152,14 +193,15 @@ Learning Context
 
 ## 改訂履歴
 
-- 2025-07-29: 初版作成
+- 2025-08-05: CQRS/Event Sourcing アーキテクチャと4つのマイクロサービス構成を追加
+- 2025-07-30: AI 機能（カスタマイズ、チャット）を Open Questions に追加
+  - 現時点では Learning Context は AI Integration Context と直接連携なし
+  - 将来的な拡張可能性として記載
+- 2025-07-30: ItemSelectionRequested を非同期から同期に変更
+  - 理由：Learning Algorithm Context との整合性を保つ
+  - セッション中の項目選定は即座の応答が必要
 - 2025-07-29: ItemsSelected を非同期から同期に変更
   - 理由：UX の一貫性を優先（学習開始時に即座に項目リストが必要）
   - 非同期パターンの学習は他の箇所（Progress Context のイベントソーシング、ドメインイベント発行）で十分に実践可能
   - アーキテクチャの適材適所（全てを非同期にする必要はない）という設計判断も重要な学習要素
-- 2025-07-30: ItemSelectionRequested を非同期から同期に変更
-  - 理由：Learning Algorithm Context との整合性を保つ
-  - セッション中の項目選定は即座の応答が必要
-- 2025-07-30: AI 機能（カスタマイズ、チャット）を Open Questions に追加
-  - 現時点では Learning Context は AI Integration Context と直接連携なし
-  - 将来的な拡張可能性として記載
+- 2025-07-29: 初版作成

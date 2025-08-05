@@ -80,6 +80,56 @@ Learning Context は、Effect プロジェクトの中核となるコンテキ�
 - judgment: 正誤判定
 - session_id: セッション識別子
 
+## CQRS による実装
+
+### Write Model（Command Service）
+
+Event Sourcing により、集約の状態はイベントの累積として管理されます。
+
+```rust
+impl LearningSession {
+    // コマンドハンドラー
+    pub fn start(user_id: UserId, items: Vec<ItemId>, session_type: SessionType) -> Result<Self> {
+        let session = Self::new(user_id, items, session_type);
+        session.record_event(SessionStarted { /* ... */ });
+        Ok(session)
+    }
+    
+    pub fn judge_correctness(&mut self, item_id: ItemId, judgment: CorrectnessJudgment) -> Result<()> {
+        // ビジネスルールの検証
+        self.validate_can_judge(item_id)?;
+        
+        // イベントの記録
+        self.record_event(CorrectnessJudged { /* ... */ });
+        Ok(())
+    }
+}
+```
+
+### Read Model（Query/Analytics Service）
+
+非正規化されたビューで高速な読み取りを実現します。
+
+```sql
+-- セッションビュー
+CREATE TABLE session_views (
+    session_id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL,
+    session_data JSONB NOT NULL,  -- 非正規化データ
+    summary JSONB,                 -- 事前計算された統計
+    INDEX idx_user_started (user_id, started_at DESC)
+);
+
+-- 学習記録ビュー  
+CREATE TABLE learning_record_views (
+    user_id UUID,
+    item_id UUID,
+    mastery_data JSONB NOT NULL,  -- 習熟度、統計など
+    PRIMARY KEY (user_id, item_id)
+);
+```
+
 ## 設計上の重要な決定
 
 ### ハイブリッド UI フロー

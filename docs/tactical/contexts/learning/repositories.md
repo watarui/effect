@@ -2,116 +2,224 @@
 
 ## 概要
 
-Learning Context には 2 つの集約が存在し、それぞれに対応するリポジトリを定義します：
+Learning Context は CQRS パターンを採用しており、Command 側と Query 側で異なるリポジトリを使用します。
 
-- `LearningSession`：学習セッションの管理
-- `UserItemRecord`：ユーザーの項目別学習記録
+## Command 側のリポジトリ
 
-## LearningSessionRepository
+### EventStoreLearningRepository
 
-学習セッションの永続化を担当するリポジトリです。
+Event Sourcing パターンに基づき、集約の状態をイベントとして保存します。
 
-### 主要な責務
+**主要な責務**:
 
-- セッションの基本的な CRUD 操作
-- アクティブセッションの管理
-- セッション履歴の検索
-- 統計情報の集計
-- タイムアウト処理のサポート
+- 集約のイベントストリームの読み込み
+- 新しいイベントの追記
+- スナップショットの管理
+- 楽観的ロックの実装
 
-### インターフェース設計
+**インターフェース**:
 
-**基本的な CRUD 操作**:
+```rust
+trait EventStoreRepository {
+    // セッションの読み込み
+    async fn find_session_by_id(&self, id: SessionId) -> Result<Option<LearningSession>>;
+    async fn find_active_session_by_user(&self, user_id: UserId) -> Result<Option<LearningSession>>;
+    
+    // 学習記録の読み込み
+    async fn find_record_by_user_and_item(&self, user_id: UserId, item_id: ItemId) -> Result<Option<UserItemRecord>>;
+    
+    // イベントの保存
+    async fn save_session(&self, session: &mut LearningSession) -> Result<()>;
+    async fn save_record(&self, record: &mut UserItemRecord) -> Result<()>;
+    
+    // スナップショット
+    async fn save_snapshot(&self, aggregate_id: Uuid, snapshot: &[u8]) -> Result<()>;
+    async fn load_from_snapshot(&self, aggregate_id: Uuid) -> Result<Option<Vec<u8>>>;
+}
+```
 
-- `find_by_id`: ID でセッションを取得
-- `save`: セッションを保存（新規作成または更新）
-- `delete`: セッションを削除（通常は使用しない）
+**実装の詳細**:
 
-**ユーザー関連のクエリ**:
+1. **イベントストリームの読み込み**
+   - スナップショットがあれば、そこから開始
+   - スナップショット以降のイベントを適用
+   - 集約の現在の状態を再構築
 
-- `find_active_by_user`: ユーザーのアクティブなセッションを取得
-- `find_by_user_paginated`: ユーザーの全セッションをページネーションで取得
-- `find_by_user_and_date_range`: 特定期間のセッションを取得
+2. **イベントの保存**
+   - 集約から発生したイベントを取得
+   - Event Store に追記
+   - Event Bus にイベントを発行
 
-**統計関連のクエリ**:
+3. **検索用の補助テーブル**
+   - `active_sessions` テーブルで user_id → session_id のマッピング
+   - `user_item_records` テーブルで (user_id, item_id) → aggregate_id のマッピング
 
-- `count_completed_by_user`: 完了セッション数を取得
-- `count_completed_today_by_user`: 本日の完了セッション数を取得
+## Query 側のリポジトリ
 
-**管理用クエリ**:
+### ReadModelRepository
 
-- `find_stale_sessions`: 長時間放置されたセッションを取得（タイムアウト処理用）
+非正規化されたビューから高速に読み取ります。
 
-## UserItemRecordRepository
+**主要な責務**:
 
-ユーザーと項目の学習記録を管理するリポジトリです。
-
-### 主要な責務
-
-- 学習記録の基本的な CRUD 操作
-- 習熟状態による検索
-- 復習スケジュールの管理
-- 学習履歴の追跡
+- セッション情報の高速取得
+- 学習記録の検索・フィルタリング
 - 統計情報の提供
+- 分析用データの出力
 
-### インターフェース設計
+**インターフェース**:
 
-**基本的な CRUD 操作**:
+```rust
+trait ReadModelRepository {
+    // セッション情報
+    async fn get_active_session(&self, user_id: Uuid) -> Result<Option<ActiveSessionView>>;
+    async fn get_session(&self, session_id: Uuid) -> Result<Option<SessionDetailView>>;
+    async fn get_session_history(&self, query: SessionHistoryQuery) -> Result<SessionHistoryView>;
+    
+    // 学習記録
+    async fn get_user_item_records(&self, user_id: Uuid, item_ids: &[Uuid]) -> Result<Vec<UserItemRecordView>>;
+    async fn get_mastery_status_counts(&self, user_id: Uuid) -> Result<MasteryStatusCounts>;
+    async fn get_due_for_review(&self, user_id: Uuid, limit: u32) -> Result<Vec<UserItemRecordView>>;
+    
+    // 進捗・統計
+    async fn get_learning_progress(&self, user_id: Uuid, period: ProgressPeriod) -> Result<LearningProgressView>;
+    async fn get_learning_stats(&self, user_id: Uuid) -> Result<LearningStatsView>;
+}
+```
 
-- `find_by_user_and_item`: ユーザーと項目のペアで記録を取得
-- `save`: 記録を保存（新規作成または更新）
-- `delete`: 記録を削除（リセット時のみ使用）
+**データ構造**:
 
-**バッチ操作**:
+```rust
+// 非正規化されたセッションビュー
+struct SessionView {
+    session_id: Uuid,
+    user_id: Uuid,
+    started_at: DateTime<Utc>,
+    session_data: serde_json::Value,  // JSONB
+    summary: serde_json::Value,       // 事前計算された統計
+    status: String,
+}
 
-- `find_by_user_and_items`: 複数項目の記録を一括取得
-- `save_batch`: 複数の記録を一括保存
+// 非正規化された学習記録ビュー
+struct LearningRecordView {
+    user_id: Uuid,
+    item_id: Uuid,
+    mastery_status: String,
+    mastery_data: serde_json::Value,  // JSONB（統計、履歴など）
+    last_reviewed: DateTime<Utc>,
+    next_review: Option<DateTime<Utc>>,
+}
+```
 
-**習熟状態による検索**:
+## Projection 側のリポジトリ
 
-- `find_by_user_and_status`: 特定の習熟状態の項目を取得
-- `find_new_items_for_user`: 未学習の項目を取得
-- `find_weak_items_for_user`: 苦手項目を取得
+### ProjectionRepository
 
-**復習スケジュール関連**:
+イベントから Read Model への投影を管理します。
 
-- `find_due_for_review`: 復習期限が来た項目を取得
-- `find_overdue_items`: 復習期限を過ぎた項目を取得
-- `find_next_review_items`: 次回復習予定の項目を取得
+**主要な責務**:
 
-**統計関連**:
+- イベントハンドリング
+- Read Model の更新
+- 投影状態の管理
+- 習熟度計算
 
-- `count_by_user_and_status`: 習熟状態別の項目数を取得
-- `count_mastered_items`: 習得済み項目数を取得
-- `count_total_responses`: 総回答数を取得
-- `calculate_average_accuracy`: 平均正答率を計算
+**インターフェース**:
 
-**学習アルゴリズム向けクエリ**:
-
-- `find_recent_responses`: 最近の回答履歴を取得
-- `find_learning_curve_data`: 学習曲線データを取得
+```rust
+trait ProjectionRepository {
+    // Read Model の更新
+    async fn apply_session_started(&self, event: SessionStarted) -> Result<()>;
+    async fn apply_item_presented(&self, event: ItemPresented) -> Result<()>;
+    async fn apply_correctness_judged(&self, event: CorrectnessJudged) -> Result<()>;
+    async fn apply_session_completed(&self, event: SessionCompleted) -> Result<()>;
+    
+    // 習熟度計算
+    async fn calculate_mastery_transition(&self, event: &CorrectnessJudged) -> Result<Option<MasteryTransition>>;
+    async fn update_mastery_status(&self, transition: MasteryTransition) -> Result<()>;
+    
+    // 投影状態の管理
+    async fn get_projection_state(&self) -> Result<ProjectionState>;
+    async fn update_projection_state(&self, state: ProjectionState) -> Result<()>;
+}
+```
 
 ## 実装上の考慮事項
 
-### パフォーマンス最適化
+### 1. トランザクション境界
 
-- 頻繁にアクセスされる UserItemRecord はキャッシュを考慮
-- バッチ操作で N+1 問題を回避
-- インデックスの適切な設定（user_id, item_id, mastery_status）
+**Command 側**:
 
-### データ整合性
+- Event Store への書き込みと Event Bus への発行は同一トランザクション
+- 失敗時は全体をロールバック
 
-- LearningSession と UserItemRecord の整合性はイベント駆動で保証
-- トランザクション境界は各集約ごとに設定
+**Query 側**:
 
-### Progress Context との連携
+- 読み取り専用のため、トランザクションは最小限
+- キャッシュとの整合性を考慮
 
-- UserItemRecord は Progress Context とデータを共有
-- 変更はイベントを通じて伝播
-- 読み取りモデルの非正規化を許容
+**Projection 側**:
 
-### 履歴データの管理
+- イベント単位でトランザクション
+- 冪等性を保証
 
-- ResponseRecord は追記のみ（イミュータブル）
-- 古い履歴データのアーカイブ戦略を考慮
-- 分析用途のための効率的なクエリ設計
+### 2. 楽観的ロック
+
+Event Store でのバージョン管理：
+
+```sql
+-- イベント保存時のチェック
+INSERT INTO events (stream_id, event_version, ...)
+VALUES (?, ?, ...)
+ON CONFLICT (stream_id, event_version) DO NOTHING;
+```
+
+### 3. キャッシング戦略
+
+**Query Service**:
+
+- Redis で Read Model をキャッシュ
+- TTL:
+  - アクティブセッション: キャッシュなし
+  - セッション詳細: 5分
+  - 統計データ: 1時間
+
+**Command Service**:
+
+- キャッシュは使用しない（整合性重視）
+
+### 4. パフォーマンス最適化
+
+**Event Store**:
+
+- aggregate_id にインデックス
+- occurred_at にインデックス（時系列クエリ用）
+
+**Read Model**:
+
+- user_id, started_at に複合インデックス
+- mastery_status にインデックス
+- JSONB の GIN インデックス（検索用）
+
+### 5. エラーハンドリング
+
+```rust
+// リポジトリエラーの統一的な処理
+enum RepositoryError {
+    NotFound,
+    VersionConflict,
+    DatabaseError(String),
+    SerializationError(String),
+}
+```
+
+## まとめ
+
+CQRS パターンにより：
+
+- **Write 側**: イベントの完全性と監査証跡を保証
+- **Read 側**: 高速な読み取りと柔軟な検索
+- **Projection**: 非同期での最終的一貫性
+- **Analytics**: 分析用に最適化されたデータモデル
+
+各リポジトリは単一責任原則に従い、それぞれの役割に特化した実装となっています。

@@ -149,3 +149,60 @@ SessionCompleted
 - **Progress Context**: SessionCompleted, ItemMasteryUpdated を受信して進捗を更新
 - **Learning Algorithm Context**: CorrectnessJudged を受信してアルゴリズムパラメータを更新
 - **AI Integration Context**: 学習パターンを分析して推薦を改善
+
+## Event Sourcing による実装
+
+すべてのイベントは Event Store に以下の形式で保存される：
+
+```sql
+events (
+  event_id UUID,
+  aggregate_id UUID,        -- session_id または user_item_record_id
+  aggregate_type VARCHAR,   -- "LearningSession" または "UserItemRecord"
+  event_type VARCHAR,       -- "SessionStarted", "ItemPresented" など
+  event_data JSONB,         -- イベントの詳細データ
+  event_version INTEGER,    -- 集約のバージョン
+  occurred_at TIMESTAMPTZ
+)
+```
+
+### イベントハンドリング
+
+```rust
+// Projection Service でのイベント処理例
+async fn handle_correctness_judged(event: CorrectnessJudged) {
+    // 1. セッションビューの更新
+    update_session_item_view(&event).await?;
+    
+    // 2. 学習記録の更新
+    update_user_item_record(&event).await?;
+    
+    // 3. 習熟度の再計算
+    if let Some(new_status) = calculate_mastery_status(&event).await? {
+        // 新しいイベントを生成
+        publish_event(ItemMasteryUpdated {
+            user_id: event.user_id,
+            item_id: event.item_id,
+            old_status: new_status.old,
+            new_status: new_status.new,
+            occurred_at: Utc::now(),
+        }).await?;
+    }
+    
+    // 4. Progress Context への転送
+    forward_to_progress_context(&event).await?;
+}
+```
+
+### イベントの順序保証
+
+- 同一セッション内のイベントは順序を保証
+- Pub/Sub のメッセージ順序保証機能を使用
+- 集約ごとにパーティショニング
+
+これにより：
+
+- 完全な学習履歴の保持
+- 任意の時点の状態再現
+- 監査証跡の提供
+- 分析用データの蓄積
