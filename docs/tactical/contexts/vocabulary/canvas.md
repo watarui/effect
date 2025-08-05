@@ -8,7 +8,7 @@ Vocabulary Context
 
 Wikipedia スタイルの語彙データベースを管理し、同一スペリングで複数の意味を持つ項目を効率的に管理する。
 AI と連携して豊富な語彙情報を自動生成し、全ユーザーが共有するグローバル辞書を提供する。
-Vocabulary Context は CQRS/Event Sourcing パターンを採用し、4 つのマイクロサービスに分解されることで、
+CQRS/Event Sourcing パターンを採用し、4 つのマイクロサービス（Command、Query、Projection、Search）に分解されることで、
 高い可用性とスケーラビリティを実現する。
 
 ## 3. Strategic Classification
@@ -189,7 +189,8 @@ Vocabulary Context は以下の 4 つのサービスに分解される：
 - **Event Bus**: Google Pub/Sub（サービス間通信）
 - **Read Model**: PostgreSQL（基本データ）
 - **Search Engine**: Meilisearch（高度な検索）
-- **Cache**: Redis（クエリ結果キャッシュ）
+- **Cache**: Redis（クエリ結果キャッシュ、5分 TTL）
+- **Asset Storage**: Google Cloud Storage（画像・音声ファイル）
 - **Deployment**: Google Cloud Run
 
 ## 12. Open Questions
@@ -198,21 +199,22 @@ Vocabulary Context は以下の 4 つのサービスに分解される：
 
 - [x] 大規模データでの検索性能の最適化方法は？→ Meilisearch 採用
 - [x] 変更履歴の保持期間とアーカイブ戦略は？→ Event Sourcing で全履歴保持
-- [ ] 画像（イラスト）の管理をどうするか？
-- [ ] 発音音声ファイルの管理方法は？
-- [ ] 例文の難易度判定は必要か？
-- [ ] コロケーションの自動抽出は可能か？
+- [x] 画像（イラスト）の管理をどうするか？→ Google Cloud Storage
+- [x] 発音音声ファイルの管理方法は？→ Google Cloud Storage
+- [x] 例文の難易度判定は必要か？→ 不要（CEFR レベルで十分）
+- [x] コロケーションの自動抽出は可能か？→ 実装しない（AI 生成に含める）
 
 ### 実装上の課題
 
 - [x] AI タスク ID と生成状態の永続化方法は？→ Event Store に記録
-- [ ] AI 生成の優先順位付けアルゴリズムは？
-- [ ] 外部辞書 API との連携は必要か？
+- [x] AI 生成の優先順位付けアルゴリズムは？→ FIFO（デフォルト）
+- [x] 外部辞書 API との連携は必要か？→ 不要（AI 生成で十分）
 
 ---
 
 ## 改訂履歴
 
+- 2025-08-05: インフラストラクチャ設計決定を反映（GCS、AI 生成設計）
 - 2025-08-03: CQRS/Event Sourcing 実装詳細を追加
 - 2025-07-30: AI Integration Context の非同期化に伴う更新（TaskCreatedAck 追加、AI タスク ID 管理を明記）
 - 2025-07-30: 初版作成
