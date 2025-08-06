@@ -5,7 +5,7 @@
 このドキュメントは、Effect プロジェクトの戦略的 DDD 設計の現在の進捗状況と、今後の作業再開のためのガイドです。
 
 作成日: 2025-07-27  
-最終更新: 2025-07-31（マイクロサービスインフラ実装完了）
+最終更新: 2025-08-06（真の CQRS+ES マイクロサービスへの移行）
 
 ## プロジェクト背景
 
@@ -499,9 +499,54 @@ PlantUML 図を作成（`/docs/ddd/design/aggregates/`）:
 - `/docs/ddd/design/saga-pattern-opportunities.md`（Saga パターン分析）
 - `/docs/ddd/design/design-changes-log.md`（設計変更記録）
 
+## 現在の実装状況（2025-08-06）
+
+### 真の CQRS+ES マイクロサービスへの移行
+
+1. **Vocabulary Context の再設計完了**
+   - モノリシック CRUD から真の CQRS+ES へ移行
+   - 4 つのマイクロサービスに分割：
+     - `vocabulary_command_service`: コマンド処理とドメインロジック
+     - `vocabulary_query_service`: 高速な読み取り処理
+     - `vocabulary_projection_service`: Event Store から Read Model への投影
+     - `vocabulary_search_service`: Meilisearch による検索機能
+   - Event Sourcing による完全な監査証跡
+   - 最終的一貫性の実現
+
+2. **共有ライブラリの理想的な再構成**
+   - `shared/kernel/`: Shared Kernel（IDs、ValueObjects、Events）
+   - `shared/contexts/`: 各コンテキストの共有型定義
+   - `shared/infrastructure/`: Event Store、Event Bus、Repository 基底実装
+   - `shared/cross_cutting/`: 横断的関心事（Error、Telemetry、Security、Cache、Config）
+   - 依存関係の明確化とレイヤー分離の実現
+
+3. **実装上の成果**
+   - ヘキサゴナルアーキテクチャの骨格構築
+   - Google Pub/Sub によるイベントバス実装
+   - PostgreSQL ベースの Event Store 実装
+   - 各サービスの基本構造とディレクトリ構成確立
+
+### 次のステップ
+
+1. **共有ライブラリの完成**
+   - domain_events の完全実装
+   - infrastructure コンポーネントの実装完了
+   - cross_cutting 機能の実装
+
+2. **他の Context への CQRS+ES 適用検討**
+   - Learning Context の分割検討
+   - Progress Context の純粋イベントソーシング実装
+   - 各コンテキストの責務見直し
+
+3. **統合テストとドキュメント整備**
+   - サービス間通信のテスト
+   - GraphQL API の実装
+   - 開発者向けガイドの作成
+
 ## メモ
 
 - ドメインエキスパートは開発者本人
 - 「話を勝手に進めないでね」という要望あり
 - 段階的アプローチは嫌い → フル機能を最初から設計
 - 「覚えた感」が最重要価値
+- 真の DDD CQRS+ES 実現への強いこだわり

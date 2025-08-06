@@ -9,6 +9,47 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-08-06: Vocabulary Context の真の CQRS+ES 実装への移行
+
+- **変更内容**: Vocabulary Context をモノリシック CRUD から真の CQRS+ES マイクロサービスへ再設計
+- **決定事項**:
+  - 4 つの独立したマイクロサービスに分割
+    - vocabulary_command_service: 書き込み専用、Event Store への永続化
+    - vocabulary_query_service: 読み取り専用、Read Model からの取得
+    - vocabulary_projection_service: イベント投影、Read Model の更新
+    - vocabulary_search_service: 検索機能、Meilisearch 統合
+  - Write Model と Read Model の完全分離
+  - 最終的一貫性の受け入れ
+- **理由**:
+  - 当初の実装がモノリシック CRUD になっていたことに気づいた
+  - DDD、CQRS、Event Sourcing の学習という本来の目的に合致していなかった
+  - 真のマイクロサービスアーキテクチャを実現するため
+  - 各サービスが単一責任原則に従うようにするため
+- **影響範囲**:
+  - Cargo.toml: 4 つの新しいサービスを workspace メンバーに追加
+  - services/ ディレクトリ: 新しいサービスディレクトリの作成
+  - shared/contexts/vocabulary/: 共有型定義の再整理
+  - docs/tactical/contexts/vocabulary/architecture.md: 新アーキテクチャの文書化
+
+### 2025-08-06: 共有ライブラリの理想的な再構成
+
+- **変更内容**: shared/ ディレクトリを DDD の原則に従って再構成
+- **決定事項**:
+  - kernel/: Shared Kernel（IDs、ValueObjects、基本イベント型）
+  - contexts/: 各 Bounded Context の共有型定義
+  - infrastructure/: 技術的な実装（Event Store、Event Bus、Repository）
+  - cross_cutting/: 横断的関心事（Error、Telemetry、Security、Cache、Config）
+  - domain_events/: 移行中のレガシー実装
+- **理由**:
+  - 依存関係を明確にし、レイヤー違反を防ぐ
+  - 各コンテキストの自律性を保ちながら、必要な共有を実現
+  - インフラストラクチャ層とドメイン層の明確な分離
+  - 横断的関心事を一箇所に集約
+- **影響範囲**:
+  - Cargo.toml: workspace メンバーの再構成
+  - 各サービスの依存関係: 新しいパス構造への更新
+  - ドキュメント: shared-infrastructure.md の更新
+
 ### 2025-07-31: 本番環境データベースの選定
 
 - **変更内容**: 本番環境のデータベースを外部サービスの Neon に決定
