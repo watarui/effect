@@ -1,6 +1,6 @@
 //! イベントハンドリングトレイト
 //!
-//! このモジュールはイベントハンドリング、保存、配信のためのトレイトを含みます。
+//! このモジュールはイベントハンドリングと配信のためのトレイトを含みます。
 
 use async_trait::async_trait;
 
@@ -20,13 +20,4 @@ pub trait EventBus: Send + Sync {
     async fn publish(&self, event: DomainEvent) -> Result<(), EventError>;
     /// イベントハンドラーを購読する
     async fn subscribe(&self, handler: Box<dyn EventHandler>) -> Result<(), EventError>;
-}
-
-/// イベントを永続化するためのイベントストアトレイト
-#[async_trait]
-pub trait EventStore: Send + Sync {
-    /// イベントをストリームに追加する
-    async fn append(&self, stream_id: &str, events: Vec<DomainEvent>) -> Result<(), EventError>;
-    /// ストリームからイベントを読み込む
-    async fn read(&self, stream_id: &str, from: usize) -> Result<Vec<DomainEvent>, EventError>;
 }

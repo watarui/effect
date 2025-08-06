@@ -50,372 +50,149 @@
 
 ### Shared Kernel の実装
 
-```rust
-// shared/kernel/src/lib.rs
-pub mod user {
-    use uuid::Uuid;
-    use serde::{Serialize, Deserialize};
+**概念**: 複数のコンテキスト間で共有される基本的な型定義。
 
-    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-    pub struct UserId(pub Uuid);
+**含まれるもの**:
 
-    impl UserId {
-        pub fn new() -> Self {
-            Self(Uuid::new_v4())
-        }
-    }
+- 識別子（UserId、ItemId など）
+- 基本的な値オブジェクト（CourseType、CefrLevel など）
+- 共通のタイムスタンプ表現
 
-    #[derive(Clone, Debug, Serialize, Deserialize)]
-    pub struct UserInfo {
-        pub id: UserId,
-        pub display_name: String,
-        pub email: String,
-    }
-}
+**実装場所**: `shared/kernel/src/`
 
-pub mod common {
-    use chrono::{DateTime, Utc};
+**設計原則**:
 
-    #[derive(Clone, Debug)]
-    pub struct AuditInfo {
-        pub created_by: UserId,
-        pub created_at: DateTime<Utc>,
-        pub updated_by: Option<UserId>,
-        pub updated_at: Option<DateTime<Utc>>,
-    }
-}
-```
-
-**使用例**:
-
-```rust
-// 各コンテキストでの利用
-use shared_kernel::user::{UserId, UserInfo};
-
-pub struct Word {
-    pub id: WordId,
-    pub text: String,
-    pub created_by: UserId,  // Shared Kernel
-}
-```
+- 最小限の共有
+- ビジネスロジックを含まない
+- 高い安定性
 
 ### Published Language の実装
 
-```rust
-// word-management/src/public_api.rs
-use async_trait::async_trait;
+**概念**: コンテキストが外部に公開する明確に定義された API。
 
-/// Word Management Context が公開する API
-#[async_trait]
-pub trait WordServiceApi {
-    /// 学習用の単語データを取得
-    async fn get_words_for_learning(
-        &self,
-        criteria: LearningCriteria,
-    ) -> Result<Vec<WordData>, WordServiceError>;
+**特徴**:
 
-    /// 単語の詳細情報を取得
-    async fn get_word_details(
-        &self,
-        word_id: WordId,
-    ) -> Result<WordDetails, WordServiceError>;
-}
+- 明確なインターフェース定義
+- バージョニング対応
+- ドキュメント化された仕様
+- 後方互換性の維持
 
-/// 標準化されたリクエスト/レスポンス
-#[derive(Serialize, Deserialize)]
-pub struct LearningCriteria {
-    pub user_id: UserId,
-    pub categories: Vec<Category>,
-    pub difficulty_range: (u8, u8),
-    pub limit: usize,
-}
+**実装方法**:
 
-#[derive(Serialize, Deserialize)]
-pub struct WordData {
-    pub id: WordId,
-    pub text: String,
-    pub phonetic: String,
-    pub primary_meaning: String,
-    pub difficulty: u8,
-}
+- gRPC サービス定義（`.proto` ファイル）
+- GraphQL スキーマ
+- REST API 仕様
 
-/// バージョニング対応
-pub mod v1 {
-    pub use super::{WordServiceApi, WordData, LearningCriteria};
-}
-```
+**実装場所**: `protos/services/`
 
-**クライアント実装**:
+**設計原則**:
 
-```rust
-// learning-context/src/infrastructure/word_service_client.rs
-pub struct WordServiceClient {
-    base_url: String,
-    client: reqwest::Client,
-}
-
-impl WordServiceClient {
-    pub async fn get_words_for_learning(
-        &self,
-        criteria: LearningCriteria,
-    ) -> Result<Vec<WordData>> {
-        let response = self.client
-            .post(&format!("{}/api/v1/words/for-learning", self.base_url))
-            .json(&criteria)
-            .send()
-            .await?;
-
-        response.json().await
-    }
-}
-```
+- 安定したインターフェース
+- 明確なバージョニング戦略
+- 包括的なドキュメント
 
 ### Domain Events の実装
 
-```rust
-// shared/events/src/lib.rs
-use serde::{Serialize, Deserialize};
+**概念**: コンテキスト間の非同期通信を実現するイベント駆動アーキテクチャ。
 
-/// すべてのドメインイベントの基底トレイト
-pub trait DomainEvent: Serialize + Send + Sync {
-    fn event_type(&self) -> &'static str;
-    fn aggregate_id(&self) -> String;
-    fn occurred_at(&self) -> DateTime<Utc>;
-}
+**メリット**:
 
-/// Learning Context のイベント
-#[derive(Serialize, Deserialize)]
-pub enum LearningDomainEvent {
-    SessionStarted {
-        session_id: SessionId,
-        user_id: UserId,
-        word_ids: Vec<WordId>,
-        started_at: DateTime<Utc>,
-    },
-    QuestionAnswered {
-        session_id: SessionId,
-        word_id: WordId,
-        is_correct: bool,
-        response_time_ms: u32,
-        answered_at: DateTime<Utc>,
-    },
-    SessionCompleted {
-        session_id: SessionId,
-        total_questions: u32,
-        correct_answers: u32,
-        completed_at: DateTime<Utc>,
-    },
-}
+- 疎結合な通信
+- 時間的な分離
+- イベントソーシング対応
+- 監査ログの自動生成
 
-impl DomainEvent for LearningDomainEvent {
-    fn event_type(&self) -> &'static str {
-        match self {
-            Self::SessionStarted { .. } => "learning.session.started",
-            Self::QuestionAnswered { .. } => "learning.question.answered",
-            Self::SessionCompleted { .. } => "learning.session.completed",
-        }
-    }
-    // ...
-}
-```
+**実装方法**:
 
-**イベントパブリッシャー**:
+1. **イベント定義**: 各コンテキストでドメインイベントを定義
+2. **イベントバス**: Pub/Sub によるイベント配信
+3. **イベントストア**: イベントの永続化と再生
 
-```rust
-// learning-context/src/infrastructure/event_publisher.rs
-pub struct EventPublisher {
-    bus: Arc<dyn EventBus>,
-}
+**実装場所**:
 
-impl EventPublisher {
-    pub async fn publish(&self, event: impl DomainEvent) -> Result<()> {
-        let envelope = EventEnvelope {
-            event_id: Uuid::new_v4(),
-            event_type: event.event_type().to_string(),
-            aggregate_id: event.aggregate_id(),
-            payload: serde_json::to_value(&event)?,
-            occurred_at: event.occurred_at(),
-        };
+- イベント定義: `shared/contexts/*/src/events.rs`
+- イベントバス: `shared/infrastructure/event_bus/`
+- イベントストア: `shared/infrastructure/event_store/`
 
-        self.bus.publish(envelope).await
-    }
-}
-```
+**設計原則**:
 
-**イベントサブスクライバー**:
-
-```rust
-// progress-context/src/infrastructure/event_handlers.rs
-pub struct LearningEventHandler {
-    progress_service: Arc<ProgressService>,
-}
-
-#[async_trait]
-impl EventHandler for LearningEventHandler {
-    async fn handle(&self, envelope: EventEnvelope) -> Result<()> {
-        match envelope.event_type.as_str() {
-            "learning.session.completed" => {
-                let event: SessionCompleted = serde_json::from_value(envelope.payload)?;
-                self.progress_service.update_statistics(event).await?;
-            }
-            _ => {}
-        }
-        Ok(())
-    }
-}
-```
+- イベントは過去形で命名
+- イベントは不変
+- 必要最小限の情報のみ含む
 
 ### Anti-Corruption Layer の実装
 
-```rust
-// word-management/src/infrastructure/dictionary_acl.rs
-pub struct DictionaryACL {
-    external_client: ExternalDictionaryClient,
-}
+**概念**: 外部システムのモデルから内部ドメインモデルを保護する変換層。
 
-impl DictionaryACL {
-    /// 外部 API のデータを内部ドメインモデルに変換
-    pub async fn enrich_word_data(&self, word: &str) -> Result<EnrichedWordData> {
-        // 外部 API 呼び出し
-        let external_response = self.external_client
-            .lookup_word(word)
-            .await
-            .map_err(|e| DomainError::ExternalServiceError(e.to_string()))?;
+**目的**:
 
-        // ドメインモデルへの変換
-        Ok(EnrichedWordData {
-            phonetic_ipa: self.convert_pronunciation(external_response.pronunciation),
-            audio_url: external_response.audio_files.first().map(|f| f.url.clone()),
-            etymology: self.convert_etymology(external_response.etymology),
-        })
-    }
+- 外部システムの変更から内部を保護
+- ドメインモデルの純粋性を維持
+- 変換ロジックの一元化
 
-    fn convert_pronunciation(&self, external: ExternalPronunciation) -> String {
-        // 外部形式から IPA 形式への変換ロジック
-        match external {
-            ExternalPronunciation::Ipa(ipa) => ipa,
-            ExternalPronunciation::Respelling(resp) => self.respelling_to_ipa(resp),
-        }
-    }
-}
+**実装パターン**:
 
-/// 外部サービスのモデル（変更される可能性がある）
-struct ExternalDictionaryResponse {
-    word: String,
-    pronunciation: ExternalPronunciation,
-    audio_files: Vec<AudioFile>,
-    etymology: Option<String>,
-}
+1. **Adapter**: 外部 API との通信
+2. **Translator**: データ形式の変換
+3. **Facade**: 複雑な外部システムの簡略化
 
-/// 内部ドメインモデル（安定）
-pub struct EnrichedWordData {
-    pub phonetic_ipa: String,
-    pub audio_url: Option<String>,
-    pub etymology: Option<String>,
-}
-```
+**実装場所**: 各サービスの `infrastructure/external/`
+
+**設計原則**:
+
+- 外部モデルを内部に漏らさない
+- 変換は明示的に行う
+- エラーハンドリングを適切に行う
 
 ## 統合テスト戦略
 
 ### Contract Testing
 
-```rust
-#[cfg(test)]
-mod contract_tests {
-    use super::*;
+**目的**: API の契約（仕様）が守られていることを保証。
 
-    #[tokio::test]
-    async fn word_service_contract() {
-        let mock_service = MockWordService::new();
+**テスト対象**:
 
-        // Published Language の契約を検証
-        let criteria = LearningCriteria {
-            user_id: UserId::new(),
-            categories: vec![Category::IELTS],
-            difficulty_range: (3, 7),
-            limit: 10,
-        };
-
-        let result = mock_service.get_words_for_learning(criteria).await;
-
-        assert!(result.is_ok());
-        let words = result.unwrap();
-        assert!(!words.is_empty());
-        assert!(words.iter().all(|w| w.difficulty >= 3 && w.difficulty <= 7));
-    }
-}
-```
+- Published Language のインターフェース
+- イベントスキーマ
+- エラーレスポンス形式
 
 ### Integration Testing
 
-```rust
-#[tokio::test]
-async fn learning_to_progress_event_flow() {
-    let event_bus = InMemoryEventBus::new();
-    let learning_context = setup_learning_context(&event_bus);
-    let progress_context = setup_progress_context(&event_bus);
+**目的**: コンテキスト間の連携が正しく動作することを確認。
 
-    // Learning Context でセッション完了
-    let session_id = learning_context
-        .start_session(user_id, word_ids)
-        .await
-        .unwrap();
+**テスト項目**:
 
-    learning_context
-        .complete_session(session_id)
-        .await
-        .unwrap();
+- イベントフローの検証
+- データ整合性の確認
+- エラー伝播の検証
 
-    // Progress Context でイベントが処理されることを確認
-    tokio::time::sleep(Duration::from_millis(100)).await;
+### テスト環境
 
-    let stats = progress_context
-        .get_user_statistics(user_id)
-        .await
-        .unwrap();
-
-    assert_eq!(stats.total_sessions, 1);
-}
-```
+- **単体テスト**: モック/スタブを使用
+- **統合テスト**: Docker Compose による環境構築
+- **E2E テスト**: 本番環境に近い構成
 
 ## マイグレーション戦略
 
-### 現在: モノリシック
+### 現在の構成: マイクロサービス
 
-```rust
-// すべてが単一プロセス内
-pub struct MonolithicApp {
-    word_service: WordService,
-    learning_service: LearningService,
-    progress_service: ProgressService,
-}
-```
+Effect プロジェクトは最初からマイクロサービスアーキテクチャを採用：
 
-### 移行期: モジュラーモノリス
+- **独立したサービス**: 各コンテキストが独立したサービスとして実装
+- **gRPC 通信**: サービス間は gRPC で通信
+- **イベント駆動**: Pub/Sub によるイベント配信
+- **コンテナ化**: Docker による環境構築
 
-```rust
-// 論理的な分離、物理的には単一プロセス
-pub mod contexts {
-    pub mod word_management { /* ... */ }
-    pub mod learning { /* ... */ }
-    pub mod progress { /* ... */ }
-}
-```
+### 段階的な実装アプローチ
 
-### 将来: マイクロサービス
+1. **Phase 1**: コアドメインの実装（Vocabulary Context）
+2. **Phase 2**: 周辺コンテキストの追加
+3. **Phase 3**: 統合とオーケストレーション
 
-```yaml
-# docker-compose.yml
-services:
-  word-management:
-    image: effect/word-management:latest
+### インフラストラクチャ
 
-  learning:
-    image: effect/learning:latest
-
-  progress:
-    image: effect/progress:latest
-```
+- **ローカル開発**: Docker Compose
+- **本番環境**: Google Cloud Run + Cloud Pub/Sub
 
 ## 更新履歴
 

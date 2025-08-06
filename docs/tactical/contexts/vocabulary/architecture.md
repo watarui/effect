@@ -160,6 +160,37 @@ vocabulary_items_view (
 - ユーザー体験を損なわない範囲での非同期処理
 - 重要な操作後は明示的な同期オプション
 
+### 5. Read Model バージョニング
+
+Event Sourcing と API バージョニングの統合により、柔軟な Read Model 管理が可能：
+
+**バージョン別 Read Model**:
+
+- `/api/v1/` → `vocabulary_items_v1` テーブル
+- `/api/v2/` → `vocabulary_items_v2` テーブル（新しいスキーマ）
+
+**利点**:
+
+- 同一のイベントストリームから複数のビューを生成
+- クライアントの段階的移行が可能
+- 破壊的変更なしに新機能を追加
+
+**実装例**:
+
+```
+Event Store (不変)
+    ↓
+Projection Service
+    ├→ Read Model V1 (既存クライアント用)
+    └→ Read Model V2 (新機能を含む)
+```
+
+**移行戦略**:
+
+1. 新バージョンの Read Model を並行稼働
+2. クライアントを段階的に移行
+3. 旧バージョンの利用が0になったら削除
+
 ## 運用上の考慮事項
 
 ### モニタリング

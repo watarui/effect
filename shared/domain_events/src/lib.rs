@@ -72,7 +72,7 @@ impl EventMetadata {
 
 // トレイトを再エクスポート
 pub use error::EventError;
-pub use traits::{EventBus, EventHandler, EventStore};
+pub use traits::{EventBus, EventHandler};
 
 // DomainEvent を定義（proto の各イベントをラップ）
 

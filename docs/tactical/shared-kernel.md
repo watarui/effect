@@ -8,19 +8,15 @@ Shared Kernel は、複数の境界づけられたコンテキスト間で共有
 
 すべてのコンテキストで同じ意味と形式を持つ識別子です。
 
-```rust
-// ユーザーを一意に識別
-pub struct UserId(Uuid);
+### 実装されている識別子
 
-// 学習項目を一意に識別
-pub struct ItemId(Uuid);
+- **UserId**: ユーザーを一意に識別
+- **ItemId**: 語彙項目を一意に識別  
+- **SessionId**: 学習セッションを一意に識別
+- **EntryId**: 語彙エントリー（見出し語）を一意に識別
+- **EventId**: ドメインイベントを一意に識別
 
-// 学習セッションを一意に識別
-pub struct SessionId(Uuid);
-
-// AIタスクを一意に識別
-pub struct TaskId(Uuid);
-```
+実装: `shared/kernel/src/ids.rs`
 
 ### 識別子の実装ガイドライン
 
@@ -31,67 +27,35 @@ pub struct TaskId(Uuid);
 
 ## 共有される基本的な値オブジェクト
 
-### コースタイプ
+### 値オブジェクト一覧
 
-```rust
-pub enum CourseType {
-    Ielts,
-    Toefl,
-    Toeic,
-    Eiken,
-    GeneralEnglish,
-}
-```
+- **CourseType**: 試験コース種別（IELTS、TOEFL、TOEIC、英検、一般英語）
+- **CefrLevel**: 言語能力レベル（A1〜C2）
+- **LanguageCode**: 言語を表す2文字コード（ISO 639-1 標準）
+  - 例: `en`（英語）、`ja`（日本語）、`es`（スペイン語）
+  - 用途: UI言語、学習者の母語、翻訳先言語の指定
+- **ResponseType**: 学習時の反応タイプ（正解、不正解、スキップ）
+- **MasteryStatus**: 習得状態（未学習、テスト済み、短期記憶、長期記憶）
 
-### CEFR レベル
+実装: `shared/kernel/src/value_objects.rs`
 
-```rust
-pub enum CefrLevel {
-    A1,  // Beginner
-    A2,  // Elementary
-    B1,  // Intermediate
-    B2,  // Upper Intermediate
-    C1,  // Advanced
-    C2,  // Proficient
-}
-```
+### Protocol Buffers との対応
 
-### 言語コード
+gRPC 通信では以下の対応関係で変換されます：
 
-```rust
-pub struct LanguageCode(String); // ISO 639-1 形式（例: "en", "ja"）
-```
+- Rust の `enum` → Proto の `enum`（命名規則の変換あり）
+- Rust の snake_case → Proto の UPPER_SNAKE_CASE
+- 詳細: `protos/common/types.proto`
 
-### タイムスタンプ
+## タイムスタンプの扱い
 
-```rust
-use chrono::{DateTime, Utc};
+すべてのコンテキストで統一的に時刻を扱うための方針：
 
-pub type Timestamp = DateTime<Utc>;
-```
+- **内部表現**: `chrono::DateTime<Utc>` を使用
+- **シリアライズ**: RFC3339 形式
+- **タイムゾーン**: 常に UTC で保存、表示時にユーザーのタイムゾーンに変換
 
-## 共有される列挙型
-
-### 反応タイプ
-
-```rust
-pub enum ResponseType {
-    Correct,
-    Incorrect,
-    Skipped,
-}
-```
-
-### マスタリーステータス
-
-```rust
-pub enum MasteryStatus {
-    Unknown,      // 未学習
-    Tested,       // テスト済み（1回以上正解）
-    ShortTerm,    // 短期記憶に定着
-    LongTerm,     // 長期記憶に定着
-}
-```
+実装: `shared/kernel/src/timestamp.rs`
 
 ## 使用上の注意事項
 
@@ -114,46 +78,29 @@ pub enum MasteryStatus {
 
 ## バージョニング戦略
 
-```rust
-// バージョン情報の埋め込み
-pub const SHARED_KERNEL_VERSION: &str = "1.0.0";
+Shared Kernel の変更は慎重に管理する必要があります：
 
-// 互換性チェック
-pub fn is_compatible(required_version: &str) -> bool {
-    // セマンティックバージョニングに基づく互換性チェック
-}
-```
+1. **セマンティックバージョニング**: major.minor.patch 形式
+2. **後方互換性**: 破壊的変更は major バージョンアップ時のみ
+3. **変更通知**: すべての関係チームへの事前通知
+4. **移行期間**: 旧バージョンのサポート期間を設定
 
 ## 例: コンテキスト間でのデータ交換
 
-```rust
-// Learning Context から Progress Context へのイベント
-pub struct LearningSessionCompleted {
-    pub session_id: SessionId,
-    pub user_id: UserId,
-    pub course_type: CourseType,
-    pub completed_at: Timestamp,
-    pub items_studied: Vec<ItemId>,
-    pub correct_count: u32,
-    pub total_count: u32,
-}
-```
+コンテキスト間でイベントやデータを交換する際は、Shared Kernel の型を使用して一貫性を保ちます。
+
+例：Learning Context から Progress Context へのイベントでは、`SessionId`、`UserId`、`CourseType` などの共有型を使用。
+
+実装例: `shared/contexts/*/src/events.rs`
 
 ## アンチパターン
 
 ### ❌ 避けるべきこと
 
 1. **ビジネスロジックの共有**
-
-   ```rust
-   // Bad: ビジネスロジックは各コンテキストで実装すべき
-   pub fn calculate_next_review_date(item: &Item) -> DateTime<Utc> {
-       // このような計算ロジックは共有しない
-   }
-   ```
+   - 計算ロジックや判定ロジックは各コンテキストで実装
 
 2. **頻繁な変更**
-
    - 実験的な機能や頻繁に変更される要素は含めない
 
 3. **大きすぎる共有**
@@ -162,11 +109,9 @@ pub struct LearningSessionCompleted {
 ### ✅ 推奨されること
 
 1. **シンプルなデータ構造**
-
    - 識別子、列挙型、基本的な値オブジェクトのみ
 
 2. **明確な命名**
-
    - すべてのコンテキストで同じ意味を持つ名前を使用
 
 3. **ドキュメント化**
@@ -174,10 +119,12 @@ pub struct LearningSessionCompleted {
 
 ## 関連ドキュメント
 
-- ユビキタス言語: `/docs/ddd/discovery/ubiquitous-language.md`
-- コンテキストマップ: `/docs/ddd/strategic/context-map.md`
-- 各コンテキストの詳細: `/docs/ddd/design/bounded-context-canvas/*.md`
+- [ユビキタス言語](../strategic/ubiquitous-language.md)
+- [コンテキストマップ](../strategic/context-map.md)
+- [統合パターン](integration/patterns.md)
+- [共有インフラストラクチャ](shared-infrastructure.md)
 
 ## 更新履歴
 
 - 2025-07-30: 初版作成
+- 2025-08-05: 実装との整合性を確保、実装例を最小化
