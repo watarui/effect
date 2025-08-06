@@ -232,10 +232,10 @@ External Systems
 
 ## 関連ドキュメント
 
-- [Shared Kernel](shared-kernel.md)
-- [Event Sourcing ガイドライン](event-sourcing-guidelines.md)
+- [Shared Kernel](kernel.md)
+- [Event Sourcing ガイドライン](../event-sourcing-guidelines.md)
 - [横断的関心事](cross-cutting-concerns.md)
-- [技術的負債](technical-debt.md)
+- [技術的負債](../technical-debt.md)
 
 ## 更新履歴
 

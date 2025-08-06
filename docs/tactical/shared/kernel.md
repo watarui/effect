@@ -119,10 +119,10 @@ Shared Kernel の変更は慎重に管理する必要があります：
 
 ## 関連ドキュメント
 
-- [ユビキタス言語](../strategic/ubiquitous-language.md)
-- [コンテキストマップ](../strategic/context-map.md)
-- [統合パターン](integration/patterns.md)
-- [共有インフラストラクチャ](shared-infrastructure.md)
+- [ユビキタス言語](../../strategic/ubiquitous-language.md)
+- [コンテキストマップ](../../strategic/context-map.md)
+- [統合パターン](../integration/patterns.md)
+- [共有インフラストラクチャ](infrastructure.md)
 
 ## 更新履歴
 

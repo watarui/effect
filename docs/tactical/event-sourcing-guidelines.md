@@ -330,7 +330,7 @@ Vocabulary Context で以下を実装：
 
 ## 関連ドキュメント
 
-- [共有インフラストラクチャ](shared-infrastructure.md)
+- [共有インフラストラクチャ](shared/infrastructure.md)
 - [統合パターン](integration/patterns.md)
 - [各コンテキストのイベント定義](contexts/*/events.md)
 

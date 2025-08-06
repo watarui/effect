@@ -255,7 +255,7 @@
 
 - Event Sourcing の重要な学習要素として実践的に実装
 - スキーマ進化の3つの戦略を体験
-- 詳細は [Event Sourcing ガイドライン](event-sourcing-guidelines.md#イベントバージョニング戦略) を参照
+- 詳細は [Event Sourcing ガイドライン](../event-sourcing-guidelines.md#イベントバージョニング戦略) を参照
 
 **Read Model バージョニング**:
 
@@ -296,9 +296,9 @@
 
 ## 関連ドキュメント
 
-- [共有インフラストラクチャ](shared-infrastructure.md)
-- [Shared Kernel](shared-kernel.md)
-- [技術的負債](technical-debt.md)
+- [共有インフラストラクチャ](infrastructure.md)
+- [Shared Kernel](kernel.md)
+- [技術的負債](../technical-debt.md)
 
 ## 更新履歴
 

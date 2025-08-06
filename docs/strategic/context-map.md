@@ -82,7 +82,7 @@ graph TB
 
 - ドメイン分類の詳細: `/docs/ddd/strategic/domain-classification.md`
 - 各コンテキストの詳細: `/docs/ddd/design/bounded-context-canvas/*.md`
-- 共有概念の定義: `/docs/ddd/strategic/shared-kernel.md`
+- 共有概念の定義: `/docs/tactical/shared/kernel.md`
 - ドメインイベント: `/docs/ddd/design/event-storming-design-level/*.md`
 
 ## 更新履歴

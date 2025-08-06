@@ -9,6 +9,23 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-08-06: ドキュメントディレクトリ構造の再編成
+
+- **変更内容**: tactical/ 配下の共有コンポーネント関連ドキュメントを shared/ ディレクトリに集約
+- **決定事項**:
+  - `shared/` ディレクトリを新規作成
+  - `shared-kernel.md` → `shared/kernel.md` へ移動
+  - `shared-infrastructure.md` → `shared/infrastructure.md` へ移動
+  - `cross-cutting-concerns.md` → `shared/cross-cutting-concerns.md` へ移動
+  - `shared/overview.md` を新規作成（全体概要）
+- **理由**:
+  - 共有コンポーネント関連のドキュメントを論理的にグループ化
+  - ドメイン層（kernel）、インフラ層（infrastructure）、横断的関心事の関係を明確化
+  - ドキュメントの発見しやすさと保守性の向上
+- **影響範囲**:
+  - 他のドキュメントからの参照パス更新
+  - README.md のナビゲーション更新
+
 ### 2025-08-06: Vocabulary Context の真の CQRS+ES 実装への移行
 
 - **変更内容**: Vocabulary Context をモノリシック CRUD から真の CQRS+ES マイクロサービスへ再設計
@@ -48,7 +65,7 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 - **影響範囲**:
   - Cargo.toml: workspace メンバーの再構成
   - 各サービスの依存関係: 新しいパス構造への更新
-  - ドキュメント: shared-infrastructure.md の更新
+  - ドキュメント: shared/infrastructure.md の更新
 
 ### 2025-07-31: 本番環境データベースの選定
 
@@ -131,7 +148,7 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 - **決定事項**:
   - context-map.md を簡素化（図と統合パターン一覧のみに）
   - domain-classification.md を新規作成（Core/Supporting/Generic の分類を統合）
-  - shared-kernel.md を新規作成（共有概念を独立管理）
+  - shared/kernel.md を新規作成（共有概念を独立管理）
   - bounded-contexts.md を簡素化（詳細は Canvas に委譲）
   - domain-types.md を削除（内容を domain-classification.md に統合）
 - **理由**:
@@ -349,7 +366,7 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
     ~~- context-map.md：Shared Kernel セクションあり（line 210-221）~~
     ~~- 他のドキュメント：参照なし~~
     ~~- 内容：共有型の定義場所を統一、各コンテキストから参照~~
-    - 注記: 調査の結果、shared-kernel.md が適切に存在し、context-map.md の L85 から参照されている。
+    - 注記: 調査の結果、shared/kernel.md が適切に存在し、context-map.md の L85 から参照されている。
     現状の構成が DDD の原則に合致しているため、変更不要と判断
 
 ~~15. **統合パターンの表記不統一**~~ （2025-07-31 確認済み）

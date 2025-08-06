@@ -20,7 +20,11 @@ Effect は英語語彙学習プラットフォームです。このドキュメ�
 ### 🔧 [戦術的設計](./tactical/) - 技術視点の設計
 
 - [aggregate-design-overview.md](./tactical/aggregate-design-overview.md) - 全体の集約設計
-- [shared-kernel.md](./tactical/shared-kernel.md) - 共有カーネル
+- **shared/** - 共有コンポーネント
+  - [overview.md](./tactical/shared/overview.md) - 概要
+  - [kernel.md](./tactical/shared/kernel.md) - 共有カーネル
+  - [infrastructure.md](./tactical/shared/infrastructure.md) - 共有インフラストラクチャ
+  - [cross-cutting-concerns.md](./tactical/shared/cross-cutting-concerns.md) - 横断的関心事
 - **contexts/** - 各 Bounded Context の詳細設計
   - vocabulary/ - 語彙管理コンテキスト
   - learning/ - 学習コンテキスト
