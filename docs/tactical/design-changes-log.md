@@ -9,6 +9,28 @@ Canvas 作成など新しい設計作業を進めながら、過去の成果物�
 
 ## 変更履歴
 
+### 2025-08-06: Learning Context のアーキテクチャ簡素化
+
+- **変更内容**: Learning Context を CQRS+ES から単一サービスアーキテクチャに変更
+- **決定事項**:
+  - 4つのマイクロサービス構成を廃止
+  - 単一の `learning_service` として統合
+  - Redis でセッション状態を一時管理
+  - 長期的な履歴管理は Progress Context に完全委譲
+- **理由**:
+  - セッション実行という一時的な責務に CQRS+ES は過剰
+  - UI との密結合でリアルタイム性が重要（Event Sourcing の非同期性が不適）
+  - 履歴管理は Progress Context が担当するため重複を回避
+  - シンプルさと保守性を優先
+- **影響範囲**:
+  - architecture.md: 単一サービス設計に全面改訂
+  - canvas.md: Service Architecture セクションの更新
+  - 実装: 既存の learning_service をそのまま活用可能
+- **設計の特徴**:
+  - ステートフルだが一時的（Redis + TTL）
+  - 他サービスとの同期通信（gRPC）
+  - Progress Context への非同期イベント発行のみ
+
 ### 2025-08-06: ドキュメントディレクトリ構造の再編成
 
 - **変更内容**: tactical/ 配下の共有コンポーネント関連ドキュメントを shared/ ディレクトリに集約

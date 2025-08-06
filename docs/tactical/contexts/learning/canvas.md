@@ -8,8 +8,8 @@ Learning Context
 
 ハイブリッド UI（解答表示 →3 秒自動確認）による「覚えた感」を実現し、効果的な学習体験を提供する。
 ユーザーが設定した問題数で学習セッションを管理し、ユーザーの学習プロセスを最適化する。
-CQRS/Event Sourcing パターンを採用し、4つのマイクロサービス（Command、Query、Projection、Analytics）に分解されることで、
-高い可用性とスケーラビリティを実現する。
+セッション実行に特化した単一サービスとして、リアルタイムな UI インタラクションと他コンテキストとの同期通信を実現し、
+シンプルで高性能なアーキテクチャを維持する。
 
 ## 3. Strategic Classification（戦略的分類）
 
@@ -134,41 +134,46 @@ CQRS/Event Sourcing パターンを採用し、4つのマイクロサービス�
 
 ## 11. Service Architecture
 
-### マイクロサービス構成
+### サービス構成
 
-Learning Context は以下の 4 つのサービスに分解される：
+Learning Context は単一サービスとして実装される：
 
-1. **learning-command-service**
-   - LearningSession/UserItemRecord 集約の管理
-   - セッション制御とコマンド実行
-   - ドメインイベントの生成
-   - Event Store への永続化
+**learning_service**
 
-2. **learning-query-service**
-   - セッション情報の取得
-   - 学習記録の検索
-   - 統計情報の提供
-   - Redis キャッシュ活用
+- **責務**: 学習セッションの実行管理に特化
+- **特徴**: ステートフルだが一時的（Redis でセッション状態管理）
+- **アーキテクチャ選択理由**:
+  - セッション実行という短期的タスクに CQRS+ES は過剰
+  - UI との密結合でリアルタイム性が最重要
+  - 履歴管理は Progress Context に完全委譲
 
-3. **learning-projection-service**
-   - イベントの消費と処理
-   - Read Model の更新
-   - Progress Context への転送
-   - 習熟度計算
+### 内部構造
 
-4. **learning-analytics-service**
-   - 学習パターン分析
-   - パフォーマンス指標
-   - 推奨事項生成
-   - レポート機能
+1. **Domain 層**
+   - LearningSession 集約
+   - UserItemRecord（軽量版）
+   - ドメインイベント（Progress への通知用）
+
+2. **Application 層**
+   - セッション管理ロジック
+   - UI インタラクション処理
+
+3. **Infrastructure 層**
+   - Redis によるセッション状態管理
+   - gRPC クライアント（Algorithm/Vocabulary）
+   - Pub/Sub イベント発行（Progress へ）
+
+4. **API 層**
+   - GraphQL エンドポイント
+   - リアルタイムな応答（< 100ms）
 
 ### 技術選定
 
-- **Event Store**: PostgreSQL（イベント永続化）
-- **Event Bus**: Google Pub/Sub（サービス間通信）
-- **Read Model**: PostgreSQL（学習データ）
-- **Cache**: Redis（クエリ結果キャッシュ、5分-1時間 TTL）
-- **Analytics**: Apache Arrow/DataFusion（分析処理）
+- **State Store**: Redis（セッション状態の一時保存、TTL 2時間）
+- **Event Bus**: Google Pub/Sub（Progress Context への通知）
+- **Database**: PostgreSQL（最小限の永続化）
+- **Cache**: Redis（項目詳細の短期キャッシュ、5分 TTL）
+- **通信**: gRPC（Algorithm/Vocabulary との同期通信）
 - **Deployment**: Google Cloud Run
 
 ## 12. Open Questions
