@@ -48,24 +48,26 @@ service_name/
 ├── src/
 │   ├── main.rs                 # エントリーポイント
 │   ├── config.rs               # 設定
-│   ├── domain/                 # ドメイン層（ビジネスロジック）
-│   │   ├── mod.rs
+│   ├── domain.rs               # ドメイン層（ビジネスロジック）
+│   ├── domain/                 # ドメイン層のサブモジュール
 │   │   ├── aggregates/         # 集約
 │   │   ├── events/            # ドメインイベント
 │   │   └── value_objects/     # 値オブジェクト
-│   ├── application/           # アプリケーション層（ユースケース）
-│   │   ├── mod.rs
+│   ├── application.rs         # アプリケーション層（ユースケース）
+│   ├── application/           # アプリケーション層のサブモジュール
 │   │   ├── commands/          # コマンドハンドラ
 │   │   └── queries/           # クエリハンドラ
-│   ├── infrastructure/        # インフラ層（技術的実装）
-│   │   ├── mod.rs
+│   ├── infrastructure.rs      # インフラ層（技術的実装）
+│   ├── infrastructure/        # インフラ層のサブモジュール
 │   │   ├── repositories/      # リポジトリ実装
 │   │   └── grpc/             # gRPC サービス
-│   └── ports/                # ポート（インターフェース）
-│       ├── mod.rs
+│   ├── ports.rs               # ポート（インターフェース）
+│   └── ports/                # ポートのサブモジュール
 │       └── repositories.rs    # リポジトリトレイト
 └── tests/                    # 統合テスト
 ```
+
+**注意**: Rust Edition 2024 のデファクトスタンダードに従い、`mod.rs` は使用しません。各モジュールは同名の `.rs` ファイルで定義します。
 
 ## コーディング規約
 
