@@ -751,6 +751,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "event_store_service"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "prost 0.14.1",
+ "prost-types 0.14.1",
+ "serde",
+ "serde_json",
+ "shared_config",
+ "shared_database",
+ "shared_kernel",
+ "shared_telemetry",
+ "sqlx",
+ "thiserror 2.0.12",
+ "tokio",
+ "tokio-stream",
+ "tonic 0.14.0",
+ "tonic-prost",
+ "tonic-prost-build",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

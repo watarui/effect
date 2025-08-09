@@ -28,6 +28,7 @@ members = [
   "shared/domain_events",
 
   # Microservices
+  "services/event_store_service",
   "services/learning_service",
   "services/algorithm_service",
   "services/user_service",
@@ -43,6 +44,7 @@ resolver = "2"
 # Async runtime
 tokio = { version = "1.47.1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["rt"] }
+tokio-stream = { version = "0.1", features = ["net"] }
 async-trait = "0.1"
 futures = "0.3"
 

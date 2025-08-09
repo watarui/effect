@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package effect.event_store;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+// Event Store Service - イベントストアの中央管理サービス
+service EventStoreService {
+  // イベントを追加
+  rpc AppendEvents(AppendEventsRequest) returns (AppendEventsResponse);
+
+  // イベントを取得
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
+
+  // スナップショットを取得
+  rpc GetSnapshot(GetSnapshotRequest) returns (GetSnapshotResponse);
+
+  // スナップショットを保存
+  rpc SaveSnapshot(SaveSnapshotRequest) returns (SaveSnapshotResponse);
+
+  // イベントストリームを購読（Server Streaming）
+  rpc SubscribeToStream(SubscribeRequest) returns (stream EventNotification);
+
+  // 全イベントを購読（Server Streaming）
+  rpc SubscribeToAll(SubscribeAllRequest) returns (stream EventNotification);
+}
+
+// イベント追加リクエスト
+message AppendEventsRequest {
+  string stream_id = 1; // ストリーム ID（集約 ID）
+  string stream_type = 2; // ストリームタイプ（集約タイプ）
+  repeated Event events = 3; // 追加するイベント
+  int64 expected_version = 4; // 期待するバージョン（楽観的ロック）
+}
+
+// イベント追加レスポンス
+message AppendEventsResponse {
+  int64 next_version = 1; // 次のバージョン番号
+  repeated string event_ids = 2; // 追加されたイベントの ID
+}
+
+// イベント取得リクエスト
+message GetEventsRequest {
+  string stream_id = 1; // ストリーム ID
+  string stream_type = 2; // ストリームタイプ
+  int64 from_version = 3; // 開始バージョン（0 = 最初から）
+  int64 to_version = 4; // 終了バージョン（0 = 最後まで）
+  int32 max_count = 5; // 最大取得数
+}
+
+// イベント取得レスポンス
+message GetEventsResponse {
+  repeated StoredEvent events = 1; // 取得したイベント
+  int64 next_version = 2; // 次のバージョン
+  bool is_end_of_stream = 3; // ストリームの終端か
+}
+
+// スナップショット取得リクエスト
+message GetSnapshotRequest {
+  string stream_id = 1; // ストリーム ID
+  string stream_type = 2; // ストリームタイプ
+  int64 max_version = 3; // 最大バージョン（0 = 最新）
+}
+
+// スナップショット取得レスポンス
+message GetSnapshotResponse {
+  Snapshot snapshot = 1; // スナップショット
+  bool found = 2; // スナップショットが存在するか
+}
+
+// スナップショット保存リクエスト
+message SaveSnapshotRequest {
+  string stream_id = 1; // ストリーム ID
+  string stream_type = 2; // ストリームタイプ
+  int64 version = 3; // スナップショットのバージョン
+  google.protobuf.Any data = 4; // スナップショットデータ
+}
+
+// スナップショット保存レスポンス
+message SaveSnapshotResponse {
+  string snapshot_id = 1; // スナップショット ID
+}
+
+// ストリーム購読リクエスト
+message SubscribeRequest {
+  string stream_id = 1; // ストリーム ID
+  string stream_type = 2; // ストリームタイプ
+  int64 from_version = 3; // 開始バージョン
+  bool include_existing = 4; // 既存イベントを含むか
+}
+
+// 全イベント購読リクエスト
+message SubscribeAllRequest {
+  string position = 1; // 開始位置（空 = 最初から）
+  repeated string event_types = 2; // フィルタするイベントタイプ
+  bool include_existing = 3; // 既存イベントを含むか
+}
+
+// イベント通知（ストリーミング用）
+message EventNotification {
+  StoredEvent event = 1; // イベント
+  string position = 2; // グローバル位置
+}
+
+// イベント
+message Event {
+  string event_type = 1; // イベントタイプ
+  google.protobuf.Any data = 2; // イベントデータ
+  map<string, string> metadata = 3; // メタデータ
+}
+
+// 保存されたイベント
+message StoredEvent {
+  string event_id = 1; // イベント ID
+  string stream_id = 2; // ストリーム ID
+  string stream_type = 3; // ストリームタイプ
+  int64 version = 4; // バージョン
+  string event_type = 5; // イベントタイプ
+  google.protobuf.Any data = 6; // イベントデータ
+  map<string, string> metadata = 7; // メタデータ
+  google.protobuf.Timestamp created_at = 8; // 作成日時
+  string position = 9; // グローバル位置
+}
+
+// スナップショット
+message Snapshot {
+  string snapshot_id = 1; // スナップショット ID
+  string stream_id = 2; // ストリーム ID
+  string stream_type = 3; // ストリームタイプ
+  int64 version = 4; // バージョン
+  google.protobuf.Any data = 5; // スナップショットデータ
+  google.protobuf.Timestamp created_at = 6; // 作成日時
+}
