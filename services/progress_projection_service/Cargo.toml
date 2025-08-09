@@ -1,0 +1,40 @@
+[package]
+name = "progress_projection_service"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Async Runtime
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+
+# Database
+sqlx = { workspace = true }
+
+# Event Processing
+futures = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Google Cloud
+google-cloud-pubsub = { workspace = true }
+
+# Utilities
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Environment
+dotenvy = { workspace = true }
+config = { workspace = true }
+
+# Shared
+shared_kernel = { path = "../../shared/kernel" }
+shared_progress_context = { path = "../../shared/contexts/progress" }
+
+[dev-dependencies]
+mockall = { workspace = true }

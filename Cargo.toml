@@ -29,11 +29,16 @@ members = [
 
   # Microservices
   "services/event_store_service",
-  "services/vocabulary_service",
+  "services/vocabulary_command_service",
+  "services/vocabulary_query_service",
+  "services/vocabulary_projection_service",
+  "services/vocabulary_search_service",
   "services/learning_service",
   "services/algorithm_service",
   "services/user_service",
-  "services/progress_service",
+  "services/progress_command_service",
+  "services/progress_query_service",
+  "services/progress_projection_service",
   "services/ai_service",
   "services/api_gateway",
   "services/event_processor",
@@ -84,10 +89,10 @@ uuid = { version = "1.17", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
 # gRPC
-tonic = "0.14.0"
-tonic-prost = "0.14"
-tonic-prost-build = "0.14"
-tonic-build = "0.14.0"
+tonic = "0.14.1"
+tonic-prost = "0.14.1"
+tonic-prost-build = "0.14.1"
+tonic-build = "0.14.1"
 prost = "0.14"
 prost-types = { version = "0.14", features = ["std"] }
 
@@ -109,6 +114,9 @@ redis = { version = "0.32.4", features = [
   "tokio-comp",
   "connection-manager",
 ] }
+
+# Search
+meilisearch-sdk = "0.29.1"
 
 # Utilities
 hex = "0.4"
