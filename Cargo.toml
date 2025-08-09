@@ -29,6 +29,7 @@ members = [
 
   # Microservices
   "services/event_store_service",
+  "services/vocabulary_service",
   "services/learning_service",
   "services/algorithm_service",
   "services/user_service",

@@ -98,7 +98,7 @@ graph TD
 ## 重要な設計決定
 
 - **用語統一**: 「語句」→「項目（Item）」
-- **マイクロサービス**: 最初から分離（Rust + cargo workspace）
+- **マイクロサービス**: 7つのサービス（Rust + cargo workspace）
 - **イベントストア**: PostgreSQL + カスタム実装
 - **メッセージング**: Google Pub/Sub
 - **API Gateway**: GraphQL (async-graphql)
@@ -120,5 +120,4 @@ graph TD
 
 ## 関連リンク
 
-- [プロジェクト進捗サマリー](./ddd/progress-summary.md) - 詳細な進捗状況（旧構造）
 - [DDD-Crew: DDD Starter Modelling Process](https://ddd-crew.github.io/ddd-starter-modelling-process/)
