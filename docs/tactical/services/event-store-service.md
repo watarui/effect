@@ -19,7 +19,9 @@ Event Store Service は、Effect プロジェクト全体のイベントソー�
 ```
 ┌─────────────────────────────────────────────┐
 │              各マイクロサービス                │
-│  (Vocabulary, Learning, Progress, etc.)      │
+│  (Vocabulary, Learning, Learning Algorithm,  │
+│   AI Integration, User)                      │
+│  ※ Progress は Read Model のためイベント受信のみ │
 └────────────────┬────────────────────────────┘
                  │ gRPC
                  ▼
@@ -236,18 +238,24 @@ client.append_events(request).await?;
 ### Projection Service での購読
 
 ```rust
-// ストリーム購読の例
-let request = SubscribeRequest {
-    stream_type: "VocabularyItem".to_string(),
-    from_version: 0,
+// ストリーム購読の例（Progress Context などの Read Model 用）
+let request = SubscribeAllRequest {
+    from_position: last_position,
     include_existing: true,
+    filter: Some(EventFilter {
+        event_types: vec![
+            "CorrectnessJudged".to_string(),
+            "SessionCompleted".to_string(),
+            "ReviewRecorded".to_string(),
+        ],
+    }),
 };
 
-let mut stream = client.subscribe_to_stream(request).await?;
+let mut stream = client.subscribe_to_all(request).await?;
 
 while let Some(notification) = stream.message().await? {
-    // イベント処理
-    handle_event(notification.event);
+    // Read Model の更新
+    update_projection(notification.event);
 }
 ```
 
