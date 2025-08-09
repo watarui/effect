@@ -40,9 +40,9 @@ SM-2 アルゴリズムに基づく復習スケジューリングを実装。85%
 
 各コンテキストの詳細な設計は以下を参照：
 
-- 設計詳細: `/docs/ddd/design/bounded-context-canvas/*.md`
-- コンテキスト間の関係: `/docs/ddd/strategic/context-map.md`
-- ドメイン分類: `/docs/ddd/strategic/domain-classification.md`
+- 設計詳細: `/docs/tactical/contexts/*/canvas.md`
+- コンテキスト間の関係: `/docs/strategic/context-map.md`
+- ドメイン分類: `/docs/strategic/domain-classification.md`
 
 ## 更新履歴
 

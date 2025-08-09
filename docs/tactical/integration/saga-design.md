@@ -199,7 +199,8 @@ Saga パターンの実装を通じて以下を学習：
 ## 関連ドキュメント
 
 - `/services/saga-executor/` - Saga 実行サービス（実装予定）
-- `/docs/ddd/design/event-storming-design-level/` - 各コンテキストの詳細設計
+- `/docs/tactical/contexts/*/events.md` - 各コンテキストのイベント定義
+- `/docs/tactical/integration/event-flows.md` - イベントフローの詳細
 
 ## 更新履歴
 

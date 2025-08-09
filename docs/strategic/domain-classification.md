@@ -85,12 +85,14 @@ Effect プロジェクトの 6 つの境界づけられたコンテキストを�
 - 学習データの可視化と分析
 - モチベーション維持のための進捗表示
 - 学習効果の測定基盤
+- **純粋な Read Model**（集約なし、イベント受信専用）
 
 **投資方針**:
 
 - CQRS/Event Sourcing による柔軟な集計
 - 段階的な機能拡張
 - パフォーマンスの最適化
+- イベント駆動アーキテクチャの実践的な学習例として活用
 
 ## Generic Subdomain（汎用サブドメイン）
 
@@ -168,9 +170,9 @@ Effect プロジェクトの 6 つの境界づけられたコンテキストを�
 
 ## 関連ドキュメント
 
-- コンテキスト間の関係: `/docs/ddd/strategic/context-map.md`
-- 各コンテキストの詳細: `/docs/ddd/design/bounded-context-canvas/*.md`
-- 境界づけられたコンテキスト: `/docs/ddd/strategic/bounded-contexts.md`
+- コンテキスト間の関係: `/docs/strategic/context-map.md`
+- 各コンテキストの詳細: `/docs/tactical/contexts/*/canvas.md`
+- 境界づけられたコンテキスト: `/docs/strategic/bounded-contexts.md`
 
 ## 更新履歴
 

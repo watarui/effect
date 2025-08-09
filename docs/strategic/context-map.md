@@ -20,7 +20,7 @@ graph TB
 
     subgraph "Supporting Domain"
         UC[User Context]
-        PC[Progress Context]
+        PC[Progress Context<br/>※Read Model/集約なし]
     end
 
     subgraph "Generic Subdomain"
@@ -62,8 +62,8 @@ graph TB
 | Learning Context           | Vocabulary Context         | Customer-Supplier  | 同期 API          | 実装済み |
 | Learning Context           | AI Integration Context     | Event-Driven Partnership | 非同期イベント    | 将来実装 |
 | Learning Context           | Learning Algorithm Context | Partnership        | 同期 API/イベント | 実装済み |
-| Learning Context           | Progress Context           | Published Language | イベント駆動      | 実装済み |
-| Learning Algorithm Context | Progress Context           | Published Language | イベント駆動      | 実装済み |
+| Learning Context           | Progress Context           | Published Language | イベント駆動（送信のみ） | 実装済み |
+| Learning Algorithm Context | Progress Context           | Published Language | イベント駆動（送信のみ） | 実装済み |
 | Vocabulary Context         | AI Integration Context     | Partnership + ACL  | 非同期イベント    | 実装済み |
 | Progress Context           | User Context               | Customer-Supplier  | 同期 API          | 将来実装 |
 
@@ -77,13 +77,15 @@ graph TB
 1. **イベント駆動を優先**: 疎結合と非同期処理による性能向上
 2. **Anti-Corruption Layer の適用**: 外部サービスから内部モデルを保護
 3. **Published Language**: ドメインイベントを共通言語として定義
+4. **Progress Context の特殊性**: 純粋な Read Model として、イベント受信専用（集約なし）
 
 ## 関連ドキュメント
 
-- ドメイン分類の詳細: `/docs/ddd/strategic/domain-classification.md`
-- 各コンテキストの詳細: `/docs/ddd/design/bounded-context-canvas/*.md`
+- ドメイン分類の詳細: `/docs/strategic/domain-classification.md`
+- 各コンテキストの詳細: `/docs/tactical/contexts/*/canvas.md`
 - 共有概念の定義: `/docs/tactical/shared/kernel.md`
-- ドメインイベント: `/docs/ddd/design/event-storming-design-level/*.md`
+- ドメインイベント: `/docs/tactical/contexts/*/events.md`
+- 統合パターン: `/docs/tactical/integration/patterns.md`
 
 ## 更新履歴
 
