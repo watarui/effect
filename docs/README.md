@@ -98,7 +98,7 @@ graph TD
 ## 重要な設計決定
 
 - **用語統一**: 「語句」→「項目（Item）」
-- **マイクロサービス**: 7つのサービス（Rust + cargo workspace）
+- **マイクロサービス**: 15のサービス（Rust + cargo workspace、CQRS+ES による分割を含む）
 - **イベントストア**: PostgreSQL + カスタム実装
 - **メッセージング**: Google Pub/Sub
 - **API Gateway**: GraphQL (async-graphql)
