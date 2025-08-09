@@ -50,17 +50,20 @@ Step 3: Vocabulary Context - AI 生成結果で VocabularyEntry を更新
 ↓
 Step 1: Learning Context - セッション結果を保存
 ↓
-Step 2: Learning Algorithm Context - 各項目のスケジュール更新
+Step 2: Learning Algorithm Context - 各項目のSM-2アルゴリズム更新
+        (イベント: CorrectnessJudgedを受信して処理)
 ↓
-Step 3: Progress Context - 学習統計を更新
-↓
-Step 4: AI Integration Context - 次回の推奨項目を生成（オプション）
+Step 3: AI Integration Context - 次回の推奨項目を生成（オプション）
 ↓
 完了: 全コンテキストで整合性の取れた状態
 
 補償フロー（いずれかのステップ失敗時）:
-- 各ステップの変更を元に戻す
-- セッション未完了として扱う
+- Step 3 補償: AI生成タスクをキャンセル
+- Step 2 補償: アルゴリズム更新をロールバック
+- Step 1 補償: セッションを未完了ステータスに戻す
+
+※ Progress Context はイベント駆動で自動更新されるため、
+Sagaのステップには含まない（補償処理不要）
 ```
 
 **特徴:**
@@ -79,16 +82,19 @@ Step 4: AI Integration Context - 次回の推奨項目を生成（オプショ�
 Step 1: User Context - プロファイル作成
 ↓
 Step 2: Learning Algorithm Context - 初期学習記録セットアップ
+        (新規ユーザー用のデフォルトSM-2パラメータ設定)
 ↓
-Step 3: Progress Context - 初期統計作成
+Step 3: AI Integration Context - レベルチェックや推奨項目生成
 ↓
-Step 4: AI Integration Context - レベルチェックや推奨項目生成
-↓
-完了: ユーザーが学習を開始できる状態
+完了: ユーザーが学習を開始できる状慎
 
 補償フロー（失敗時）:
-- 作成された部分的なデータを削除
-- ユーザー登録を取り消し
+- Step 3 補償: AIタスクをキャンセル
+- Step 2 補償: 学習記録を削除
+- Step 1 補償: ユーザープロファイルを削除
+
+※ Progress Context は UserCreated イベントを受信して
+自動的に初期統計を生成するため、Sagaに含まない
 ```
 
 **特徴:**

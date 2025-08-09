@@ -7,19 +7,23 @@
 ## Context 間の関係マップ
 
 ```
-Vocabulary ─────┬─────> Progress (項目情報の提供)
+Vocabulary ─────┬─────> Learning (項目データ提供)
     │           │
-    │           └─────> Learning (テスト用項目データ)
-    │
-    └─────────────────> AI Integration (生成要求)
+    │           └─────> AI Integration (生成要求)
     
-Progress ───────┬─────> Notification (学習リマインダー)
+Learning ───────┬─────> Progress (学習イベント送信)
     │           │
-    │           └─────> User (統計情報)
+    │           └─────> Learning Algorithm (正誤判定送信)
     │
-    └─────────────────> Learning (学習履歴)
+    └───────────────< Learning Algorithm (最適項目選択)
+
+Learning Algorithm ────> Progress (アルゴリズム結果送信)
 
 AI Integration ────────> Vocabulary (生成結果)
+
+User ──────────────────> 全コンテキスト (ユーザーID参照)
+
+Progress (Read Model) ─> GraphQL API (データ提供のみ)
 ```
 
 ## 主要な Integration Events
@@ -47,28 +51,26 @@ AI Integration ────────> Vocabulary (生成結果)
   - difficulty_changed: 難易度が変更されたか
   - cefr_level_changed: CEFRレベルが変更されたか
 
-### 2. Progress → Learning Context
+### 2. Learning → Learning Algorithm Context
 
-**ItemProgressChanged**
+**ItemSelectionRequested**
 
-- **目的**: 項目の学習進捗が変更されたことを通知
+- **目的**: 学習セッション用の最適な項目選択を要求
 - **ペイロード**:
   - user_id: ユーザーID
-  - item_id: 項目ID
-  - new_mastery_level: 新しい習熟度
-  - repetition_count: 総復習回数
-  - next_review_date: 次回復習予定日
+  - session_type: セッションタイプ（新規/復習）
+  - max_items: 最大項目数
+  - request_timestamp: リクエストタイムスタンプ
 
-**UserProgressMilestoneReached**
+**ItemsSelected** (応答)
 
-- **目的**: ユーザーが重要なマイルストーンに到達したことを通知
+- **目的**: 選択された項目リストを返答
 - **ペイロード**:
   - user_id: ユーザーID
-  - milestone_type: マイルストーンの種類
-  - achievement_date: 達成日時
-  - details: 詳細情報
+  - selected_items: 項目IDのリスト（優先度順）
+  - selection_criteria: 選択基準の説明
 
-### 3. Learning → Progress Context
+### 3. Learning → Progress Context / Learning Algorithm Context
 
 **LearningSessionCompleted**
 
@@ -80,17 +82,33 @@ AI Integration ────────> Vocabulary (生成結果)
   - results: セッション結果のサマリー
   - item_results: 個別項目の結果リスト
 
-**ItemStudied**
+**CorrectnessJudged** (Learning → Progress & Learning Algorithm)
 
-- **目的**: 個別項目が学習されたことを通知
+- **目的**: 個別項目の正誤判定を通知
+- **送信先**: Progress Context と Learning Algorithm Context の両方
 - **ペイロード**:
   - user_id: ユーザーID
   - item_id: 項目ID
-  - study_type: 学習タイプ（新規/復習）
-  - result: 学習結果（正解/不正解）
-  - response_time: 回答時間
+  - session_id: セッションID
+  - correctness: 正誤判定（correct/incorrect/timeout）
+  - response_time_ms: 回答時間（ミリ秒）
+  - timestamp: 判定時刻
 
-### 4. Vocabulary ↔ AI Integration Context
+### 4. Learning Algorithm → Progress Context
+
+**ReviewRecorded**
+
+- **目的**: SM-2 アルゴリズムの計算結果を通知
+- **ペイロード**:
+  - user_id: ユーザーID
+  - item_id: 項目ID
+  - easiness_factor: 更新された難易度係数
+  - repetition_count: 復習回数
+  - interval_days: 次回復習までの間隔
+  - next_review_date: 次回復習予定日
+  - quality: 品質評価（0-5）
+
+### 5. Vocabulary ↔ AI Integration Context
 
 **AIGenerationRequested** (Vocabulary → AI)
 
@@ -111,7 +129,7 @@ AI Integration ────────> Vocabulary (生成結果)
   - generated_content: 生成されたコンテンツ
   - generation_metadata: 生成に関するメタデータ
 
-### 5. User Context との連携
+### 6. User Context との連携
 
 **UserPreferencesUpdated** (User → Learning/Progress)
 

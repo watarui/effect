@@ -18,7 +18,7 @@
 
 ### 2. Published Language（公開ホスト言語）
 
-**使用箇所**: Word Management → Learning Context
+**使用箇所**: Vocabulary Context → Learning Context
 
 **特徴**:
 
@@ -28,13 +28,23 @@
 
 ### 3. Domain Events（ドメインイベント）
 
-**使用箇所**: Learning Context → Progress Context
+**使用箇所**:
+
+- Learning Context → Progress Context
+- Learning Algorithm Context → Progress Context
+- Vocabulary Context → AI Integration Context
 
 **特徴**:
 
 - 非同期通信
 - 疎結合
 - イベントソーシング対応
+
+**Progress Context の特殊性**:
+
+- Progress Context は「集約なし」の純粋な Read Model
+- イベントを受信専用（自身からイベントを発信しない）
+- すべてのデータは他コンテキストのイベントから派生
 
 ### 4. Anti-Corruption Layer（腐敗防止層）
 
@@ -110,9 +120,9 @@
 
 **実装場所**:
 
-- イベント定義: `shared/contexts/*/src/events.rs`
+- イベント定義: `docs/tactical/contexts/*/events.md`
 - イベントバス: `shared/infrastructure/event_bus/`
-- イベントストア: `shared/infrastructure/event_store/`
+- イベントストア: `services/event-store-service/`
 
 **設計原則**:
 
