@@ -2,145 +2,102 @@
 
 ## 概要
 
-Learning Context は CQRS パターンを採用しており、Command 側と Query 側で異なるリポジトリを使用します。
+Learning Context はシンプルなリポジトリパターンを採用し、セッション管理に特化した軽量な実装となっています。
 
-## Command 側のリポジトリ
+## 主要リポジトリ
 
-### EventStoreLearningRepository
+### SessionRepository
 
-Event Sourcing パターンに基づき、集約の状態をイベントとして保存します。
+Redis を使用したセッション状態の一時管理を行います。
 
 **主要な責務**:
 
-- 集約のイベントストリームの読み込み
-- 新しいイベントの追記
-- スナップショットの管理
-- 楽観的ロックの実装
+- セッション状態の保存・取得
+- タイムアウト管理
+- アクティブセッションの追跡
 
 **インターフェース**:
 
 ```rust
-trait EventStoreRepository {
-    // セッションの読み込み
+trait SessionRepository {
+    // セッション管理
+    async fn save_session(&self, session: &LearningSession) -> Result<()>;
     async fn find_session_by_id(&self, id: SessionId) -> Result<Option<LearningSession>>;
     async fn find_active_session_by_user(&self, user_id: UserId) -> Result<Option<LearningSession>>;
+    async fn delete_session(&self, id: SessionId) -> Result<()>;
     
-    // 学習記録の読み込み
-    async fn find_record_by_user_and_item(&self, user_id: UserId, item_id: ItemId) -> Result<Option<UserItemRecord>>;
-    
-    // イベントの保存
-    async fn save_session(&self, session: &mut LearningSession) -> Result<()>;
-    async fn save_record(&self, record: &mut UserItemRecord) -> Result<()>;
-    
-    // スナップショット
-    async fn save_snapshot(&self, aggregate_id: Uuid, snapshot: &[u8]) -> Result<()>;
-    async fn load_from_snapshot(&self, aggregate_id: Uuid) -> Result<Option<Vec<u8>>>;
+    // セッション状態の更新
+    async fn update_session_item(&self, session_id: SessionId, item: &SessionItem) -> Result<()>;
+    async fn mark_session_completed(&self, session_id: SessionId) -> Result<()>;
 }
 ```
 
 **実装の詳細**:
 
-1. **イベントストリームの読み込み**
-   - スナップショットがあれば、そこから開始
-   - スナップショット以降のイベントを適用
-   - 集約の現在の状態を再構築
+1. **Redis での状態管理**
+   - セッション状態を JSON として保存
+   - TTL 2時間で自動削除
+   - ユーザーごとのアクティブセッション管理
 
-2. **イベントの保存**
-   - 集約から発生したイベントを取得
-   - Event Store に追記
-   - Event Bus にイベントを発行
+2. **最小限の永続化**
+   - セッション完了時のサマリーのみ PostgreSQL に保存
+   - 詳細な履歴は Progress Context に委譲
 
-3. **検索用の補助テーブル**
-   - `active_sessions` テーブルで user_id → session_id のマッピング
-   - `user_item_records` テーブルで (user_id, item_id) → aggregate_id のマッピング
+### UserItemRecordRepository
 
-## Query 側のリポジトリ
-
-### ReadModelRepository
-
-非正規化されたビューから高速に読み取ります。
+最小限の学習記録を管理します。
 
 **主要な責務**:
 
-- セッション情報の高速取得
-- 学習記録の検索・フィルタリング
-- 統計情報の提供
-- 分析用データの出力
+- 最新の学習状態のみ保持
+- 正答率の簡易計算
+- Progress Context への同期用データ提供
 
 **インターフェース**:
 
 ```rust
-trait ReadModelRepository {
-    // セッション情報
-    async fn get_active_session(&self, user_id: Uuid) -> Result<Option<ActiveSessionView>>;
-    async fn get_session(&self, session_id: Uuid) -> Result<Option<SessionDetailView>>;
-    async fn get_session_history(&self, query: SessionHistoryQuery) -> Result<SessionHistoryView>;
+trait UserItemRecordRepository {
+    // 記録の取得・更新
+    async fn find_or_create(&self, user_id: UserId, item_id: ItemId) -> Result<UserItemRecord>;
+    async fn update_after_judgment(&self, record: &UserItemRecord) -> Result<()>;
     
-    // 学習記録
-    async fn get_user_item_records(&self, user_id: Uuid, item_ids: &[Uuid]) -> Result<Vec<UserItemRecordView>>;
-    async fn get_mastery_status_counts(&self, user_id: Uuid) -> Result<MasteryStatusCounts>;
-    async fn get_due_for_review(&self, user_id: Uuid, limit: u32) -> Result<Vec<UserItemRecordView>>;
-    
-    // 進捗・統計
-    async fn get_learning_progress(&self, user_id: Uuid, period: ProgressPeriod) -> Result<LearningProgressView>;
-    async fn get_learning_stats(&self, user_id: Uuid) -> Result<LearningStatsView>;
+    // 簡易検索
+    async fn find_by_user(&self, user_id: UserId, limit: usize) -> Result<Vec<UserItemRecord>>;
+    async fn count_by_status(&self, user_id: UserId) -> Result<HashMap<String, usize>>;
 }
 ```
 
 **データ構造**:
 
 ```rust
-// 非正規化されたセッションビュー
-struct SessionView {
-    session_id: Uuid,
-    user_id: Uuid,
-    started_at: DateTime<Utc>,
-    session_data: serde_json::Value,  // JSONB
-    summary: serde_json::Value,       // 事前計算された統計
-    status: String,
-}
-
-// 非正規化された学習記録ビュー
-struct LearningRecordView {
+// 最小限の学習記録
+struct UserItemRecord {
     user_id: Uuid,
     item_id: Uuid,
-    mastery_status: String,
-    mastery_data: serde_json::Value,  // JSONB（統計、履歴など）
-    last_reviewed: DateTime<Utc>,
-    next_review: Option<DateTime<Utc>>,
+    last_seen: DateTime<Utc>,
+    correct_count: u32,
+    total_count: u32,
+    // 詳細な履歴は Progress Context で管理
 }
 ```
 
-## Projection 側のリポジトリ
+### EventPublisher
 
-### ProjectionRepository
-
-イベントから Read Model への投影を管理します。
+Progress Context への通知を管理します。
 
 **主要な責務**:
 
-- イベントハンドリング
-- Read Model の更新
-- 投影状態の管理
-- 習熟度計算
+- ドメインイベントの発行
+- Pub/Sub への送信
 
 **インターフェース**:
 
 ```rust
-trait ProjectionRepository {
-    // Read Model の更新
-    async fn apply_session_started(&self, event: SessionStarted) -> Result<()>;
-    async fn apply_item_presented(&self, event: ItemPresented) -> Result<()>;
-    async fn apply_correctness_judged(&self, event: CorrectnessJudged) -> Result<()>;
-    async fn apply_session_completed(&self, event: SessionCompleted) -> Result<()>;
-    
-    // 習熟度計算
-    async fn calculate_mastery_transition(&self, event: &CorrectnessJudged) -> Result<Option<MasteryTransition>>;
-    async fn update_mastery_status(&self, transition: MasteryTransition) -> Result<()>;
-    
-    // 投影状態の管理
-    async fn get_projection_state(&self) -> Result<ProjectionState>;
-    async fn update_projection_state(&self, state: ProjectionState) -> Result<()>;
+trait EventPublisher {
+    // Progress Context への通知
+    async fn publish_session_started(&self, event: SessionStarted) -> Result<()>;
+    async fn publish_session_completed(&self, event: SessionCompleted) -> Result<()>;
+    async fn publish_correctness_judged(&self, event: CorrectnessJudged) -> Result<()>;
 }
 ```
 
@@ -148,58 +105,57 @@ trait ProjectionRepository {
 
 ### 1. トランザクション境界
 
-**Command 側**:
+**セッション操作**:
 
-- Event Store への書き込みと Event Bus への発行は同一トランザクション
-- 失敗時は全体をロールバック
+- Redis 操作は原子性を保証
+- PostgreSQL への保存は最小限
 
-**Query 側**:
+**イベント発行**:
 
-- 読み取り専用のため、トランザクションは最小限
-- キャッシュとの整合性を考慮
+- Fire-and-forget パターン
+- Progress Context での処理は非同期
 
-**Projection 側**:
+### 2. データ整合性
 
-- イベント単位でトランザクション
-- 冪等性を保証
+Redis と PostgreSQL の整合性：
 
-### 2. 楽観的ロック
-
-Event Store でのバージョン管理：
-
-```sql
--- イベント保存時のチェック
-INSERT INTO events (stream_id, event_version, ...)
-VALUES (?, ?, ...)
-ON CONFLICT (stream_id, event_version) DO NOTHING;
+```rust
+// セッション完了時の処理
+async fn complete_session(session_id: SessionId) {
+    // 1. Redis から削除
+    redis.delete(&session_id).await?;
+    
+    // 2. サマリーを PostgreSQL に保存
+    postgres.save_summary(&summary).await?;
+    
+    // 3. Progress Context へ通知
+    publisher.publish_completed(event).await?;
+}
 ```
 
 ### 3. キャッシング戦略
 
-**Query Service**:
+**セッション状態**:
 
-- Redis で Read Model をキャッシュ
-- TTL:
-  - アクティブセッション: キャッシュなし
-  - セッション詳細: 5分
-  - 統計データ: 1時間
+- Redis がメインストレージ
+- TTL 2時間で自動削除
 
-**Command Service**:
+**項目詳細**:
 
-- キャッシュは使用しない（整合性重視）
+- Vocabulary Context から取得した結果をキャッシュ
+- TTL 5分
 
 ### 4. パフォーマンス最適化
 
-**Event Store**:
+**Redis**:
 
-- aggregate_id にインデックス
-- occurred_at にインデックス（時系列クエリ用）
+- ユーザーID をキープレフィックスに使用
+- パイプラインで複数操作をバッチ処理
 
-**Read Model**:
+**PostgreSQL**:
 
-- user_id, started_at に複合インデックス
-- mastery_status にインデックス
-- JSONB の GIN インデックス（検索用）
+- 最小限のインデックス
+- user_id, item_id の複合インデックスのみ
 
 ### 5. エラーハンドリング
 
@@ -215,11 +171,11 @@ enum RepositoryError {
 
 ## まとめ
 
-CQRS パターンにより：
+シンプルなリポジトリパターンにより：
 
-- **Write 側**: イベントの完全性と監査証跡を保証
-- **Read 側**: 高速な読み取りと柔軟な検索
-- **Projection**: 非同期での最終的一貫性
-- **Analytics**: 分析用に最適化されたデータモデル
+- **セッション管理**: Redis による高速な状態管理
+- **学習記録**: 最小限の永続化
+- **履歴管理**: Progress Context への委譲
+- **通知**: 非同期でのイベント発行
 
-各リポジトリは単一責任原則に従い、それぞれの役割に特化した実装となっています。
+各リポジトリは単一責任原則に従い、セッション実行に特化した軽量な実装となっています。

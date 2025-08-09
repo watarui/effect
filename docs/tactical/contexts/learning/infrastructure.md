@@ -10,34 +10,30 @@ Learning Context の技術選択、デプロイ構成、非機能要件の定義
 
 **PostgreSQL**
 
-- Event Store: イベントの永続化
-- Read Model: 非正規化された学習データ
+- 最小限の永続化: 基本的な学習記録のみ
 - バージョン: 15以上（JSONB、gen_random_uuid() のため）
 
 **Redis**
 
-- 用途: Query Service と Analytics Service のキャッシュ
+- 用途: セッション状態の一時保存（メイン）、項目詳細のキャッシュ
 - TTL設定:
-  - アクティブセッション: キャッシュなし
-  - セッション詳細: 5分
-  - 統計データ: 1時間
+  - セッション状態: 2時間
+  - 項目詳細: 5分
 - 構成: Google Cloud Memorystore
 
 ### メッセージング
 
 **Google Cloud Pub/Sub**
 
-- Event Bus として使用
+- Progress Context への通知用
 - トピック構成:
-  - `learning-events`: すべてのドメインイベント
-  - `learning-commands`: コマンドキューイング（将来拡張用）
-  - `progress-sync`: Progress Context への転送用
+  - `learning-to-progress`: Progress Context への通知専用
 
 ### コンテナ・オーケストレーション
 
 **Google Cloud Run**
 
-- 各マイクロサービスをコンテナとしてデプロイ
+- 単一サービスをコンテナとしてデプロイ
 - 自動スケーリング
 - サーバーレス課金
 
@@ -45,56 +41,20 @@ Learning Context の技術選択、デプロイ構成、非機能要件の定義
 
 ```yaml
 services:
-  learning-command:
-    image: gcr.io/effect-project/learning-command-service
+  learning-service:
+    image: gcr.io/effect-project/learning-service
     env:
       - DATABASE_URL
+      - REDIS_URL
       - PUBSUB_TOPIC
       - ALGORITHM_SERVICE_URL
       - VOCABULARY_SERVICE_URL
     scaling:
       min_instances: 2
-      max_instances: 10
-    resources:
-      cpu: 1
-      memory: 512Mi
-
-  learning-query:
-    image: gcr.io/effect-project/learning-query-service
-    env:
-      - DATABASE_URL
-      - REDIS_URL
-    scaling:
-      min_instances: 3
       max_instances: 20
-    resources:
-      cpu: 1
-      memory: 256Mi
-
-  learning-projection:
-    image: gcr.io/effect-project/learning-projection-service
-    env:
-      - DATABASE_URL
-      - PUBSUB_SUBSCRIPTION
-      - PROGRESS_TOPIC
-    scaling:
-      min_instances: 2
-      max_instances: 5
     resources:
       cpu: 2
       memory: 1Gi
-
-  learning-analytics:
-    image: gcr.io/effect-project/learning-analytics-service
-    env:
-      - DATABASE_URL
-      - REDIS_URL
-    scaling:
-      min_instances: 1
-      max_instances: 5
-    resources:
-      cpu: 2
-      memory: 2Gi
 ```
 
 ## 非機能要件
@@ -331,13 +291,13 @@ steps:
 
   - name: Build and push
     run: |
-      docker build -t gcr.io/$PROJECT/learning-$SERVICE .
-      docker push gcr.io/$PROJECT/learning-$SERVICE
+      docker build -t gcr.io/$PROJECT/learning-service .
+      docker push gcr.io/$PROJECT/learning-service
 
   - name: Deploy
     run: |
-      gcloud run deploy learning-$SERVICE \
-        --image gcr.io/$PROJECT/learning-$SERVICE \
+      gcloud run deploy learning-service \
+        --image gcr.io/$PROJECT/learning-service \
         --platform managed \
         --region us-central1
 ```
