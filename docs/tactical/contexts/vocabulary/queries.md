@@ -47,21 +47,29 @@ Vocabulary Context の Query Service が提供するクエリパターンの定�
 }
 ```
 
-## 検索クエリ
+## 統一検索クエリ
 
-### SearchVocabularyItems
+### SearchVocabulary
 
-語彙項目を検索（Query Service 経由）。
+統一された検索エンドポイント。API Gateway が適切なサービスにルーティング。
 
 **パラメータ**:
 
-- query: 検索文字列
+- query: 検索文字列（オプション）
+- fuzzy: 曖昧検索有効化（デフォルト: true）
 - filters:
   - status: ステータスでフィルタ
   - cefr_level: CEFR レベルでフィルタ
   - part_of_speech: 品詞でフィルタ
+  - domain: ドメインでフィルタ
 - first: 取得件数（最大100）
 - after: カーソル（ページネーション用）
+
+**ルーティングロジック**:
+
+1. `query` が指定されている場合 → Search Service（Meilisearch）
+2. `filters` のみの場合 → Query Service（PostgreSQL）
+3. 両方指定の場合 → Search Service（Meilisearch はフィルタもサポート）
 
 **レスポンス**:
 
@@ -79,20 +87,20 @@ Vocabulary Context の Query Service が提供するクエリパターンの定�
 }
 ```
 
-### SearchWithMeilisearch
+### Autocomplete
 
-全文検索（Search Service 経由）。
+自動補完専用エンドポイント（Search Service 経由）。
 
 **パラメータ**:
 
-- query: 検索文字列
-- limit: 取得件数（デフォルト20）
+- prefix: 前方一致検索文字列
+- limit: 取得件数（デフォルト10）
 
 **特徴**:
 
-- Typo 許容
-- 部分一致
-- 関連度順でソート
+- 高速レスポンス
+- スペリング候補のみ返却
+- 頻度順でソート
 
 ## 統計クエリ
 

@@ -13,13 +13,13 @@ CQRS/Event Sourcing パターンを採用し、4 つのマイクロサービス�
 
 ## 3. Strategic Classification
 
-- **Domain Type**: Core Domain
+- **Domain Type**: Supporting Subdomain
 - **Business Model**: Revenue Enabler
 - **Evolution Stage**: Custom Built
 
 ### 分類の理由
 
-- **Core Domain**: 学習コンテンツの基盤となる語彙データを管理。Wikipedia スタイルの意味管理と AI 連携による自動生成が差別化要因
+- **Supporting Subdomain**: 学習機能を支える重要な基盤だが、ビジネスの差別化要因は Learning/Algorithm Context にある
 - **Revenue Enabler**: 豊富で質の高い語彙データが学習効果を向上させ、ユーザー満足度と継続率に貢献
 - **Custom Built**: 既存の辞書 API では実現できない、学習に特化した詳細情報と編集可能性を実装
 
@@ -64,7 +64,7 @@ CQRS/Event Sourcing パターンを採用し、4 つのマイクロサービス�
 | VocabularyItemUpdated    | Progress Context       | 非同期     | 語彙項目の更新通知            |
 | RequestAIGeneration      | AI Integration Context | 非同期     | AI コンテンツ生成要求         |
 | ItemDetails              | Learning Context       | 同期       | 語彙項目の詳細情報レスポンス   |
-| TaskCreatedAck           | AI Integration Context | 同期       | AI タスク ID の受領確認        |
+| TaskCreated              | AI Integration Context | 非同期     | AI タスク作成通知（Task ID は AI Context が管理） |
 
 ### 統合パターン
 
@@ -123,7 +123,7 @@ Wikipedia 方式により、1 つのスペリングに複数の意味を持た�
 ### 技術的前提
 
 - AI サービスは非同期で動作し、遅延やエラーが発生しうる
-- AI タスク ID を保持し、生成状態を追跡可能
+- AI タスク管理（ID、状態追跡）は AI Integration Context が担当
 - 楽観的ロックのためのバージョン管理が可能
 - 全文検索インデックスの構築が可能
 - 大規模データ（数万〜数十万項目）への対応
@@ -173,9 +173,9 @@ Vocabulary Context は以下の 4 つのサービスに分解される：
 
 3. **vocabulary-search-service**
    - Meilisearch を活用した全文検索
-   - ファセット検索
+   - Typo 許容、部分一致検索
    - オートコンプリート
-   - 関連語の提案
+   - フィルタリング機能（status, CEFR レベル等）
 
 4. **vocabulary-projection-service**
    - イベントの消費と処理

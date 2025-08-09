@@ -150,25 +150,38 @@ type Query {
   vocabularyEntry(id: UUID!): VocabularyEntry
   vocabularyEntryBySpelling(spelling: String!): VocabularyEntry
   
-  # 検索・一覧
-  searchVocabularyItems(
+  # 統一された検索エンドポイント
+  searchVocabulary(
+    # テキスト検索（Meilisearch 使用、オプション）
     query: String
-    status: VocabularyStatus
-    cefrLevel: CEFRLevel
-    partOfSpeech: PartOfSpeech
+    fuzzy: Boolean = true  # 曖昧検索の有効化
+    
+    # フィルタ（PostgreSQL/Meilisearch）
+    filters: SearchFilters
+    
+    # ページネーション
     first: Int = 20
     after: String
   ): VocabularyItemConnection!
   
-  # 全文検索（Meilisearch）
-  searchFullText(
-    query: String!
-    limit: Int = 20
-  ): [VocabularyItem!]!
+  # 自動補完専用
+  autocomplete(
+    prefix: String!
+    limit: Int = 10
+  ): [String!]!
   
   # 統計情報
   vocabularyStats: VocabularyStats!
 }
+```
+
+input SearchFilters {
+  status: VocabularyStatus
+  cefrLevel: CEFRLevel
+  partOfSpeech: PartOfSpeech
+  domain: String
+}
+
 ```
 
 ### ミューテーション

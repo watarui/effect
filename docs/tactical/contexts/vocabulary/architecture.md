@@ -51,18 +51,19 @@ Vocabulary Context は CQRS（Command Query Responsibility Segregation）+ Event
 
 ### 4. vocabulary_search_service
 
-**責務**: シンプルな検索機能の提供
+**責務**: 全文検索と自動補完機能の提供
 
-- Meilisearch SDK の標準機能を活用
-- 基本的な全文検索（typo許容、部分一致）
-- シンプルな自動補完
-- 最小限の設定で実用的な検索を実現
+- Meilisearch を活用した高度な検索
+- Typo 許容、部分一致検索
+- フィルタリング機能（status, CEFR レベル等）
+- 高速な自動補完
 
 **主要コンポーネント**:
 
 - SearchHandler: 検索リクエストの処理
 - MeilisearchClient: SDK を使った検索実行
 - IndexManager: インデックスの同期管理
+- FilterBuilder: 検索フィルタの構築
 
 ## データフロー
 
@@ -93,6 +94,62 @@ Vocabulary Context は CQRS（Command Query Responsibility Segregation）+ Event
 3. キャッシュミスの場合、Read Model から取得
 4. 非正規化されたデータを返却（JOIN 不要）
 ```
+
+## API Gateway のルーティングロジック
+
+### 統一検索エンドポイント（searchVocabulary）
+
+API Gateway は検索リクエストのパラメータに基づいて、適切なサービスにルーティングします：
+
+```typescript
+// API Gateway のルーティングロジック
+async function routeSearchRequest(request: SearchRequest) {
+  const { query, fuzzy, filters, first, after } = request;
+  
+  // ケース1: テキスト検索がある場合 → Search Service
+  if (query && query.length > 0) {
+    return await searchService.search({
+      query,
+      fuzzy,
+      filters,  // Meilisearch もフィルタをサポート
+      limit: first,
+      offset: after
+    });
+  }
+  
+  // ケース2: フィルタのみの場合 → Query Service
+  if (filters && !query) {
+    return await queryService.filter({
+      filters,
+      first,
+      after
+    });
+  }
+  
+  // ケース3: パラメータなし → Query Service で全件取得
+  return await queryService.list({ first, after });
+}
+```
+
+### ルーティング判定基準
+
+| パラメータの組み合わせ | ルーティング先 | 理由 |
+|----------------------|--------------|------|
+| `query` あり | Search Service | 全文検索機能が必要 |
+| `filters` のみ | Query Service | 構造化検索で十分 |
+| `query` + `filters` | Search Service | Meilisearch がフィルタもサポート |
+| パラメータなし | Query Service | 単純な一覧取得 |
+
+### 自動補完エンドポイント（autocomplete）
+
+```typescript
+// 常に Search Service にルーティング
+async function routeAutocomplete(prefix: string, limit: number) {
+  return await searchService.autocomplete({ prefix, limit });
+}
+```
+
+このルーティング戦略により、利用者には統一されたインターフェースを提供しながら、内部では各サービスの強みを活かした処理が可能になります。
 
 ## データモデルの対比
 
