@@ -2,149 +2,88 @@
 
 ## 概要
 
-Progress Context は純粋な CQRS Read Model であり、他のコンテキストから発行されるイベントを集約して、様々な統計情報を提供します。
+Progress Context のリポジトリは Event Store と Read Model の永続化を担当します。純粋な CQRS アーキテクチャのため、書き込みと読み取りが完全に分離されています。
 
-このコンテキストの特徴：
+## EventStore リポジトリ
 
-- **集約なし**：全てがイベントから生成される Read Model
-- **イベントソーシング**：イベントの履歴から状態を再構築
-- **結果整合性**：リアルタイム性より正確性を優先
+### 責務
 
-## EventStore
-
-イベントの永続化と読み取りを担当する特別なリポジトリです。
-
-### 主要な責務
-
-- イベントの追記（Append-Only）
+- イベントの永続化（Append-Only）
 - イベントストリームの読み取り
-- グローバルイベントの順序保証
-- スナップショットによる最適化
+- スナップショット管理
 
-### インターフェース設計
+### 主要メソッド
 
-**基本操作**:
+- append_events: イベント追記
+- read_events: ストリーム読み取り
+- save_snapshot: スナップショット保存
+- get_latest_snapshot: 最新スナップショット取得
 
-- `append_events`: イベントを追記
-- `read_events`: ストリームからイベントを読み取り
-- `read_all_events`: グローバルイベントストリームを読み取り
-- `read_events_by_type`: イベントタイプでフィルタリング
-
-**スナップショット**:
-
-- `save_snapshot`: スナップショットの保存
-- `get_latest_snapshot`: 最新のスナップショットを取得
-
-## ProjectionRepository
-
-各種プロジェクション（読み取りモデル）の永続化を担当します。
+## Projection リポジトリ
 
 ### 共通インターフェース
 
-すべてのプロジェクションリポジトリが実装すべき基本インターフェース：
+すべての投影リポジトリが実装する基本操作：
 
-**基本操作**:
+- save: 投影の保存/更新
+- find_by_id: ID による取得
+- save_batch: バッチ保存
+- rebuild_from_events: イベントから再構築
 
-- `save`: プロジェクションの保存（作成/更新）
-- `find_by_id`: ID による取得
-- `delete`: プロジェクションの削除
+### 個別リポジトリ
 
-**バッチ操作**:
+**DailyStatsRepository**
 
-- `save_batch`: 複数のプロジェクションを一括保存
-- `rebuild_from_events`: イベントから再構築
+- 日別統計の管理
+- ユーザーと日付による検索
 
-### 個別のプロジェクションリポジトリ
+**WeeklyStatsRepository**
 
-#### DailyStatsRepository
+- 週別統計の管理
+- トレンド分析データの提供
 
-日別統計のリポジトリ。
+**ItemStatsRepository**
 
-**特有のクエリ**:
+- 項目別統計の管理
+- 苦手/習得済み項目の抽出
 
-- `find_by_user_and_date`: ユーザーと日付で取得
-- `find_by_user_and_date_range`: 期間指定で取得
-- `find_latest_by_user`: 最新の日別統計を取得
+**DomainStatsRepository**
 
-#### WeeklyStatsRepository
+- R/W/L/S 別統計の管理
+- 領域間比較データの提供
 
-週別統計のリポジトリ。
+**LevelStatsRepository**
 
-**特有のクエリ**:
+- CEFR レベル別統計の管理
+- 目標レベルの算出
 
-- `find_by_user_and_week`: ユーザーと週で取得
-- `find_recent_weeks`: 最近N週間の統計を取得
-- `calculate_trend`: 週別トレンドを計算
+**StreakRepository**
 
-#### ItemStatsRepository
-
-項目別統計のリポジトリ。
-
-**特有のクエリ**:
-
-- `find_by_user_and_item`: ユーザーと項目で取得
-- `find_by_user_and_accuracy`: 正答率で項目を検索
-- `find_struggling_items`: 苦手項目を取得
-- `find_mastered_items`: 習得済み項目を取得
-
-#### DomainStatsRepository
-
-領域別（R/W/L/S）統計のリポジトリ。
-
-**特有のクエリ**:
-
-- `find_by_user_and_domain`: ユーザーと領域で取得
-- `find_all_domains_by_user`: 全領域の統計を取得
-- `compare_domains`: 領域間の比較データを取得
-
-#### LevelStatsRepository
-
-CEFR レベル別統計のリポジトリ。
-
-**特有のクエリ**:
-
-- `find_by_user_and_level`: ユーザーとレベルで取得
-- `find_all_levels_by_user`: 全レベルの統計を取得
-- `find_next_target_level`: 次の目標レベルを取得
-
-#### StreakRepository
-
-連続学習記録のリポジトリ。
-
-**特有のクエリ**:
-
-- `find_by_user`: ユーザーの連続記録を取得
-- `find_top_streaks`: 上位の連続記録を取得
-- `check_streak_status`: 連続記録の状態を確認
+- 連続学習記録の管理
+- ランキングデータの提供
 
 ## 実装上の考慮事項
 
-### イベントソーシングの実装
+### イベントソーシング
 
 - イベントは追記のみ（イミュータブル）
-- イベントの順序は厳密に保証
-- イベントIDによる重複排除
+- 厳密な順序保証
+- イベントID による重複排除
 
-### プロジェクションの更新戦略
+### 更新戦略
 
-**リアルタイム更新**:
-
-- 重要な統計（日別、連続記録）は即座に更新
-- イベントハンドラーで非同期処理
-
-**バッチ更新**:
-
-- 集計の重い統計は定期バッチで更新
-- 深夜などの低負荷時に再計算
-
-### スナップショット戦略
-
-- 1000イベントごとにスナップショット作成
-- 古いスナップショットは定期的に削除
-- リビルド時はスナップショットから開始
+- **リアルタイム**: 日別統計、連続記録
+- **バッチ（5分）**: 週別統計、領域別統計
+- **遅延評価**: アクセス頻度の低い統計
 
 ### パフォーマンス最適化
 
-- 頻繁にアクセスされるプロジェクションはキャッシュ
-- インデックスの適切な設定
+- Redis によるキャッシング
+- 適切なインデックス設定
 - 読み取り専用レプリカの活用
+
+### スナップショット
+
+- 1000イベントごとに作成
+- 古いスナップショットの定期削除
+- リビルド時の高速化
