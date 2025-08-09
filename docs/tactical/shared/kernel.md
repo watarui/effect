@@ -15,6 +15,7 @@ Shared Kernel は、複数の境界づけられたコンテキスト間で共有
 - **SessionId**: 学習セッションを一意に識別
 - **EntryId**: 語彙エントリー（見出し語）を一意に識別
 - **EventId**: ドメインイベントを一意に識別
+- **RecordId**: 学習記録（UserItemRecord、ItemLearningRecord）を一意に識別
 
 実装: `shared/kernel/src/ids.rs`
 
@@ -34,8 +35,9 @@ Shared Kernel は、複数の境界づけられたコンテキスト間で共有
 - **LanguageCode**: 言語を表す2文字コード（ISO 639-1 標準）
   - 例: `en`（英語）、`ja`（日本語）、`es`（スペイン語）
   - 用途: UI言語、学習者の母語、翻訳先言語の指定
-- **ResponseType**: 学習時の反応タイプ（正解、不正解、スキップ）
-- **MasteryStatus**: 習得状態（未学習、テスト済み、短期記憶、長期記憶）
+- **Correctness**: 正誤判定（correct、incorrect、timeout）
+- **MasteryState**: 習得状態（new、short_term、long_term）
+- **ReviewStatus**: 復習状態（new、learning、review、relearning）
 
 実装: `shared/kernel/src/value_objects.rs`
 
@@ -89,9 +91,12 @@ Shared Kernel の変更は慎重に管理する必要があります：
 
 コンテキスト間でイベントやデータを交換する際は、Shared Kernel の型を使用して一貫性を保ちます。
 
-例：Learning Context から Progress Context へのイベントでは、`SessionId`、`UserId`、`CourseType` などの共有型を使用。
+例：
 
-実装例: `shared/contexts/*/src/events.rs`
+- Learning Context から Progress Context へのイベント（CorrectnessJudged）では、`SessionId`、`UserId`、`ItemId`、`Correctness` などの共有型を使用
+- Learning Algorithm Context から Progress Context へのイベント（ReviewRecorded）では、`UserId`、`ItemId`、`RecordId` などの共有型を使用
+
+実装例: `docs/tactical/contexts/*/events.md`
 
 ## アンチパターン
 

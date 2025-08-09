@@ -118,6 +118,7 @@
 - 基本的なメトリクスは構造化ログで代替
 - 本番環境では Cloud Monitoring の基本機能を活用
 - OpenTelemetry/Prometheus は将来の拡張オプションとして記載
+- Progress Context の Read Model 更新パフォーマンスは特に注視
 
 ### 分散トレーシング
 

@@ -10,7 +10,8 @@ DDD の原則に従い、ドメイン層の共有（Shared Kernel）と技術的
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                     Application Services                      │
-│  (Learning, Vocabulary, Algorithm, Progress, AI, User)       │
+│  (Learning, Vocabulary, Learning Algorithm, AI, User)        │
+│  ※ Progress は Read Model のためイベント受信専用              │
 └────────────────────────┬─────────────────────────────────────┘
                          │ 依存
 ┌────────────────────────┴─────────────────────────────────────┐
@@ -117,9 +118,9 @@ shared/
 ├── contexts/               # 各コンテキストの共有型
 │   ├── vocabulary/
 │   ├── learning/
-│   ├── algorithm/
-│   ├── progress/
-│   ├── ai/
+│   ├── learning_algorithm/  # SM-2アルゴリズム専用
+│   ├── progress/           # Read Model専用（集約なし）
+│   ├── ai_integration/
 │   └── user/
 │
 ├── infrastructure/         # インフラストラクチャ実装

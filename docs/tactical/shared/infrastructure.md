@@ -63,11 +63,19 @@
 
 **実装**: `shared/infrastructure/event_bus/`
 
+**主要なイベント例**:
+
+- `CorrectnessJudged`: Learning → Progress & Learning Algorithm
+- `SessionCompleted`: Learning → Progress
+- `ReviewRecorded`: Learning Algorithm → Progress
+- `VocabularyItemCreated`: Vocabulary → AI Integration
+
 **設計判断**:
 
 - Google Pub/Sub を選択（マネージドサービス、スケーラビリティ）
 - トピック自動作成
 - JSON シリアライズ
+- Progress Context は受信専用（発行しない）
 
 ### Repository 基底実装
 
