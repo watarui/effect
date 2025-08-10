@@ -1,0 +1,33 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n                    SELECT DISTINCT ON (event_type)\n                        event_type, version, description, created_at\n                    FROM event_schemas\n                    ORDER BY event_type, version DESC\n                    ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "event_type",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 1,
+				"name": "version",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 2,
+				"name": "description",
+				"type_info": "Text"
+			},
+			{
+				"ordinal": 3,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": []
+		},
+		"nullable": [false, false, false, false]
+	},
+	"hash": "d2f722e8bf3c5424f7cb0813fb08559494e788f92edf83c1e5a755911833fb3e"
+}

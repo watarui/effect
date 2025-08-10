@@ -10,7 +10,7 @@ path = "src/main.rs"
 [dependencies]
 # Shared modules from workspace
 shared_kernel = { path = "../../shared/kernel", features = ["sqlx"] }
-domain_events = { path = "../../shared/domain_events" }
+domain_events_service = { path = "../domain_events_service" }
 shared_repository = { path = "../../shared/infrastructure/repository" }
 
 # Workspace dependencies
@@ -31,7 +31,7 @@ sqlx = { workspace = true }
 config = { workspace = true }
 
 # Service specific dependencies
-validator = { version = "0.20.0", features = ["derive"] }
+validator = { workspace = true }
 
 [dev-dependencies]
 mockall = { workspace = true }

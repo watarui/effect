@@ -6,9 +6,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
-use domain_events::{DomainEvent, EventBus, EventError, EventHandler};
 use google_cloud_googleapis::pubsub::v1::PubsubMessage;
 use google_cloud_pubsub::{client::Client, publisher::Publisher};
+use shared_kernel::{EventBus, EventError};
 use tokio::sync::RwLock;
 use tracing::{error, info};
 
@@ -75,9 +75,9 @@ impl PubSubEventBus {
         Ok(publisher)
     }
 
-    /// ドメインイベント用のトピック名を取得
-    fn get_topic_name(event: &DomainEvent) -> String {
-        format!("effect-{}", event.event_type().to_lowercase())
+    /// トピック名からイベントタイプを取得
+    fn get_topic_name(topic: &str) -> String {
+        format!("effect-{topic}")
     }
 
     /// サブスクリプションの存在確認と作成
@@ -126,30 +126,18 @@ impl PubSubEventBus {
 
 #[async_trait]
 impl EventBus for PubSubEventBus {
-    /// ドメインイベントを適切なトピックに発行
-    async fn publish(&self, event: DomainEvent) -> Result<(), EventError> {
-        let topic_name = Self::get_topic_name(&event);
+    /// イベントを適切なトピックに発行
+    async fn publish(&self, topic: &str, event: &[u8]) -> Result<(), EventError> {
+        let topic_name = Self::get_topic_name(topic);
 
-        // イベントを JSON にシリアライズ
-        let event_data = serde_json::to_vec(&event)
-            .map_err(|e| EventError::Deserialization(format!("Failed to serialize event: {e}")))?;
-
-        // タイムスタンプを取得（メタデータがない場合は現在時刻を使用）
-        let timestamp = event
-            .metadata()
-            .and_then(|meta| meta.occurred_at.as_ref())
-            .and_then(|ts| {
-                use chrono::{DateTime, Utc};
-                let nanos = u32::try_from(ts.nanos).ok()?;
-                DateTime::<Utc>::from_timestamp(ts.seconds, nanos)
-            })
-            .map_or_else(|| chrono::Utc::now().to_rfc3339(), |dt| dt.to_rfc3339());
+        // タイムスタンプを取得
+        let timestamp = chrono::Utc::now().to_rfc3339();
 
         // Pub/Sub メッセージを作成
         let message = PubsubMessage {
-            data: event_data,
+            data: event.to_vec(),
             attributes: HashMap::from([
-                ("event_type".to_string(), event.event_type().to_string()),
+                ("topic".to_string(), topic.to_string()),
                 ("timestamp".to_string(), timestamp),
             ]),
             ..Default::default()
@@ -166,25 +154,20 @@ impl EventBus for PubSubEventBus {
             .await
             .map_err(|e| EventError::Publish(format!("Failed to publish message: {e}")))?;
 
-        info!(
-            "Published event {} to topic {}",
-            event.event_type(),
-            topic_name
-        );
+        info!("Published event to topic {}", topic_name);
         Ok(())
     }
 
     /// 指定されたハンドラーでイベントを購読
-    async fn subscribe(&self, handler: Box<dyn EventHandler>) -> Result<(), EventError> {
-        // 現時点では、すべてのコンテキストをリッスンするシンプルな購読を実装
-        // 実際の実装では、コンテキストやイベントタイプでフィルタリングする機能を
-        // 追加することを検討
-
-        let subscription_name = format!("effect-all-events-{}", uuid::Uuid::new_v4());
-        let topic_name = "effect-all"; // すべてのイベントを受信する特別なトピック
+    async fn subscribe<F>(&self, topic: &str, handler: F) -> Result<(), EventError>
+    where
+        F: Fn(&[u8]) -> Result<(), EventError> + Send + Sync + 'static,
+    {
+        let subscription_name = format!("effect-{}-{}", topic, uuid::Uuid::new_v4());
+        let topic_name = Self::get_topic_name(topic);
 
         // サブスクリプションの存在確認と作成
-        self.ensure_subscription_exists(&subscription_name, topic_name)
+        self.ensure_subscription_exists(&subscription_name, &topic_name)
             .await?;
 
         // spawn に必要な情報をクローン
@@ -208,22 +191,14 @@ impl EventBus for PubSubEventBus {
                 };
 
                 for msg in stream {
-                    // イベントをデシリアライズ
-                    match serde_json::from_slice::<DomainEvent>(&msg.message.data) {
-                        Ok(event) => {
-                            // イベントを処理
-                            if let Err(e) = handler.handle(event).await {
-                                error!("Error handling event: {}", e);
-                            }
-
-                            // メッセージを確認応答
-                            let _ = msg.ack().await;
-                        },
-                        Err(e) => {
-                            error!("Error deserializing event: {}", e);
-                            // リトライ可能にするためメッセージを否定応答
-                            let _ = msg.nack().await;
-                        },
+                    // イベントを処理
+                    if let Err(e) = handler(&msg.message.data) {
+                        error!("Error handling event: {}", e);
+                        // リトライ可能にするためメッセージを否定応答
+                        let _ = msg.nack().await;
+                    } else {
+                        // メッセージを確認応答
+                        let _ = msg.ack().await;
                     }
                 }
             }

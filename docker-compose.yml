@@ -225,6 +225,52 @@ services:
   # マイクロサービス層
   # ========================================
 
+  # Domain Events Service - イベントスキーマ管理
+  domain-events-service:
+    build:
+      context: .
+      dockerfile: services/domain_events_service/Dockerfile
+    container_name: effect-domain-events-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      DOMAIN_EVENTS_GRPC_PORT: 50053
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+    ports:
+      - "${DOMAIN_EVENTS_PORT:-50053}:50053"
+    depends_on:
+      postgres-event-store:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # Event Store Service - イベント永続化 + Event Bus
+  event-store-service:
+    build:
+      context: .
+      dockerfile: services/event_store_service/Dockerfile
+    container_name: effect-event-store-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50051
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      DOMAIN_EVENTS_URL: http://domain-events-service:50053
+      ENABLE_EVENT_VALIDATION: "true"
+      GCP_PROJECT_ID: ${PUBSUB_PROJECT_ID:-effect-local}
+      PUBSUB_TOPIC_PREFIX: effect
+      PUBSUB_ENABLE_ORDERING: "true"
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+    ports:
+      - "${EVENT_STORE_PORT:-50051}:50051"
+    depends_on:
+      postgres-event-store:
+        condition: service_healthy
+      domain-events-service:
+        condition: service_started
+      pubsub:
+        condition: service_started
+    networks:
+      - effect-network
+
   # API Gateway - GraphQL エンドポイント
   api-gateway:
     build:

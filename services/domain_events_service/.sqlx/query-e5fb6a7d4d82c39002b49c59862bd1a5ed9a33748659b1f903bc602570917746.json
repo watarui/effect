@@ -1,0 +1,20 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO event_schemas (\n                id, event_type, version, definition, description,\n                created_at, updated_at\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7)\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Varchar",
+				"Int4",
+				"Text",
+				"Text",
+				"Timestamptz",
+				"Timestamptz"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "e5fb6a7d4d82c39002b49c59862bd1a5ed9a33748659b1f903bc602570917746"
+}

@@ -149,6 +149,39 @@ pub enum EventError {
 
     #[error("Invalid event: {0}")]
     InvalidEvent(String),
+
+    #[error("Publish error: {0}")]
+    Publish(String),
+
+    #[error("Handler error: {0}")]
+    Handler(String),
+}
+
+/// 学習レベル（CEFR）
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CefrLevel {
+    A1,
+    A2,
+    B1,
+    B2,
+    C1,
+    C2,
+}
+
+/// 正解判定
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CorrectnessJudgment {
+    Correct,
+    Incorrect,
+    PartiallyCorrect,
+}
+
+/// ユーザーロール
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum UserRole {
+    User,
+    Admin,
+    Moderator,
 }
 
 /// イベントハンドラーのトレイト

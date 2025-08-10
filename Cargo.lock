@@ -42,7 +42,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "domain_events",
+ "domain_events_service",
  "prost 0.14.1",
  "serde",
  "serde_json",
@@ -61,7 +61,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "domain_events",
+ "domain_events_service",
  "prost 0.14.1",
  "serde",
  "serde_json",
@@ -788,18 +788,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "domain_events"
+name = "domain_events_service"
 version = "0.1.0"
 dependencies = [
- "async-trait",
+ "axum 0.8.4",
  "chrono",
+ "config",
+ "mockall",
  "prost 0.14.1",
  "prost-types 0.14.1",
  "serde",
  "serde_json",
+ "shared_database",
  "shared_kernel",
+ "shared_telemetry",
+ "sqlx",
  "thiserror 2.0.12",
+ "tokio",
+ "tonic 0.14.1",
+ "tonic-prost",
  "tonic-prost-build",
+ "tower 0.5.2",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -883,7 +895,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "domain_events",
+ "domain_events_service",
  "serde",
  "serde_json",
  "shared_kernel",
@@ -899,6 +911,8 @@ name = "event_store_service"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "google-cloud-googleapis",
+ "google-cloud-pubsub",
  "prost 0.14.1",
  "prost-types 0.14.1",
  "serde",
@@ -1747,7 +1761,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "domain_events",
+ "domain_events_service",
  "prost 0.14.1",
  "serde",
  "serde_json",
@@ -3092,7 +3106,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "domain_events",
+ "domain_events_service",
  "prost 0.14.1",
  "serde",
  "serde_json",
@@ -3311,12 +3325,12 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "domain_events",
  "futures",
  "google-cloud-googleapis",
  "google-cloud-pubsub",
  "serde",
  "serde_json",
+ "shared_kernel",
  "thiserror 2.0.12",
  "tokio",
  "tracing",
@@ -4208,9 +4222,9 @@ dependencies = [
 
 [[package]]
 name = "tonic-build"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18262cdd13dec66e8e3f2e3fe535e4b2cc706fab444a7d3678d75d8ac2557329"
+checksum = "49e323d8bba3be30833707e36d046deabf10a35ae8ad3cae576943ea8933e25d"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -4511,7 +4525,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "config",
- "domain_events",
+ "domain_events_service",
  "mockall",
  "prost 0.14.1",
  "prost-types 0.14.1",

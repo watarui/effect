@@ -24,11 +24,9 @@ members = [
   "shared/cross_cutting/cache",
   "shared/cross_cutting/config",
 
-  # Legacy shared (移行中)
-  "shared/domain_events",
-
   # Microservices
   "services/event_store_service",
+  "services/domain_events_service",
   "services/vocabulary_command_service",
   "services/vocabulary_query_service",
   "services/vocabulary_projection_service",
@@ -120,6 +118,9 @@ meilisearch-sdk = "0.29.1"
 
 # Utilities
 hex = "0.4"
+
+# Validation
+validator = { version = "0.20.0", features = ["derive"] }
 
 [workspace.lints.clippy]
 # エラーレベルのリント

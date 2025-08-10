@@ -1,0 +1,18 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT MAX(version)\n            FROM event_schemas\n            WHERE event_type = $1\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "max",
+				"type_info": "Int4"
+			}
+		],
+		"parameters": {
+			"Left": ["Text"]
+		},
+		"nullable": [null]
+	},
+	"hash": "c613c99a98972bcb527e9955b09d2df8e339b90edb201d76ab678527af54aaf3"
+}

@@ -11,7 +11,20 @@ pub mod timestamp;
 pub mod value_objects;
 
 // Re-export commonly used items
-pub use events::*;
+// CefrLevel は value_objects から直接エクスポート（events からの重複を避ける）
+pub use events::{
+    CorrectnessJudgment,
+    DomainEvent,
+    EventBus,
+    EventError,
+    EventHandler,
+    EventMetadata,
+    EventStore,
+    IntegrationEvent,
+    TraceContext,
+    UserRole,
+    serde_helpers,
+};
 pub use ids::*;
 pub use timestamp::*;
 pub use value_objects::*;

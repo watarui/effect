@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package effect.domain_events;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+// Domain Events Service - イベントスキーマの中央管理
+service DomainEventsService {
+  // スキーマ取得
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+
+  // イベント検証
+  rpc ValidateEvent(ValidateEventRequest) returns (ValidateEventResponse);
+
+  // スキーマ登録（将来の拡張用）
+  rpc RegisterSchema(RegisterSchemaRequest) returns (RegisterSchemaResponse);
+
+  // 利用可能なイベントタイプ一覧取得
+  rpc ListEventTypes(ListEventTypesRequest) returns (ListEventTypesResponse);
+
+  // スキーマバージョン取得
+  rpc GetSchemaVersion(GetSchemaVersionRequest) returns (GetSchemaVersionResponse);
+}
+
+// スキーマ取得リクエスト
+message GetSchemaRequest {
+  string event_type = 1;
+  optional int32 version = 2; // 指定しない場合は最新版
+}
+
+// スキーマ取得レスポンス
+message GetSchemaResponse {
+  Schema schema = 1;
+}
+
+// イベント検証リクエスト
+message ValidateEventRequest {
+  string event_type = 1;
+  google.protobuf.Any event_data = 2;
+  optional int32 schema_version = 3;
+}
+
+// イベント検証レスポンス
+message ValidateEventResponse {
+  bool is_valid = 1;
+  repeated ValidationError errors = 2;
+}
+
+// スキーマ登録リクエスト
+message RegisterSchemaRequest {
+  string event_type = 1;
+  string schema_definition = 2; // JSON Schema or Protobuf descriptor
+  string description = 3;
+}
+
+// スキーマ登録レスポンス
+message RegisterSchemaResponse {
+  string schema_id = 1;
+  int32 version = 2;
+}
+
+// イベントタイプ一覧取得リクエスト
+message ListEventTypesRequest {
+  optional string context = 1; // "vocabulary", "learning", etc.
+}
+
+// イベントタイプ一覧取得レスポンス
+message ListEventTypesResponse {
+  repeated EventTypeInfo event_types = 1;
+}
+
+// スキーマバージョン取得リクエスト
+message GetSchemaVersionRequest {
+  string event_type = 1;
+}
+
+// スキーマバージョン取得レスポンス
+message GetSchemaVersionResponse {
+  int32 current_version = 1;
+  repeated int32 available_versions = 2;
+}
+
+// スキーマ情報
+message Schema {
+  string id = 1;
+  string event_type = 2;
+  int32 version = 3;
+  string definition = 4; // JSON Schema or Protobuf descriptor
+  string description = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// 検証エラー
+message ValidationError {
+  string field = 1;
+  string message = 2;
+  string code = 3;
+}
+
+// イベントタイプ情報
+message EventTypeInfo {
+  string event_type = 1;
+  string context = 2;
+  string description = 3;
+  int32 current_version = 4;
+  bool is_deprecated = 5;
+}

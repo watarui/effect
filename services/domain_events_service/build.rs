@@ -1,3 +1,5 @@
+//! Domain Events Service のビルドスクリプト
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = tonic_prost_build::configure();
 
@@ -12,16 +14,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .server_attribute(".", "#[allow(clippy::all)]")
         .client_attribute(".", "#[allow(clippy::all)]");
 
+    // Domain Events Service の gRPC 定義をコンパイル
     config
         .build_server(true)
         .build_client(true)
         .compile_protos(
-            &["../../protos/services/event_store_service.proto"],
+            &["../../protos/services/domain_events_service.proto"],
             &["../../protos"],
         )?;
 
     // ビルドが変更を検知できるようにする
-    println!("cargo:rerun-if-changed=../../protos/services/event_store_service.proto");
+    println!("cargo:rerun-if-changed=../../protos/services/domain_events_service.proto");
 
     Ok(())
 }

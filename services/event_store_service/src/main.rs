@@ -3,6 +3,7 @@
 use tracing::info;
 
 mod config;
+mod event_bus;
 mod grpc;
 mod repository;
 
@@ -32,8 +33,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // リポジトリ作成
     let repository = repository::PostgresEventStore::new(pool.clone());
 
+    // Event Bus 初期化
+    let event_bus = event_bus::EventBus::new(config.event_bus.clone()).await?;
+    info!("Event Bus (Pub/Sub) initialized");
+
     // gRPC サーバー起動
-    grpc::start_server(config, repository).await?;
+    grpc::start_server(config, repository, event_bus).await?;
 
     Ok(())
 }

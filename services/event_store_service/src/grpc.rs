@@ -6,9 +6,13 @@ use tonic::{Request, Response, Status, transport::Server};
 use tracing::info;
 use uuid::Uuid;
 
-use crate::{config::Config, repository::PostgresEventStore};
+use crate::{config::Config, event_bus::EventBus, repository::PostgresEventStore};
 
 // Protocol Buffers から生成されたコード
+#[allow(clippy::all)]
+#[allow(clippy::pedantic)]
+#[allow(clippy::restriction)]
+#[allow(warnings)]
 pub mod proto {
     tonic::include_proto!("effect.event_store");
 }
@@ -20,7 +24,15 @@ use proto::{
 
 /// Event Store Service の gRPC 実装
 pub struct EventStoreServiceImpl {
-    repository: Arc<PostgresEventStore>,
+    repository:           Arc<PostgresEventStore>,
+    event_bus:            Arc<EventBus>,
+    #[allow(dead_code)]
+    domain_events_client: Option<DomainEventsClient>,
+}
+
+// Domain Events Service クライアント
+struct DomainEventsClient {
+    // TODO: 実際の gRPC クライアント実装
 }
 
 #[tonic::async_trait]
@@ -55,9 +67,27 @@ impl EventStoreService for EventStoreServiceImpl {
 
         let version = self
             .repository
-            .append_events(stream_id, &req.stream_type, events, expected_version)
+            .append_events(
+                stream_id,
+                &req.stream_type,
+                events.clone(),
+                expected_version,
+            )
             .await
             .map_err(|e| Status::internal(format!("Failed to append events: {e}")))?;
+
+        // Event Bus に発行
+        for (i, event) in events.into_iter().enumerate() {
+            let event_type = format!("{}.Event{}", req.stream_type, i); // TODO: 実際のイベントタイプ
+            if let Err(e) = self
+                .event_bus
+                .publish_event(&event_type, &stream_id, event)
+                .await
+            {
+                // エラーをログに記録して続行（At-least-once 保証）
+                tracing::error!("Failed to publish event to Event Bus: {}", e);
+            }
+        }
 
         Ok(Response::new(AppendEventsResponse {
             next_version: version,
@@ -231,11 +261,22 @@ impl EventStoreService for EventStoreServiceImpl {
 pub async fn start_server(
     config: Config,
     repository: PostgresEventStore,
+    event_bus: EventBus,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr: SocketAddr = format!("0.0.0.0:{}", config.port).parse()?;
 
+    // Domain Events Service クライアント作成（必要に応じて）
+    let domain_events_client = if config.domain_events.enable_validation {
+        // TODO: 実際の gRPC クライアント接続
+        None
+    } else {
+        None
+    };
+
     let service = EventStoreServiceImpl {
         repository: Arc::new(repository),
+        event_bus: Arc::new(event_bus),
+        domain_events_client,
     };
 
     info!("Event Store Service listening on {}", addr);

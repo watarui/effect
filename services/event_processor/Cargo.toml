@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 shared_kernel = { path = "../../shared/kernel", features = ["sqlx"] }
-domain_events = { path = "../../shared/domain_events" }
+domain_events_service = { path = "../domain_events_service" }
 async-trait = { workspace = true }
 chrono = { workspace = true }
 serde = { workspace = true }
