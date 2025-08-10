@@ -43,18 +43,58 @@ services:
     networks:
       - effect-network
 
-  # Vocabulary Service 専用 PostgreSQL
-  postgres-vocabulary:
+  # Vocabulary Command Service 専用 PostgreSQL
+  postgres-vocabulary-command:
     image: postgres:18beta2-alpine3.22
-    container_name: effect-postgres-vocabulary
+    container_name: effect-postgres-vocabulary-command
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-effect}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
-      POSTGRES_DB: vocabulary_db
+      POSTGRES_DB: vocabulary_command_db
     ports:
-      - "${POSTGRES_VOCABULARY_PORT:-5434}:5432"
+      - "${POSTGRES_VOCABULARY_COMMAND_PORT:-5434}:5432"
     volumes:
-      - postgres_vocabulary_data:/var/lib/postgresql/data
+      - postgres_vocabulary_command_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # Vocabulary Query Service 専用 PostgreSQL
+  postgres-vocabulary-query:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-vocabulary-query
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: vocabulary_query_db
+    ports:
+      - "${POSTGRES_VOCABULARY_QUERY_PORT:-5440}:5432"
+    volumes:
+      - postgres_vocabulary_query_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - effect-network
+
+  # Vocabulary Projection Service 専用 PostgreSQL
+  postgres-vocabulary-projection:
+    image: postgres:18beta2-alpine3.22
+    container_name: effect-postgres-vocabulary-projection
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-effect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-effect_password}
+      POSTGRES_DB: vocabulary_projection_db
+    ports:
+      - "${POSTGRES_VOCABULARY_PROJECTION_PORT:-5441}:5432"
+    volumes:
+      - postgres_vocabulary_projection_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-effect}"]
       interval: 10s
@@ -283,11 +323,12 @@ services:
       PORT: 8000
       # gRPC サービスエンドポイント
       LEARNING_SERVICE_URL: learning-service:50051
-      VOCABULARY_SERVICE_URL: vocabulary-service:50052
-      USER_SERVICE_URL: user-service:50053
-      PROGRESS_SERVICE_URL: progress-service:50054
-      ALGORITHM_SERVICE_URL: algorithm-service:50055
-      AI_SERVICE_URL: ai-service:50056
+      VOCABULARY_COMMAND_SERVICE_URL: vocabulary-command-service:50052
+      VOCABULARY_QUERY_SERVICE_URL: vocabulary-query-service:50053
+      USER_SERVICE_URL: user-service:50054
+      PROGRESS_SERVICE_URL: progress-service:50055
+      ALGORITHM_SERVICE_URL: algorithm-service:50056
+      AI_SERVICE_URL: ai-service:50057
     ports:
       - "${API_GATEWAY_PORT:-8000}:8000"
     volumes:
@@ -298,7 +339,8 @@ services:
       - target_cache:/app/target
     depends_on:
       - learning-service
-      - vocabulary-service
+      - vocabulary-command-service
+      - vocabulary-query-service
       - user-service
       - progress-service
       - algorithm-service
@@ -340,34 +382,93 @@ services:
     networks:
       - effect-network
 
-  # Vocabulary Service - 語彙管理
-  vocabulary-service:
+  # Vocabulary Command Service - 書き込み専用
+  vocabulary-command-service:
     build:
       context: .
-      dockerfile: services/vocabulary-service/Dockerfile
+      dockerfile: services/vocabulary_command_service/Dockerfile
       target: development
-    container_name: effect-vocabulary-service
+    container_name: effect-vocabulary-command-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
       PORT: 50052
-      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary:5432/vocabulary_db
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary-command:5432/vocabulary_command_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
       PUBSUB_EMULATOR_HOST: pubsub:8085
       GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
-      - ./services/vocabulary-service:/app/services/vocabulary-service
+      - ./services/vocabulary_command_service:/app/services/vocabulary_command_service
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
       - target_cache:/app/target
     depends_on:
-      postgres-vocabulary:
+      postgres-vocabulary-command:
         condition: service_healthy
       postgres-event-store:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      pubsub:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # Vocabulary Query Service - 読み取り専用
+  vocabulary-query-service:
+    build:
+      context: .
+      dockerfile: services/vocabulary_query_service/Dockerfile
+      target: development
+    container_name: effect-vocabulary-query-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      PORT: 50053
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary-query:5432/vocabulary_query_db
+      REDIS_URL: redis://redis:6379
+      ENVIRONMENT: local
+    volumes:
+      - ./services/vocabulary_query_service:/app/services/vocabulary_query_service
+      - ./shared:/app/shared
+      - ./protos:/app/protos
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      postgres-vocabulary-query:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - effect-network
+
+  # Vocabulary Projection Service - イベント処理
+  vocabulary-projection-service:
+    build:
+      context: .
+      dockerfile: services/vocabulary_projection_service/Dockerfile
+      target: development
+    container_name: effect-vocabulary-projection-service
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary-projection:5432/vocabulary_projection_db
+      QUERY_DB_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary-query:5432/vocabulary_query_db
+      EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
+      ENVIRONMENT: local
+    volumes:
+      - ./services/vocabulary_projection_service:/app/services/vocabulary_projection_service
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    depends_on:
+      postgres-vocabulary-projection:
+        condition: service_healthy
+      postgres-vocabulary-query:
+        condition: service_healthy
+      postgres-event-store:
         condition: service_healthy
       pubsub:
         condition: service_healthy
@@ -383,7 +484,7 @@ services:
     container_name: effect-user-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
-      PORT: 50053
+      PORT: 50054
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-user:5432/user_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
@@ -417,7 +518,7 @@ services:
     container_name: effect-progress-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
-      PORT: 50054
+      PORT: 50055
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-progress:5432/progress_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
@@ -453,7 +554,7 @@ services:
     container_name: effect-algorithm-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
-      PORT: 50055
+      PORT: 50056
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-algorithm:5432/algorithm_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
@@ -487,7 +588,7 @@ services:
     container_name: effect-ai-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
-      PORT: 50056
+      PORT: 50057
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-ai:5432/ai_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
@@ -552,7 +653,7 @@ services:
     container_name: effect-saga-orchestrator
     environment:
       RUST_LOG: ${RUST_LOG:-info}
-      PORT: 50057
+      PORT: 50058
       DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-saga:5432/saga_db
       EVENT_STORE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-event-store:5432/event_store_db
       REDIS_URL: redis://redis:6379
@@ -561,11 +662,12 @@ services:
       ENVIRONMENT: local
       # gRPC サービスエンドポイント（補償トランザクション用）
       LEARNING_SERVICE_URL: learning-service:50051
-      VOCABULARY_SERVICE_URL: vocabulary-service:50052
-      USER_SERVICE_URL: user-service:50053
-      PROGRESS_SERVICE_URL: progress-service:50054
-      ALGORITHM_SERVICE_URL: algorithm-service:50055
-      AI_SERVICE_URL: ai-service:50056
+      VOCABULARY_COMMAND_SERVICE_URL: vocabulary-command-service:50052
+      VOCABULARY_QUERY_SERVICE_URL: vocabulary-query-service:50053
+      USER_SERVICE_URL: user-service:50054
+      PROGRESS_SERVICE_URL: progress-service:50055
+      ALGORITHM_SERVICE_URL: algorithm-service:50056
+      AI_SERVICE_URL: ai-service:50057
     volumes:
       - ./services/saga-orchestrator:/app/services/saga-orchestrator
       - ./shared:/app/shared
@@ -593,12 +695,12 @@ services:
     container_name: effect-vocabulary-search-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
-      PORT: 50058
+      PORT: 50059
       MEILISEARCH_URL: http://meilisearch:7700
       MEILISEARCH_API_KEY: ${MEILISEARCH_MASTER_KEY:-masterKey}
       REDIS_URL: redis://redis:6379
       INDEX_NAME: vocabulary_items
-      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary:5432/vocabulary_db
+      DATABASE_URL: postgresql://${POSTGRES_USER:-effect}:${POSTGRES_PASSWORD:-effect_password}@postgres-vocabulary-query:5432/vocabulary_query_db
     volumes:
       - ./services/vocabulary_search_service:/app/services/vocabulary_search_service
       - ./shared:/app/shared
@@ -610,7 +712,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      postgres-vocabulary:
+      postgres-vocabulary-query:
         condition: service_healthy
     networks:
       - effect-network
@@ -635,7 +737,9 @@ services:
     depends_on:
       - postgres-event-store
       - postgres-learning
-      - postgres-vocabulary
+      - postgres-vocabulary-command
+      - postgres-vocabulary-query
+      - postgres-vocabulary-projection
       - postgres-user
       - postgres-progress
       - postgres-algorithm
@@ -728,7 +832,9 @@ volumes:
   # PostgreSQL データボリューム（各サービスごと）
   postgres_event_store_data:
   postgres_learning_data:
-  postgres_vocabulary_data:
+  postgres_vocabulary_command_data:
+  postgres_vocabulary_query_data:
+  postgres_vocabulary_projection_data:
   postgres_user_data:
   postgres_progress_data:
   postgres_algorithm_data:

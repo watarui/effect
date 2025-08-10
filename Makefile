@@ -107,13 +107,19 @@ audit: ## セキュリティ監査
 # ===========================================
 
 .PHONY: db-migrate
-db-migrate: ## データベースマイグレーション実行
-	./scripts/run-migrations.sh
+db-migrate: ## ローカルデータベースマイグレーション実行
+	./scripts/migrate-local.sh
 
 .PHONY: db-reset
-db-reset: ## データベースをリセット（各サービスのデータベースを個別にリセット）
-	@echo "各データベースをリセットします..."
-	@echo "注意: 現在は各サービスが独立したデータベースを持っています"
+db-reset: ## データベースをリセット
+	./scripts/reset-db.sh
+
+.PHONY: db-prepare
+db-prepare: ## SQLX オフラインモード準備
+	./scripts/prepare-sqlx.sh
+
+.PHONY: db-setup
+db-setup: db-reset db-migrate ## データベース完全セットアップ（リセット＋マイグレーション）
 
 .PHONY: db-shell
 db-shell: ## PostgreSQL シェルに接続（サービスを指定: make db-shell SERVICE=learning）
