@@ -24,7 +24,6 @@ tracing-subscriber = { workspace = true }
 
 # Error handling
 thiserror = { workspace = true }
-anyhow = { workspace = true }
 
 # Configuration
 config = { workspace = true }
@@ -33,6 +32,16 @@ config = { workspace = true }
 tonic = { workspace = true }
 prost = { workspace = true }
 
+# Date and time
+chrono = { workspace = true }
+
+# UUID
+uuid = { workspace = true }
+
 # Shared
 shared_kernel = { path = "../../shared/kernel" }
 shared_vocabulary_context = { path = "../../shared/contexts/vocabulary" }
+
+[dev-dependencies]
+# Mocking
+mockall = { workspace = true }

@@ -4622,10 +4622,11 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 name = "vocabulary_command_service"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "axum 0.8.4",
+ "chrono",
  "config",
+ "mockall",
  "prost 0.14.1",
  "serde",
  "serde_json",
@@ -4637,6 +4638,7 @@ dependencies = [
  "tonic 0.14.1",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

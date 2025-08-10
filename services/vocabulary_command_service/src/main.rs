@@ -1,8 +1,10 @@
-use anyhow::Result;
 use tracing::info;
 
 mod config;
+mod error;
 mod server;
+
+use error::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {

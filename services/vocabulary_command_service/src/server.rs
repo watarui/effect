@@ -4,9 +4,9 @@ use axum::{Json, Router, routing::get};
 use serde_json::json;
 use tracing::info;
 
-use crate::config::Config;
+use crate::{config::Config, error::Result};
 
-pub async fn run(config: Config) -> anyhow::Result<()> {
+pub async fn run(config: Config) -> Result<()> {
     // ルーター構築
     let app = Router::new()
         .route("/health", get(health_check))
@@ -17,8 +17,12 @@ pub async fn run(config: Config) -> anyhow::Result<()> {
     info!("Vocabulary Command Service listening on {}", addr);
 
     // サーバー起動
-    let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app).await?;
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .map_err(|e| crate::error::Error::Config(format!("Failed to bind address: {}", e)))?;
+    axum::serve(listener, app)
+        .await
+        .map_err(|e| crate::error::Error::Internal(format!("Server error: {}", e)))?;
 
     Ok(())
 }
