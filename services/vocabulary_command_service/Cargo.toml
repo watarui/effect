@@ -30,7 +30,9 @@ config = { workspace = true }
 
 # gRPC
 tonic = { workspace = true }
+tonic-prost = { workspace = true }
 prost = { workspace = true }
+prost-types = { workspace = true }
 
 # Date and time
 chrono = { workspace = true }
@@ -41,6 +43,9 @@ uuid = { workspace = true }
 # Shared
 shared_kernel = { path = "../../shared/kernel" }
 shared_vocabulary_context = { path = "../../shared/contexts/vocabulary" }
+
+[build-dependencies]
+tonic-prost-build = { workspace = true }
 
 [dev-dependencies]
 # Mocking

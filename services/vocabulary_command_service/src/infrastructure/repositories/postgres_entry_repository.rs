@@ -10,6 +10,7 @@ use crate::{
 };
 
 /// PostgreSQL 実装の VocabularyEntryRepository
+#[derive(Clone)]
 pub struct PostgresVocabularyEntryRepository {
     pool: PgPool,
 }

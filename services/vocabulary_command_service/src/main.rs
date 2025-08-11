@@ -1,10 +1,7 @@
 use tracing::info;
+use vocabulary_command_service::{config, error::Result};
 
-mod config;
-mod error;
 mod server;
-
-use error::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -18,6 +18,7 @@ use crate::{
 };
 
 /// PostgreSQL 実装の VocabularyItemRepository
+#[derive(Clone)]
 pub struct PostgresVocabularyItemRepository {
     pool: PgPool,
 }

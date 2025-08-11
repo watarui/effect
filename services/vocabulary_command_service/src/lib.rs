@@ -60,6 +60,7 @@ pub mod infrastructure {
     }
 
     pub mod grpc {
-        // gRPC サーバー実装（TODO）
+        pub mod server;
+        pub mod service;
     }
 }

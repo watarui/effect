@@ -2,27 +2,63 @@ use std::net::SocketAddr;
 
 use axum::{Json, Router, routing::get};
 use serde_json::json;
+use tokio::task;
 use tracing::info;
-
-use crate::{config::Config, error::Result};
+use vocabulary_command_service::{
+    config::Config,
+    error::{Error, Result},
+    infrastructure::grpc::server::start_grpc_server,
+};
 
 pub async fn run(config: Config) -> Result<()> {
+    let config_clone = config.clone();
+
+    // HTTPヘルスチェックサーバーを別タスクで起動
+    let http_task = task::spawn(async move {
+        let http_port = 8080; // HTTPヘルスチェック用ポート
+        run_http_server(config_clone.server.host.clone(), http_port).await
+    });
+
+    // gRPCサーバーを別タスクで起動
+    let grpc_task = task::spawn(async move { start_grpc_server(config).await });
+
+    // 両方のサーバーを並行して実行
+    tokio::select! {
+        result = http_task => {
+            result
+                .map_err(|e| Error::Internal(format!("HTTP task error: {}", e)))?
+                .map_err(|e| Error::Internal(format!("HTTP server error: {}", e)))?
+        }
+        result = grpc_task => {
+            result
+                .map_err(|e| Error::Internal(format!("gRPC task error: {}", e)))?
+                .map_err(|e| Error::Internal(format!("gRPC server error: {}", e)))?
+        }
+    }
+
+    Ok(())
+}
+
+async fn run_http_server(host: String, port: u16) -> Result<()> {
     // ルーター構築
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/", get(index));
 
     // サーバーアドレス
-    let addr = SocketAddr::from(([0, 0, 0, 0], config.server.port));
-    info!("Vocabulary Command Service listening on {}", addr);
+    let addr: SocketAddr = format!("{}:{}", host, port)
+        .parse()
+        .map_err(|e| Error::Config(format!("Invalid address: {}", e)))?;
+
+    info!("HTTP health check server listening on {}", addr);
 
     // サーバー起動
     let listener = tokio::net::TcpListener::bind(addr)
         .await
-        .map_err(|e| crate::error::Error::Config(format!("Failed to bind address: {}", e)))?;
+        .map_err(|e| Error::Config(format!("Failed to bind address: {}", e)))?;
     axum::serve(listener, app)
         .await
-        .map_err(|e| crate::error::Error::Internal(format!("Server error: {}", e)))?;
+        .map_err(|e| Error::Internal(format!("Server error: {}", e)))?;
 
     Ok(())
 }

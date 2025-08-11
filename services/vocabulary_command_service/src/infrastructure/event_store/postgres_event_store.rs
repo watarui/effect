@@ -11,6 +11,7 @@ use crate::{
 };
 
 /// PostgreSQL 実装の EventStore
+#[derive(Clone)]
 pub struct PostgresEventStore {
     pool: PgPool,
 }
