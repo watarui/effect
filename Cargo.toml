@@ -97,6 +97,7 @@ prost-types = { version = "0.14", features = ["std"] }
 # Testing
 mockall = "0.13"
 tokio-test = "0.4.4"
+approx = "0.5"
 
 # Environment variables
 dotenvy = "0.15"
