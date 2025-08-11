@@ -103,6 +103,7 @@ impl LearningItemRepository for MockRepository {
             .collect())
     }
 
+    #[allow(clippy::significant_drop_tightening)]
     async fn count_by_user(&self, user_id: Uuid) -> RepositoryResult<ItemCounts> {
         let items = self.items.read().await;
         let user_items: Vec<_> = items
@@ -111,21 +112,33 @@ impl LearningItemRepository for MockRepository {
             .collect();
 
         let result = ItemCounts {
-            total:    i64::try_from(user_items.len()).unwrap_or(i64::MAX),
-            mastered: i64::try_from(user_items.iter().filter(|i| i.mastery_level == 5).count())
-                .unwrap_or(i64::MAX),
-            learning: i64::try_from(
+            total:    i32::try_from(user_items.len()).unwrap_or(i32::MAX),
+            mastered: i32::try_from(user_items.iter().filter(|i| i.mastery_level == 5).count())
+                .unwrap_or(i32::MAX),
+            learning: i32::try_from(
                 user_items
                     .iter()
                     .filter(|i| (2..=4).contains(&i.mastery_level))
                     .count(),
             )
-            .unwrap_or(i64::MAX),
-            new:      i64::try_from(user_items.iter().filter(|i| i.mastery_level == 1).count())
-                .unwrap_or(i64::MAX),
+            .unwrap_or(i32::MAX),
+            new:      i32::try_from(user_items.iter().filter(|i| i.mastery_level == 1).count())
+                .unwrap_or(i32::MAX),
         };
         drop(items);
         Ok(result)
+    }
+
+    #[allow(clippy::significant_drop_tightening)]
+    async fn find_by_user(&self, user_id: Uuid) -> RepositoryResult<Vec<LearningItemState>> {
+        let items = self.items.read().await;
+        let mut user_items: Vec<_> = items
+            .values()
+            .filter(|item| item.user_id == user_id)
+            .cloned()
+            .collect();
+        user_items.sort_by_key(|item| item.item_id);
+        Ok(user_items)
     }
 }
 
@@ -232,6 +245,32 @@ impl ReviewHistoryRepository for MockHistoryRepository {
         };
 
         Ok(i64::try_from(count).unwrap_or(i64::MAX))
+    }
+
+    async fn get_recent_reviews_for_user(
+        &self,
+        user_id: Uuid,
+        limit: i64,
+    ) -> RepositoryResult<Vec<ReviewHistory>> {
+        self.get_recent_by_user(user_id, limit).await
+    }
+
+    async fn get_reviews_since(
+        &self,
+        user_id: Uuid,
+        since: DateTime<Utc>,
+    ) -> RepositoryResult<Vec<ReviewHistory>> {
+        let mut result: Vec<_> = {
+            let histories = self.histories.read().await;
+            histories
+                .iter()
+                .filter(|h| h.user_id == user_id && h.reviewed_at >= since)
+                .cloned()
+                .collect()
+        };
+
+        result.sort_by(|a, b| a.reviewed_at.cmp(&b.reviewed_at));
+        Ok(result)
     }
 }
 

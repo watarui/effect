@@ -85,19 +85,22 @@ pub trait LearningItemRepository: Send + Sync {
 
     /// Count items by user
     async fn count_by_user(&self, user_id: Uuid) -> RepositoryResult<ItemCounts>;
+
+    /// Find all learning items for a user
+    async fn find_by_user(&self, user_id: Uuid) -> RepositoryResult<Vec<LearningItemState>>;
 }
 
 /// Item counts by category
 #[derive(Debug, Clone)]
 pub struct ItemCounts {
     /// 総項目数
-    pub total:    i64,
+    pub total:    i32,
     /// 習得済み項目数
-    pub mastered: i64,
+    pub mastered: i32,
     /// 学習中項目数
-    pub learning: i64,
+    pub learning: i32,
     /// 新規項目数
-    pub new:      i64,
+    pub new:      i32,
 }
 
 /// `PostgreSQL` implementation of `LearningItemRepository`
@@ -292,10 +295,10 @@ impl LearningItemRepository for PostgresRepository {
         let row = sqlx::query!(
             r#"
             SELECT 
-                COUNT(*) as total,
-                COUNT(*) FILTER (WHERE mastery_level = 5) as mastered,
-                COUNT(*) FILTER (WHERE mastery_level BETWEEN 2 AND 4) as learning,
-                COUNT(*) FILTER (WHERE mastery_level = 1) as new
+                COUNT(*)::INTEGER as "total!",
+                COUNT(*) FILTER (WHERE mastery_level = 5)::INTEGER as "mastered!",
+                COUNT(*) FILTER (WHERE mastery_level BETWEEN 2 AND 4)::INTEGER as "learning!",
+                COUNT(*) FILTER (WHERE mastery_level = 1)::INTEGER as "new!"
             FROM learning_item_states
             WHERE user_id = $1
             "#,
@@ -305,10 +308,32 @@ impl LearningItemRepository for PostgresRepository {
         .await?;
 
         Ok(ItemCounts {
-            total:    row.total.unwrap_or(0),
-            mastered: row.mastered.unwrap_or(0),
-            learning: row.learning.unwrap_or(0),
-            new:      row.new.unwrap_or(0),
+            total:    row.total,
+            mastered: row.mastered,
+            learning: row.learning,
+            new:      row.new,
         })
+    }
+
+    async fn find_by_user(&self, user_id: Uuid) -> RepositoryResult<Vec<LearningItemState>> {
+        let items = sqlx::query_as!(
+            LearningItemState,
+            r#"
+            SELECT 
+                id, user_id, item_id, easiness_factor, repetition_number,
+                interval_days, mastery_level, retention_rate, next_review_date,
+                last_reviewed_at, total_reviews, correct_count, incorrect_count,
+                average_response_time_ms, difficulty_level, is_problematic,
+                version, created_at, updated_at
+            FROM learning_item_states
+            WHERE user_id = $1
+            ORDER BY item_id
+            "#,
+            user_id
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(items)
     }
 }

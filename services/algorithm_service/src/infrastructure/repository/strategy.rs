@@ -77,13 +77,13 @@ pub trait LearningStrategyRepository: Send + Sync {
 }
 
 /// `PostgreSQL` implementation of `LearningStrategyRepository`
-pub struct PostgresLearningStrategyRepository {
+pub struct PostgresRepository {
     #[allow(dead_code)]
     pool: PgPool,
 }
 
-impl PostgresLearningStrategyRepository {
-    /// 新しい `PostgresLearningStrategyRepository` を作成
+impl PostgresRepository {
+    /// 新しい `PostgresRepository` を作成
     #[must_use]
     pub const fn new(pool: PgPool) -> Self {
         Self { pool }
@@ -91,7 +91,7 @@ impl PostgresLearningStrategyRepository {
 }
 
 #[async_trait]
-impl LearningStrategyRepository for PostgresLearningStrategyRepository {
+impl LearningStrategyRepository for PostgresRepository {
     async fn find_by_user(&self, user_id: Uuid) -> RepositoryResult<Option<LearningStrategy>> {
         let result = sqlx::query_as!(
             LearningStrategy,

@@ -64,16 +64,30 @@ pub trait ReviewHistoryRepository: Send + Sync {
         from: DateTime<Utc>,
         to: DateTime<Utc>,
     ) -> RepositoryResult<i64>;
+
+    /// Get recent reviews for a user (for performance analysis)
+    async fn get_recent_reviews_for_user(
+        &self,
+        user_id: Uuid,
+        limit: i64,
+    ) -> RepositoryResult<Vec<ReviewHistory>>;
+
+    /// Get reviews since a specific date
+    async fn get_reviews_since(
+        &self,
+        user_id: Uuid,
+        since: DateTime<Utc>,
+    ) -> RepositoryResult<Vec<ReviewHistory>>;
 }
 
 /// `PostgreSQL` implementation of `ReviewHistoryRepository`
-pub struct PostgresReviewHistoryRepository {
+pub struct PostgresRepository {
     #[allow(dead_code)]
     pool: PgPool,
 }
 
-impl PostgresReviewHistoryRepository {
-    /// 新しい `PostgresReviewHistoryRepository` を作成
+impl PostgresRepository {
+    /// 新しい `PostgresRepository` を作成
     #[must_use]
     pub const fn new(pool: PgPool) -> Self {
         Self { pool }
@@ -81,7 +95,7 @@ impl PostgresReviewHistoryRepository {
 }
 
 #[async_trait]
-impl ReviewHistoryRepository for PostgresReviewHistoryRepository {
+impl ReviewHistoryRepository for PostgresRepository {
     async fn create(&self, history: &ReviewHistory) -> RepositoryResult<Uuid> {
         let id = Uuid::new_v4();
 
@@ -206,5 +220,56 @@ impl ReviewHistoryRepository for PostgresReviewHistoryRepository {
         .await?;
 
         Ok(result.count.unwrap_or(0))
+    }
+
+    async fn get_recent_reviews_for_user(
+        &self,
+        user_id: Uuid,
+        limit: i64,
+    ) -> RepositoryResult<Vec<ReviewHistory>> {
+        let histories = sqlx::query_as!(
+            ReviewHistory,
+            r#"
+            SELECT 
+                id, user_id, item_id, reviewed_at, judgment,
+                response_time_ms, interval_days, easiness_factor,
+                session_id, created_at
+            FROM review_histories
+            WHERE user_id = $1
+            ORDER BY reviewed_at DESC
+            LIMIT $2
+            "#,
+            user_id,
+            limit
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(histories)
+    }
+
+    async fn get_reviews_since(
+        &self,
+        user_id: Uuid,
+        since: DateTime<Utc>,
+    ) -> RepositoryResult<Vec<ReviewHistory>> {
+        let histories = sqlx::query_as!(
+            ReviewHistory,
+            r#"
+            SELECT 
+                id, user_id, item_id, reviewed_at, judgment,
+                response_time_ms, interval_days, easiness_factor,
+                session_id, created_at
+            FROM review_histories
+            WHERE user_id = $1 AND reviewed_at >= $2
+            ORDER BY reviewed_at ASC
+            "#,
+            user_id,
+            since
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(histories)
     }
 }

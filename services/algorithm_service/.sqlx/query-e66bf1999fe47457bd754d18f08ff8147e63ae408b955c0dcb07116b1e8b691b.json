@@ -1,0 +1,74 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                id, user_id, item_id, reviewed_at, judgment,\n                response_time_ms, interval_days, easiness_factor,\n                session_id, created_at\n            FROM review_histories\n            WHERE user_id = $1 AND reviewed_at >= $2\n            ORDER BY reviewed_at ASC\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 2,
+				"name": "item_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 3,
+				"name": "reviewed_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 4,
+				"name": "judgment",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 5,
+				"name": "response_time_ms",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 6,
+				"name": "interval_days",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 7,
+				"name": "easiness_factor",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 8,
+				"name": "session_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 9,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid", "Timestamptz"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			false
+		]
+	},
+	"hash": "e66bf1999fe47457bd754d18f08ff8147e63ae408b955c0dcb07116b1e8b691b"
+}

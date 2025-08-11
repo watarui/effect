@@ -21,8 +21,16 @@ pub async fn start(config: ServiceConfig) -> Result<(), Box<dyn std::error::Erro
 
     info!("Algorithm Service listening on {}", addr);
 
+    // データベース接続プールの作成
+    let db_pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&config.database_url)
+        .await?;
+
+    info!("Connected to database");
+
     // サービスの作成
-    let service = AlgorithmServiceImpl::new();
+    let service = AlgorithmServiceImpl::new(db_pool);
     let algorithm_server = AlgorithmServiceServer::new(service);
 
     // サーバーの起動

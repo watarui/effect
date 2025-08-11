@@ -116,13 +116,13 @@ pub trait StatisticsRepository: Send + Sync {
 }
 
 /// `PostgreSQL` implementation of `StatisticsRepository`
-pub struct PostgresStatisticsRepository {
+pub struct PostgresRepository {
     #[allow(dead_code)]
     pool: PgPool,
 }
 
-impl PostgresStatisticsRepository {
-    /// 新しい `PostgresStatisticsRepository` を作成
+impl PostgresRepository {
+    /// 新しい `PostgresRepository` を作成
     #[must_use]
     pub const fn new(pool: PgPool) -> Self {
         Self { pool }
@@ -130,7 +130,7 @@ impl PostgresStatisticsRepository {
 }
 
 #[async_trait]
-impl StatisticsRepository for PostgresStatisticsRepository {
+impl StatisticsRepository for PostgresRepository {
     async fn get_user_statistics(
         &self,
         user_id: Uuid,
