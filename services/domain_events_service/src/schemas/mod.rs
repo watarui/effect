@@ -13,7 +13,7 @@ use std::collections::HashMap;
 /// すべてのイベントスキーマを初期化
 #[must_use]
 #[allow(dead_code)]
-pub fn initialize_schemas() -> HashMap<String, String> {
+pub fn initialize() -> HashMap<String, String> {
     let mut schemas = HashMap::new();
 
     // Vocabulary Context のスキーマ

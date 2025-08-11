@@ -15,16 +15,16 @@ pub struct Config {
 
     /// gRPC サーバー設定
     #[serde(default)]
-    pub grpc: GrpcConfig,
+    pub grpc: Grpc,
 
     /// スキーマレジストリ設定
     #[serde(default)]
-    pub registry: RegistryConfig,
+    pub registry: Registry,
 }
 
 /// gRPC サーバー設定
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct GrpcConfig {
+pub struct Grpc {
     /// gRPC ポート
     #[serde(default = "default_grpc_port")]
     pub port: u16,
@@ -37,7 +37,7 @@ pub struct GrpcConfig {
 
 /// スキーマレジストリ設定
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct RegistryConfig {
+pub struct Registry {
     /// スキーマキャッシュの有効期限（秒）
     #[serde(default = "default_cache_ttl")]
     pub cache_ttl_seconds: u64,
@@ -49,6 +49,11 @@ pub struct RegistryConfig {
 
 impl Config {
     /// 環境変数から設定を読み込む
+    ///
+    /// # Errors
+    ///
+    /// - `config::ConfigError` -
+    ///   設定の読み込みまたはデシリアライズに失敗した場合
     pub fn from_env() -> Result<Self, config::ConfigError> {
         let mut builder = config::Config::builder();
 
@@ -103,6 +108,10 @@ const fn default_max_versions() -> usize {
 }
 
 /// 設定を読み込む
+///
+/// # Errors
+///
+/// - 設定の読み込みに失敗した場合
 pub fn load() -> Result<Config, Box<dyn std::error::Error>> {
     Config::from_env().map_err(Into::into)
 }

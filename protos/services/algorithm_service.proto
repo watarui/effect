@@ -5,6 +5,7 @@ package effect.services.algorithm;
 import "common/learning_types.proto";
 import "common/types.proto";
 import "events/algorithm_events.proto";
+import "events/learning_events.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 

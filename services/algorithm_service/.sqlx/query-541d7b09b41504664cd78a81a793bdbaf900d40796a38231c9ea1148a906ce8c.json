@@ -1,0 +1,26 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE user_learning_statistics SET\n                total_items = $3,\n                mastered_items = $4,\n                learning_items = $5,\n                new_items = $6,\n                total_sessions = $7,\n                total_reviews = $8,\n                overall_accuracy = $9,\n                average_session_duration_seconds = $10,\n                daily_review_average = $11,\n                current_streak_days = $12,\n                longest_streak_days = $13,\n                last_calculated_at = NOW(),\n                updated_at = NOW()\n            WHERE user_id = $1 AND id = $2\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Uuid",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Float4",
+				"Int4",
+				"Float4",
+				"Int4",
+				"Int4"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "541d7b09b41504664cd78a81a793bdbaf900d40796a38231c9ea1148a906ce8c"
+}

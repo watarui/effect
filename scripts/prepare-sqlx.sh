@@ -93,7 +93,7 @@ cd "$ORIGINAL_DIR"
 # Algorithm Service
 echo -e "\n${YELLOW}📦 Algorithm Service...${NC}"
 cd services/algorithm_service
-DATABASE_URL="postgres://effect:effect_password@localhost:5437/algorithm_db" \
+DATABASE_URL="postgres://effect:effect_password@localhost:5437/effect_test" \
 	cargo sqlx prepare || echo -e "${YELLOW}⚠ Algorithm Service: SQLXクエリがない、またはビルドエラー${NC}"
 cd "$ORIGINAL_DIR"
 

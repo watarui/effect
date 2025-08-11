@@ -1,0 +1,110 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                id, user_id, total_items, mastered_items, learning_items,\n                new_items, total_sessions, total_reviews, overall_accuracy,\n                average_session_duration_seconds, daily_review_average,\n                current_streak_days, longest_streak_days,\n                last_calculated_at, created_at, updated_at\n            FROM user_learning_statistics\n            WHERE user_id = $1\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 2,
+				"name": "total_items",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 3,
+				"name": "mastered_items",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 4,
+				"name": "learning_items",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 5,
+				"name": "new_items",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 6,
+				"name": "total_sessions",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 7,
+				"name": "total_reviews",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 8,
+				"name": "overall_accuracy",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 9,
+				"name": "average_session_duration_seconds",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 10,
+				"name": "daily_review_average",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 11,
+				"name": "current_streak_days",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 12,
+				"name": "longest_streak_days",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 13,
+				"name": "last_calculated_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 14,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 15,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false
+		]
+	},
+	"hash": "740e0dbcbe087b4c323d87a64d0ac358bcf6d32fdffd1260063c62894ee65e4c"
+}

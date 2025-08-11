@@ -1,0 +1,24 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE learning_strategies SET\n                strategy_type = $3,\n                daily_target_items = $4,\n                new_items_per_day = $5,\n                difficulty_threshold = $6,\n                learning_speed_factor = $7,\n                retention_priority = $8,\n                adaptive_scheduling = $9,\n                last_adjusted_at = $10,\n                version = version + 1,\n                updated_at = NOW()\n            WHERE user_id = $1 AND id = $2 AND version = $11\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Uuid",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Float4",
+				"Float4",
+				"Float4",
+				"Bool",
+				"Timestamptz",
+				"Int8"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "d26289b6eec2c7a0dde47779c2f9e793be4814c47c26f34002a02ac172fe7d0d"
+}

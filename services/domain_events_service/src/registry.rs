@@ -7,39 +7,51 @@ use sqlx::PgPool;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::config::RegistryConfig;
+use crate::config::Registry as RegistryConfig;
 
 /// スキーマ情報
 #[derive(Debug, Clone)]
 pub struct SchemaInfo {
+    /// スキーマのID
     pub id:          Uuid,
+    /// イベントタイプ
     pub event_type:  String,
+    /// スキーマバージョン
     pub version:     i32,
+    /// スキーマ定義
     pub definition:  String,
+    /// スキーマの説明
     pub description: String,
+    /// 作成日時
     pub created_at:  DateTime<Utc>,
+    /// 更新日時
     pub updated_at:  DateTime<Utc>,
 }
 
 /// イベントタイプ情報
 #[derive(Debug, Clone)]
 pub struct EventTypeInfo {
+    /// イベントタイプ名
     pub event_type:      String,
+    /// コンテキスト名
     pub context:         String,
+    /// イベントタイプの説明
     pub description:     String,
+    /// 現在のバージョン
     pub current_version: i32,
+    /// 非推奨フラグ
     pub is_deprecated:   bool,
 }
 
 /// スキーマレジストリ
 #[derive(Clone)]
-pub struct SchemaRegistry {
+pub struct Registry {
     pool:   PgPool,
     config: RegistryConfig,
     cache:  Arc<RwLock<HashMap<String, SchemaInfo>>>,
 }
 
-impl SchemaRegistry {
+impl Registry {
     /// 新しいスキーマレジストリを作成
     #[must_use]
     pub fn new(pool: PgPool, config: RegistryConfig) -> Self {
@@ -51,6 +63,12 @@ impl SchemaRegistry {
     }
 
     /// スキーマを取得
+    ///
+    /// # Errors
+    ///
+    /// - `SchemaRegistryError::SchemaNotFound` -
+    ///   指定されたスキーマが見つからない場合
+    /// - `SchemaRegistryError::Database` - データベースエラーが発生した場合
     pub async fn get_schema(
         &self,
         event_type: &str,
@@ -139,6 +157,12 @@ impl SchemaRegistry {
     }
 
     /// スキーマを登録
+    ///
+    /// # Errors
+    ///
+    /// - `SchemaRegistryError::MaxVersionsExceeded` -
+    ///   最大バージョン数を超過した場合
+    /// - `SchemaRegistryError::Database` - データベースエラーが発生した場合
     pub async fn register_schema(
         &self,
         event_type: &str,
@@ -200,6 +224,10 @@ impl SchemaRegistry {
     }
 
     /// イベントタイプ一覧を取得
+    ///
+    /// # Errors
+    ///
+    /// - `SchemaRegistryError::Database` - データベースエラーが発生した場合
     pub async fn list_event_types(
         &self,
         context: Option<&str>,
@@ -259,6 +287,12 @@ impl SchemaRegistry {
     }
 
     /// スキーマバージョン情報を取得
+    ///
+    /// # Errors
+    ///
+    /// - `SchemaRegistryError::SchemaNotFound` -
+    ///   指定されたイベントタイプが見つからない場合
+    /// - `SchemaRegistryError::Database` - データベースエラーが発生した場合
     pub async fn get_schema_versions(
         &self,
         event_type: &str,
@@ -300,18 +334,25 @@ struct SchemaRow {
 /// スキーマレジストリのエラー
 #[derive(Debug, thiserror::Error)]
 pub enum SchemaRegistryError {
+    /// スキーマが見つからない
     #[error("Schema not found: {event_type} (version: {version:?})")]
     SchemaNotFound {
+        /// イベントタイプ
         event_type: String,
+        /// バージョン（オプション）
         version:    Option<i32>,
     },
 
+    /// 最大バージョン数を超過
     #[error("Max versions exceeded for {event_type}: {max_versions}")]
     MaxVersionsExceeded {
+        /// イベントタイプ
         event_type:   String,
+        /// 最大バージョン数
         max_versions: usize,
     },
 
+    /// データベースエラー
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
 }

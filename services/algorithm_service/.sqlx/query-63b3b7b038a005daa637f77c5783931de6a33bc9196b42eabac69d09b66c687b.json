@@ -1,0 +1,48 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n                SELECT \n                    id, event_type, version, definition, description,\n                    created_at, updated_at\n                FROM event_schemas\n                WHERE event_type = $1 AND version = $2\n                ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "event_type",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 2,
+				"name": "version",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 3,
+				"name": "definition",
+				"type_info": "Text"
+			},
+			{
+				"ordinal": 4,
+				"name": "description",
+				"type_info": "Text"
+			},
+			{
+				"ordinal": 5,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 6,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Text", "Int4"]
+		},
+		"nullable": [false, false, false, false, false, false, false]
+	},
+	"hash": "63b3b7b038a005daa637f77c5783931de6a33bc9196b42eabac69d09b66c687b"
+}

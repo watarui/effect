@@ -1,71 +1,24 @@
 //! Learning Algorithm Context
 //!
 //! 学習アルゴリズム（SM-2）と復習スケジューリングを担当するコンテキスト
+//!
+//! # Architecture
+//!
+//! このサービスはヘキサゴナルアーキテクチャに従って構成されています：
+//! - `domain`: ビジネスロジックとドメインモデル
+//! - `infrastructure`: 技術的実装（gRPC, Repository, イベント発行）
+//! - `proto`: Protocol Buffers 定義
 
-// 一時的に警告を抑制
-#![allow(missing_docs)]
-#![allow(unused)]
-
+/// ドメイン層
 pub mod domain {
-    //! ドメイン層
-
-    pub mod aggregates {
-        //! 集約
-    }
-
-    pub mod events {
-        //! ドメインイベント
-    }
-
-    pub mod commands {
-        //! コマンド
-    }
-
-    pub mod value_objects {
-        //! 値オブジェクト
-    }
-
-    pub mod services {
-        //! ドメインサービス
-    }
+    /// SM-2 アルゴリズムサービス
+    pub mod services;
+    /// 値オブジェクト
+    pub mod value_objects;
 }
 
-pub mod application {
-    //! アプリケーション層
+/// インフラストラクチャ層
+pub mod infrastructure;
 
-    pub mod command_handlers {
-        //! コマンドハンドラー
-    }
-
-    pub mod query_handlers {
-        //! クエリハンドラー
-    }
-
-    pub mod services {
-        //! アプリケーションサービス
-    }
-}
-
-pub mod infrastructure {
-    //! インフラストラクチャ層
-
-    pub mod repositories {
-        //! リポジトリ実装
-    }
-
-    pub mod event_store {
-        //! イベントストア実装
-    }
-}
-
-pub mod ports {
-    //! ポート定義
-
-    pub mod inbound {
-        //! インバウンドポート
-    }
-
-    pub mod outbound {
-        //! アウトバウンドポート
-    }
-}
+/// Protocol Buffers 生成コード
+pub mod proto;

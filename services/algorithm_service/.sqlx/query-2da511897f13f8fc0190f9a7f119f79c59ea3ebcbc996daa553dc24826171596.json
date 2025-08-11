@@ -1,0 +1,29 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE learning_item_states SET\n                easiness_factor = $3,\n                repetition_number = $4,\n                interval_days = $5,\n                mastery_level = $6,\n                retention_rate = $7,\n                next_review_date = $8,\n                last_reviewed_at = $9,\n                total_reviews = $10,\n                correct_count = $11,\n                incorrect_count = $12,\n                average_response_time_ms = $13,\n                difficulty_level = $14,\n                is_problematic = $15,\n                version = version + 1,\n                updated_at = NOW()\n            WHERE user_id = $1 AND item_id = $2 AND version = $16\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Uuid",
+				"Float4",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Float4",
+				"Timestamptz",
+				"Timestamptz",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Float4",
+				"Int4",
+				"Bool",
+				"Int8"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "2da511897f13f8fc0190f9a7f119f79c59ea3ebcbc996daa553dc24826171596"
+}

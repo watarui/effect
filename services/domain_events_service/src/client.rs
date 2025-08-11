@@ -14,18 +14,26 @@ use crate::grpc::proto::{
 };
 
 /// Domain Events クライアント
-pub struct DomainEventsClient {
+pub struct Client {
     inner: DomainEventsServiceClient<Channel>,
 }
 
-impl DomainEventsClient {
+impl Client {
     /// 新しいクライアントを作成
+    ///
+    /// # Errors
+    ///
+    /// - `tonic::transport::Error` - 接続エラーが発生した場合
     pub async fn new(url: String) -> Result<Self, tonic::transport::Error> {
         let inner = DomainEventsServiceClient::connect(url).await?;
         Ok(Self { inner })
     }
 
     /// スキーマを取得
+    ///
+    /// # Errors
+    ///
+    /// - `tonic::Status` - gRPC エラーが発生した場合
     pub async fn get_schema(
         &mut self,
         event_type: String,
@@ -45,6 +53,10 @@ impl DomainEventsClient {
     }
 
     /// イベントを検証
+    ///
+    /// # Errors
+    ///
+    /// - `tonic::Status` - gRPC エラーが発生した場合
     pub async fn validate_event(
         &mut self,
         event_type: String,
@@ -67,6 +79,10 @@ impl DomainEventsClient {
     }
 
     /// イベントタイプ一覧を取得
+    ///
+    /// # Errors
+    ///
+    /// - `tonic::Status` - gRPC エラーが発生した場合
     pub async fn list_event_types(
         &mut self,
         context: Option<String>,

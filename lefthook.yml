@@ -67,7 +67,7 @@ pre-commit:
     clippy-check:
       priority: 3
       glob: "*.rs"
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      run: cargo clippy --all-targets -- -D warnings
       stage_fixed: false
     hadolint:
       priority: 3

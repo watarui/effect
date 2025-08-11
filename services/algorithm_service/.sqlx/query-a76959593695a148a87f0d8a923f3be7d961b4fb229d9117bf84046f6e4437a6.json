@@ -1,0 +1,18 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT COUNT(*) as count\n            FROM review_histories\n            WHERE user_id = $1 \n                AND reviewed_at >= $2 \n                AND reviewed_at <= $3\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "count",
+				"type_info": "Int8"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid", "Timestamptz", "Timestamptz"]
+		},
+		"nullable": [null]
+	},
+	"hash": "a76959593695a148a87f0d8a923f3be7d961b4fb229d9117bf84046f6e4437a6"
+}

@@ -55,3 +55,13 @@ enum AnswerResult {
   ANSWER_RESULT_INCORRECT = 2; // 不正解
   ANSWER_RESULT_SKIPPED = 3; // スキップ
 }
+
+// 習熟レベル
+enum MasteryLevel {
+  MASTERY_LEVEL_UNSPECIFIED = 0;
+  MASTERY_LEVEL_BEGINNER = 1; // 初心者
+  MASTERY_LEVEL_LEARNING = 2; // 学習中
+  MASTERY_LEVEL_FAMILIAR = 3; // 慣れている
+  MASTERY_LEVEL_PROFICIENT = 4; // 熟練
+  MASTERY_LEVEL_MASTERED = 5; // 習得済み
+}

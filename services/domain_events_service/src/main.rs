@@ -46,11 +46,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Migrations completed");
 
     // スキーマレジストリ初期化
-    let registry = registry::SchemaRegistry::new(pool.clone(), config.registry.clone());
+    let registry = registry::Registry::new(pool.clone(), config.registry.clone());
     info!("Schema registry initialized");
 
     // バリデーター初期化
-    let validator = validator::EventValidator::new(registry.clone());
+    let validator = validator::Validator::new(registry.clone());
     info!("Event validator initialized");
 
     // gRPC サーバー起動

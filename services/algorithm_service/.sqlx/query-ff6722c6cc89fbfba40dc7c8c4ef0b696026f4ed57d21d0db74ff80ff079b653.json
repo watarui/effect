@@ -1,0 +1,98 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                id, user_id, analyzed_from, analyzed_to,\n                accuracy_trend, speed_trend, retention_trend,\n                problematic_categories, strong_categories, active_hours,\n                consistency_score, predicted_mastery_days, burnout_risk,\n                created_at\n            FROM performance_analyses\n            WHERE user_id = $1\n            ORDER BY created_at DESC\n            LIMIT 1\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 2,
+				"name": "analyzed_from",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 3,
+				"name": "analyzed_to",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 4,
+				"name": "accuracy_trend",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 5,
+				"name": "speed_trend",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 6,
+				"name": "retention_trend",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 7,
+				"name": "problematic_categories",
+				"type_info": "Jsonb"
+			},
+			{
+				"ordinal": 8,
+				"name": "strong_categories",
+				"type_info": "Jsonb"
+			},
+			{
+				"ordinal": 9,
+				"name": "active_hours",
+				"type_info": "Jsonb"
+			},
+			{
+				"ordinal": 10,
+				"name": "consistency_score",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 11,
+				"name": "predicted_mastery_days",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 12,
+				"name": "burnout_risk",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 13,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			false,
+			false
+		]
+	},
+	"hash": "ff6722c6cc89fbfba40dc7c8c4ef0b696026f4ed57d21d0db74ff80ff079b653"
+}

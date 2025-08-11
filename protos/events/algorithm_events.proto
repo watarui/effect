@@ -90,3 +90,22 @@ message LearningAlgorithmEvent {
     ItemReviewed item_reviewed = 6;
   }
 }
+
+// 調整理由
+enum AdjustmentReason {
+  ADJUSTMENT_REASON_UNSPECIFIED = 0;
+  ADJUSTMENT_REASON_PERFORMANCE_BASED = 1; // パフォーマンスに基づく調整
+  ADJUSTMENT_REASON_USER_FEEDBACK = 2; // ユーザーフィードバック
+  ADJUSTMENT_REASON_TOO_EASY = 3; // 簡単すぎる
+  ADJUSTMENT_REASON_TOO_HARD = 4; // 難しすぎる
+  ADJUSTMENT_REASON_MANUAL = 5; // 手動調整
+}
+
+// 戦略タイプ
+enum StrategyType {
+  STRATEGY_TYPE_UNSPECIFIED = 0;
+  STRATEGY_TYPE_AGGRESSIVE = 1; // 積極的（速習）
+  STRATEGY_TYPE_BALANCED = 2; // バランス型
+  STRATEGY_TYPE_CONSERVATIVE = 3; // 保守的（確実）
+  STRATEGY_TYPE_CUSTOM = 4; // カスタム
+}

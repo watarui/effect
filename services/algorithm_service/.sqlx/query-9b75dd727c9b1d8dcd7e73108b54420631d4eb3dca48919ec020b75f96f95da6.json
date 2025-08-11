@@ -1,0 +1,22 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO review_histories (\n                id, user_id, item_id, reviewed_at, judgment,\n                response_time_ms, interval_days, easiness_factor, session_id\n            ) VALUES (\n                $1, $2, $3, $4, $5, $6, $7, $8, $9\n            )\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Uuid",
+				"Uuid",
+				"Timestamptz",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Float4",
+				"Uuid"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "9b75dd727c9b1d8dcd7e73108b54420631d4eb3dca48919ec020b75f96f95da6"
+}

@@ -3,36 +3,43 @@
 use prost::Message;
 use serde_json::Value as JsonValue;
 
-use crate::registry::{SchemaRegistry, SchemaRegistryError};
+use crate::registry::{Registry, SchemaRegistryError};
 
 /// 検証エラー
 #[derive(Debug, Clone)]
 pub struct ValidationError {
+    /// エラーが発生したフィールド
     pub field:   String,
+    /// エラーメッセージ
     pub message: String,
+    /// エラーコード
     pub code:    String,
 }
 
 /// イベントバリデーター
 #[derive(Clone)]
-pub struct EventValidator {
-    registry: SchemaRegistry,
+pub struct Validator {
+    registry: Registry,
 }
 
-impl EventValidator {
+impl Validator {
     /// 新しいバリデーターを作成
     #[must_use]
-    pub const fn new(registry: SchemaRegistry) -> Self {
+    pub const fn new(registry: Registry) -> Self {
         Self { registry }
     }
 
     /// イベントを検証
+    ///
+    /// # Errors
+    ///
+    /// - `Error::Registry` - スキーマレジストリエラーが発生した場合
     pub async fn validate_event(
         &self,
         event_type: &str,
         event_data: &[u8],
         schema_version: Option<i32>,
-    ) -> Result<Vec<ValidationError>, ValidatorError> {
+    ) -> Result<Vec<ValidationError>, Error> {
         // スキーマを取得
         let _schema = self.registry.get_schema(event_type, schema_version).await?;
 
@@ -202,10 +209,12 @@ impl EventValidator {
 
 /// バリデーターのエラー
 #[derive(Debug, thiserror::Error)]
-pub enum ValidatorError {
+pub enum Error {
+    /// スキーマレジストリエラー
     #[error("Schema registry error: {0}")]
     Registry(#[from] SchemaRegistryError),
 
+    /// バリデーション失敗
     #[error("Validation failed: {0}")]
     #[allow(dead_code)]
     ValidationFailed(String),

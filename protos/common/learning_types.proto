@@ -2,12 +2,13 @@ syntax = "proto3";
 
 package effect.common;
 
-// 正誤判定
+// 正誤判定（詳細版）
 enum CorrectnessJudgment {
   CORRECTNESS_JUDGMENT_UNSPECIFIED = 0;
-  CORRECTNESS_JUDGMENT_CORRECT = 1; // 正解
-  CORRECTNESS_JUDGMENT_INCORRECT = 2; // 不正解
-  CORRECTNESS_JUDGMENT_SKIPPED = 3; // スキップ
+  CORRECTNESS_JUDGMENT_INCORRECT = 1; // 不正解
+  CORRECTNESS_JUDGMENT_PARTIALLY_CORRECT = 2; // 部分的に正解
+  CORRECTNESS_JUDGMENT_CORRECT = 3; // 正解
+  CORRECTNESS_JUDGMENT_PERFECT = 4; // 完璧
 }
 
 // 難易度

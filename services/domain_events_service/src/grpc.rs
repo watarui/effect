@@ -7,8 +7,8 @@ use tracing::info;
 
 use crate::{
     config::Config,
-    registry::{SchemaInfo, SchemaRegistry},
-    validator::{EventValidator, ValidationError},
+    registry::{Registry, SchemaInfo},
+    validator::{ValidationError, Validator},
 };
 
 // Protocol Buffers から生成されたコード
@@ -38,8 +38,8 @@ use proto::{
 
 /// Domain Events Service の gRPC 実装
 pub struct DomainEventsServiceImpl {
-    registry:  Arc<SchemaRegistry>,
-    validator: Arc<EventValidator>,
+    registry:  Arc<Registry>,
+    validator: Arc<Validator>,
 }
 
 #[tonic::async_trait]
@@ -153,10 +153,14 @@ impl DomainEventsService for DomainEventsServiceImpl {
 }
 
 /// gRPC サーバーを起動
+///
+/// # Errors
+///
+/// - サーバーの起動に失敗した場合
 pub async fn start_server(
     config: Config,
-    registry: SchemaRegistry,
-    validator: EventValidator,
+    registry: Registry,
+    validator: Validator,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr: SocketAddr = format!("0.0.0.0:{}", config.grpc.port).parse()?;
 

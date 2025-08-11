@@ -1,0 +1,92 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                id, user_id, strategy_type, daily_target_items,\n                new_items_per_day, difficulty_threshold, learning_speed_factor,\n                retention_priority, adaptive_scheduling, version,\n                last_adjusted_at, created_at, updated_at\n            FROM learning_strategies\n            WHERE user_id = $1\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 2,
+				"name": "strategy_type",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 3,
+				"name": "daily_target_items",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 4,
+				"name": "new_items_per_day",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 5,
+				"name": "difficulty_threshold",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 6,
+				"name": "learning_speed_factor",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 7,
+				"name": "retention_priority",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 8,
+				"name": "adaptive_scheduling",
+				"type_info": "Bool"
+			},
+			{
+				"ordinal": 9,
+				"name": "version",
+				"type_info": "Int8"
+			},
+			{
+				"ordinal": 10,
+				"name": "last_adjusted_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 11,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 12,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			false,
+			false
+		]
+	},
+	"hash": "a2696a5d3bff9c9701956f928ac92c322857d8a2fa62f96a1f4803d2a22b97d7"
+}
