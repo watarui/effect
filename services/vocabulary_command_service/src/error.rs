@@ -11,6 +11,10 @@ pub enum Error {
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
 
+    /// データベースエラー（文字列）
+    #[error("Database error: {0}")]
+    DatabaseString(String),
+
     /// ドメインエラー
     #[error("Domain error: {0}")]
     Domain(String),
@@ -34,6 +38,10 @@ pub enum Error {
     /// gRPC エラー
     #[error("gRPC error: {0}")]
     Grpc(#[from] tonic::Status),
+
+    /// シリアライゼーションエラー
+    #[error("Serialization error: {0}")]
+    Serialization(String),
 
     /// 内部エラー
     #[error("Internal error: {0}")]

@@ -82,6 +82,10 @@ impl Spelling {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    pub fn value(&self) -> &str {
+        &self.0
+    }
 }
 
 impl fmt::Display for Spelling {

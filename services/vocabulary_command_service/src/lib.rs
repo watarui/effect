@@ -45,16 +45,21 @@ pub mod application {
 
 // インフラストラクチャ層（技術的実装）
 pub mod infrastructure {
-    // TODO: 実装予定
     pub mod repositories {
-        // PostgreSQL 実装
+        pub mod postgres_entry_repository;
+        pub mod postgres_item_repository;
+
+        pub use postgres_entry_repository::PostgresVocabularyEntryRepository;
+        pub use postgres_item_repository::PostgresVocabularyItemRepository;
     }
 
     pub mod event_store {
-        // Event Store 実装
+        pub mod postgres_event_store;
+
+        pub use postgres_event_store::PostgresEventStore;
     }
 
     pub mod grpc {
-        // gRPC サーバー実装
+        // gRPC サーバー実装（TODO）
     }
 }
