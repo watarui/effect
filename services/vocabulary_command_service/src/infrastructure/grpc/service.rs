@@ -4,8 +4,19 @@ use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
 use crate::{
-    application::commands::{CreateVocabularyItemHandler, UpdateVocabularyItemHandler},
-    domain::{CreateVocabularyItem, Disambiguation, EntryId, ItemId, UpdateVocabularyItem},
+    application::commands::{
+        CreateVocabularyItemHandler,
+        DeleteVocabularyItemHandler,
+        UpdateVocabularyItemHandler,
+    },
+    domain::{
+        CreateVocabularyItem,
+        DeleteVocabularyItem,
+        Disambiguation,
+        EntryId,
+        ItemId,
+        UpdateVocabularyItem,
+    },
     error::Error,
 };
 
@@ -41,45 +52,42 @@ use proto::{
 };
 
 /// Vocabulary Command Service の gRPC 実装
-pub struct VocabularyCommandServiceImpl<ER, IR, ES, R, E>
+pub struct VocabularyCommandServiceImpl<ER, IR, ES>
 where
     ER: crate::ports::repositories::VocabularyEntryRepository + Send + Sync,
     IR: crate::ports::repositories::VocabularyItemRepository + Send + Sync,
     ES: crate::ports::event_store::EventStore + Send + Sync,
-    R: crate::ports::repositories::VocabularyItemRepository + Send + Sync,
-    E: crate::ports::event_store::EventStore + Send + Sync,
 {
     create_handler: Arc<CreateVocabularyItemHandler<ER, IR, ES>>,
-    update_handler: Arc<UpdateVocabularyItemHandler<R, E>>,
+    update_handler: Arc<UpdateVocabularyItemHandler<IR, ES>>,
+    delete_handler: Arc<DeleteVocabularyItemHandler<ER, IR, ES>>,
 }
 
-impl<ER, IR, ES, R, E> VocabularyCommandServiceImpl<ER, IR, ES, R, E>
+impl<ER, IR, ES> VocabularyCommandServiceImpl<ER, IR, ES>
 where
     ER: crate::ports::repositories::VocabularyEntryRepository + Send + Sync,
     IR: crate::ports::repositories::VocabularyItemRepository + Send + Sync,
     ES: crate::ports::event_store::EventStore + Send + Sync,
-    R: crate::ports::repositories::VocabularyItemRepository + Send + Sync,
-    E: crate::ports::event_store::EventStore + Send + Sync,
 {
     pub fn new(
         create_handler: Arc<CreateVocabularyItemHandler<ER, IR, ES>>,
-        update_handler: Arc<UpdateVocabularyItemHandler<R, E>>,
+        update_handler: Arc<UpdateVocabularyItemHandler<IR, ES>>,
+        delete_handler: Arc<DeleteVocabularyItemHandler<ER, IR, ES>>,
     ) -> Self {
         Self {
             create_handler,
             update_handler,
+            delete_handler,
         }
     }
 }
 
 #[tonic::async_trait]
-impl<ER, IR, ES, R, E> VocabularyCommandService for VocabularyCommandServiceImpl<ER, IR, ES, R, E>
+impl<ER, IR, ES> VocabularyCommandService for VocabularyCommandServiceImpl<ER, IR, ES>
 where
     ER: crate::ports::repositories::VocabularyEntryRepository + Send + Sync + 'static,
     IR: crate::ports::repositories::VocabularyItemRepository + Send + Sync + 'static,
     ES: crate::ports::event_store::EventStore + Send + Sync + 'static,
-    R: crate::ports::repositories::VocabularyItemRepository + Send + Sync + 'static,
-    E: crate::ports::event_store::EventStore + Send + Sync + 'static,
 {
     async fn create_vocabulary_item(
         &self,
@@ -173,12 +181,34 @@ where
 
     async fn delete_vocabulary_item(
         &self,
-        _request: Request<DeleteVocabularyItemRequest>,
+        request: Request<DeleteVocabularyItemRequest>,
     ) -> Result<Response<DeleteVocabularyItemResponse>, Status> {
-        // TODO: DeleteVocabularyItemHandler を実装後に対応
-        Err(Status::unimplemented(
-            "Delete vocabulary item is not implemented yet",
-        ))
+        let req = request.into_inner();
+
+        // メタデータからユーザーIDを取得
+        let metadata = req
+            .metadata
+            .ok_or_else(|| Status::invalid_argument("metadata is required"))?;
+
+        // プロトコルバッファからドメインモデルへ変換
+        let command = DeleteVocabularyItem {
+            item_id:    Uuid::parse_str(&req.item_id)
+                .map_err(|e| Status::invalid_argument(format!("Invalid item_id: {}", e)))?,
+            deleted_by: Uuid::parse_str(&metadata.issued_by)
+                .map_err(|e| Status::invalid_argument(format!("Invalid issued_by: {}", e)))?,
+        };
+
+        // ハンドラー実行
+        self.delete_handler
+            .handle(command)
+            .await
+            .map_err(|e| match e {
+                Error::NotFound(msg) => Status::not_found(msg),
+                Error::Conflict(msg) => Status::already_exists(msg),
+                _ => Status::internal(format!("Failed to delete vocabulary item: {}", e)),
+            })?;
+
+        Ok(Response::new(DeleteVocabularyItemResponse {}))
     }
 
     async fn add_example(

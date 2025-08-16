@@ -41,6 +41,7 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
                 disambiguation,
                 is_primary,
                 status,
+                is_deleted,
                 created_at,
                 updated_at,
                 version
@@ -76,6 +77,7 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
                             )));
                         },
                     },
+                    is_deleted:     row.get::<bool, _>("is_deleted"),
                     created_at:     row.get::<DateTime<Utc>, _>("created_at"),
                     updated_at:     row.get::<DateTime<Utc>, _>("updated_at"),
                     version:        Version::new(row.get::<i64, _>("version"))
@@ -98,19 +100,21 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
                 disambiguation,
                 is_primary,
                 status,
+                is_deleted,
                 created_at,
                 updated_at,
                 version
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             ON CONFLICT (item_id) 
             DO UPDATE SET
                 spelling = EXCLUDED.spelling,
                 disambiguation = EXCLUDED.disambiguation,
                 is_primary = EXCLUDED.is_primary,
                 status = EXCLUDED.status,
+                is_deleted = EXCLUDED.is_deleted,
                 updated_at = EXCLUDED.updated_at,
                 version = EXCLUDED.version
-            WHERE vocabulary_items.version = $9 - 1
+            WHERE vocabulary_items.version = $10 - 1
             "#,
         )
         .bind(item.item_id.as_uuid())
@@ -119,6 +123,7 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
         .bind(item.disambiguation.as_option())
         .bind(item.is_primary)
         .bind(item.status.as_str())
+        .bind(item.is_deleted)
         .bind(item.created_at)
         .bind(item.updated_at)
         .bind(item.version.value())
@@ -147,6 +152,7 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
                 disambiguation,
                 is_primary,
                 status,
+                is_deleted,
                 created_at,
                 updated_at,
                 version
@@ -176,6 +182,7 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
                     "published" => VocabularyStatus::Published,
                     _ => return Err(Error::DatabaseString("Invalid status value".to_string())),
                 },
+                is_deleted:     row.get::<bool, _>("is_deleted"),
                 created_at:     row.get::<DateTime<Utc>, _>("created_at"),
                 updated_at:     row.get::<DateTime<Utc>, _>("updated_at"),
                 version:        Version::new(row.get::<i64, _>("version"))
@@ -291,6 +298,7 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
                 disambiguation,
                 is_primary,
                 status,
+                is_deleted,
                 created_at,
                 updated_at,
                 version
@@ -327,6 +335,7 @@ impl VocabularyItemRepository for PostgresVocabularyItemRepository {
                             )));
                         },
                     },
+                    is_deleted:     row.get::<bool, _>("is_deleted"),
                     created_at:     row.get::<DateTime<Utc>, _>("created_at"),
                     updated_at:     row.get::<DateTime<Utc>, _>("updated_at"),
                     version:        Version::new(row.get::<i64, _>("version"))

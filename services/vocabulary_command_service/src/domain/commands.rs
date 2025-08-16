@@ -73,3 +73,20 @@ pub struct SetAsPrimaryItem {
     pub item_id:  Uuid,
     pub version:  i64,
 }
+
+/// VocabularyItem を削除するコマンド
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeleteVocabularyItem {
+    pub item_id:    Uuid,
+    pub deleted_by: Uuid,
+}
+
+/// VocabularyItem に例文を追加するコマンド
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddExample {
+    pub item_id:     Uuid,
+    pub example:     String,
+    pub translation: Option<String>,
+    pub added_by:    Uuid,
+    pub version:     i64,
+}

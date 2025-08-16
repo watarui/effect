@@ -103,6 +103,24 @@ pub struct PrimaryItemUnset {
     pub item_id:  Uuid,
 }
 
+/// VocabularyItem が削除された
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VocabularyItemDeleted {
+    pub metadata:   EventMetadata,
+    pub item_id:    Uuid,
+    pub deleted_by: Uuid,
+}
+
+/// VocabularyItem に例文が追加された
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExampleAdded {
+    pub metadata:    EventMetadata,
+    pub item_id:     Uuid,
+    pub example:     String,
+    pub translation: Option<String>,
+    pub added_by:    Uuid,
+}
+
 /// すべてのドメインイベントをまとめる列挙型
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -112,6 +130,8 @@ pub enum DomainEvent {
     VocabularyItemCreated(VocabularyItemCreated),
     VocabularyItemDisambiguationUpdated(VocabularyItemDisambiguationUpdated),
     VocabularyItemPublished(VocabularyItemPublished),
+    VocabularyItemDeleted(VocabularyItemDeleted),
+    ExampleAdded(ExampleAdded),
     AIEnrichmentRequested(AIEnrichmentRequested),
     AIEnrichmentCompleted(AIEnrichmentCompleted),
     PrimaryItemSet(PrimaryItemSet),
@@ -127,6 +147,8 @@ impl DomainEvent {
             DomainEvent::VocabularyItemCreated(e) => &e.metadata,
             DomainEvent::VocabularyItemDisambiguationUpdated(e) => &e.metadata,
             DomainEvent::VocabularyItemPublished(e) => &e.metadata,
+            DomainEvent::VocabularyItemDeleted(e) => &e.metadata,
+            DomainEvent::ExampleAdded(e) => &e.metadata,
             DomainEvent::AIEnrichmentRequested(e) => &e.metadata,
             DomainEvent::AIEnrichmentCompleted(e) => &e.metadata,
             DomainEvent::PrimaryItemSet(e) => &e.metadata,
@@ -144,6 +166,8 @@ impl DomainEvent {
                 "VocabularyItemDisambiguationUpdated"
             },
             DomainEvent::VocabularyItemPublished(_) => "VocabularyItemPublished",
+            DomainEvent::VocabularyItemDeleted(_) => "VocabularyItemDeleted",
+            DomainEvent::ExampleAdded(_) => "ExampleAdded",
             DomainEvent::AIEnrichmentRequested(_) => "AIEnrichmentRequested",
             DomainEvent::AIEnrichmentCompleted(_) => "AIEnrichmentCompleted",
             DomainEvent::PrimaryItemSet(_) => "PrimaryItemSet",

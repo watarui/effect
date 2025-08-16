@@ -46,6 +46,7 @@ pub struct VocabularyItem {
     pub disambiguation: Disambiguation,
     pub is_primary:     bool,
     pub status:         VocabularyStatus,
+    pub is_deleted:     bool,
     pub created_at:     DateTime<Utc>,
     pub updated_at:     DateTime<Utc>,
     pub version:        Version,
@@ -62,6 +63,7 @@ impl VocabularyItem {
             disambiguation,
             is_primary: false,
             status: VocabularyStatus::Draft,
+            is_deleted: false,
             created_at: now,
             updated_at: now,
             version: Version::initial(),
@@ -147,6 +149,17 @@ impl VocabularyItem {
             ));
         }
         self.disambiguation = disambiguation;
+        self.updated_at = Utc::now();
+        self.version = self.version.increment();
+        Ok(())
+    }
+
+    /// アイテムを削除（ソフトデリート）
+    pub fn mark_as_deleted(&mut self) -> Result<()> {
+        if self.is_deleted {
+            return Err(Error::Conflict("Item is already deleted".to_string()));
+        }
+        self.is_deleted = true;
         self.updated_at = Utc::now();
         self.version = self.version.increment();
         Ok(())

@@ -56,18 +56,18 @@ pre-commit:
     clippy-fix:
       priority: 2
       glob: "*.rs"
-      run: cargo clippy --fix --allow-dirty --allow-staged
+      run: SQLX_OFFLINE=true cargo clippy --fix --allow-dirty --allow-staged
       stage_fixed: true
     # === グループ3: チェックのみ（並列実行） ===
     cargo-check:
       priority: 3
       glob: "*.rs"
-      run: cargo check --all
+      run: SQLX_OFFLINE=true cargo check --all
       stage_fixed: false
     clippy-check:
       priority: 3
       glob: "*.rs"
-      run: cargo clippy --all-targets -- -D warnings
+      run: SQLX_OFFLINE=true cargo clippy --all-targets -- -D warnings
       stage_fixed: false
     hadolint:
       priority: 3

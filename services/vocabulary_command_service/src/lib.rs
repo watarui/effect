@@ -33,12 +33,14 @@ pub mod ports {
 pub mod application {
     pub mod commands {
         pub mod create_vocabulary_item;
+        pub mod delete_vocabulary_item;
         pub mod update_vocabulary_item;
 
         #[cfg(test)]
         pub mod test_helpers;
 
         pub use create_vocabulary_item::CreateVocabularyItemHandler;
+        pub use delete_vocabulary_item::DeleteVocabularyItemHandler;
         pub use update_vocabulary_item::UpdateVocabularyItemHandler;
     }
 }

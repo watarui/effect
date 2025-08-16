@@ -5,7 +5,11 @@ use tonic::transport::Server;
 use tracing::info;
 
 use crate::{
-    application::commands::{CreateVocabularyItemHandler, UpdateVocabularyItemHandler},
+    application::commands::{
+        CreateVocabularyItemHandler,
+        DeleteVocabularyItemHandler,
+        UpdateVocabularyItemHandler,
+    },
     config::Config,
     error::Result,
     infrastructure::{
@@ -36,15 +40,25 @@ pub async fn start_grpc_server(config: Config) -> Result<()> {
 
     // コマンドハンドラーを初期化
     let create_handler = Arc::new(CreateVocabularyItemHandler::new(
-        entry_repo,
+        entry_repo.clone(),
         item_repo.clone(),
         event_store.clone(),
     ));
 
-    let update_handler = Arc::new(UpdateVocabularyItemHandler::new(item_repo, event_store));
+    let update_handler = Arc::new(UpdateVocabularyItemHandler::new(
+        item_repo.clone(),
+        event_store.clone(),
+    ));
+
+    let delete_handler = Arc::new(DeleteVocabularyItemHandler::new(
+        entry_repo,
+        item_repo,
+        event_store,
+    ));
 
     // gRPC サービスを作成
-    let grpc_service = VocabularyCommandServiceImpl::new(create_handler, update_handler);
+    let grpc_service =
+        VocabularyCommandServiceImpl::new(create_handler, update_handler, delete_handler);
 
     // gRPC サーバーアドレス
     let addr: SocketAddr = format!("{}:{}", config.server.host, config.server.port)
