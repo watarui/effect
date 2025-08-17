@@ -315,7 +315,7 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: services/api-gateway/Dockerfile
+      dockerfile: services/api_gateway/Dockerfile
       target: development
     container_name: effect-api-gateway
     environment:
@@ -332,7 +332,7 @@ services:
     ports:
       - "${API_GATEWAY_PORT:-8000}:8000"
     volumes:
-      - ./services/api-gateway:/app/services/api-gateway
+      - ./services/api_gateway:/app/services/api_gateway
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
@@ -352,7 +352,7 @@ services:
   learning-service:
     build:
       context: .
-      dockerfile: services/learning-service/Dockerfile
+      dockerfile: services/learning_service/Dockerfile
       target: development
     container_name: effect-learning-service
     environment:
@@ -365,7 +365,7 @@ services:
       GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
-      - ./services/learning-service:/app/services/learning-service
+      - ./services/learning_service:/app/services/learning_service
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
@@ -387,7 +387,6 @@ services:
     build:
       context: .
       dockerfile: services/vocabulary_command_service/Dockerfile
-      target: development
     container_name: effect-vocabulary-command-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
@@ -421,7 +420,6 @@ services:
     build:
       context: .
       dockerfile: services/vocabulary_query_service/Dockerfile
-      target: development
     container_name: effect-vocabulary-query-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
@@ -448,7 +446,6 @@ services:
     build:
       context: .
       dockerfile: services/vocabulary_projection_service/Dockerfile
-      target: development
     container_name: effect-vocabulary-projection-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
@@ -479,7 +476,7 @@ services:
   user-service:
     build:
       context: .
-      dockerfile: services/user-service/Dockerfile
+      dockerfile: services/user_service/Dockerfile
       target: development
     container_name: effect-user-service
     environment:
@@ -492,7 +489,7 @@ services:
       GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
-      - ./services/user-service:/app/services/user-service
+      - ./services/user_service:/app/services/user_service
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
@@ -513,8 +510,7 @@ services:
   progress-service:
     build:
       context: .
-      dockerfile: services/progress-service/Dockerfile
-      target: development
+      dockerfile: services/progress_query_service/Dockerfile
     container_name: effect-progress-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}
@@ -526,7 +522,7 @@ services:
       GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
-      - ./services/progress-service:/app/services/progress-service
+      - ./services/progress_query_service:/app/services/progress_query_service
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
@@ -549,7 +545,7 @@ services:
   algorithm-service:
     build:
       context: .
-      dockerfile: services/algorithm-service/Dockerfile
+      dockerfile: services/algorithm_service/Dockerfile
       target: development
     container_name: effect-algorithm-service
     environment:
@@ -562,7 +558,7 @@ services:
       GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
-      - ./services/algorithm-service:/app/services/algorithm-service
+      - ./services/algorithm_service:/app/services/algorithm_service
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
@@ -583,7 +579,7 @@ services:
   ai-service:
     build:
       context: .
-      dockerfile: services/ai-service/Dockerfile
+      dockerfile: services/ai_service/Dockerfile
       target: development
     container_name: effect-ai-service
     environment:
@@ -598,7 +594,7 @@ services:
       # Gemini API Key は .env ファイルで管理
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     volumes:
-      - ./services/ai-service:/app/services/ai-service
+      - ./services/ai_service:/app/services/ai_service
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
@@ -619,7 +615,7 @@ services:
   event-processor:
     build:
       context: .
-      dockerfile: services/event-processor/Dockerfile
+      dockerfile: services/event_processor/Dockerfile
       target: development
     container_name: effect-event-processor
     environment:
@@ -630,7 +626,7 @@ services:
       GOOGLE_CLOUD_PROJECT: ${PUBSUB_PROJECT_ID:-effect-local}
       ENVIRONMENT: local
     volumes:
-      - ./services/event-processor:/app/services/event-processor
+      - ./services/event_processor:/app/services/event_processor
       - ./shared:/app/shared
       - cargo_cache:/usr/local/cargo/registry
       - target_cache:/app/target
@@ -648,7 +644,7 @@ services:
   saga-orchestrator:
     build:
       context: .
-      dockerfile: services/saga-orchestrator/Dockerfile
+      dockerfile: services/saga_orchestrator/Dockerfile
       target: development
     container_name: effect-saga-orchestrator
     environment:
@@ -669,7 +665,7 @@ services:
       ALGORITHM_SERVICE_URL: algorithm-service:50056
       AI_SERVICE_URL: ai-service:50057
     volumes:
-      - ./services/saga-orchestrator:/app/services/saga-orchestrator
+      - ./services/saga_orchestrator:/app/services/saga_orchestrator
       - ./shared:/app/shared
       - ./protos:/app/protos
       - cargo_cache:/usr/local/cargo/registry
@@ -691,7 +687,6 @@ services:
     build:
       context: .
       dockerfile: services/vocabulary_search_service/Dockerfile
-      target: development
     container_name: effect-vocabulary-search-service
     environment:
       RUST_LOG: ${RUST_LOG:-info}

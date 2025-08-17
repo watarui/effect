@@ -46,6 +46,8 @@ shared_vocabulary_context = { path = "../../shared/contexts/vocabulary" }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }
+prost-build = { workspace = true }
+protobuf-src = { workspace = true }
 
 [dev-dependencies]
 # Mocking

@@ -4,19 +4,20 @@
 # ===============================
 # ベースイメージの定義
 # ===============================
-ARG RUST_VERSION=1.88.0
+ARG RUST_VERSION=slim
 ARG DEBIAN_VERSION=bookworm
 
 # ===============================
 # ビルドステージ
 # ===============================
-FROM rust:${RUST_VERSION}-slim-${DEBIAN_VERSION} AS builder
+FROM rust:1.89-slim-bookworm AS builder
 
 # ビルドに必要なパッケージをインストール
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libssl-dev \
     protobuf-compiler \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # ワークディレクトリを設定
@@ -65,13 +66,14 @@ RUN touch services/algorithm-service/src/main.rs && \
 # ===============================
 # 開発用ステージ
 # ===============================
-FROM rust:${RUST_VERSION}-slim-${DEBIAN_VERSION} AS development
+FROM rust:1.89-slim-bookworm AS development
 
 # 開発に必要なツールをインストール
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libssl-dev \
     protobuf-compiler \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # cargo-watch をインストール

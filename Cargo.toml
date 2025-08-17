@@ -92,7 +92,9 @@ tonic-prost = "0.14.1"
 tonic-prost-build = "0.14.1"
 tonic-build = "0.14.1"
 prost = "0.14"
+prost-build = "0.14"
 prost-types = { version = "0.14", features = ["std"] }
+protobuf-src = "2.1.1"
 
 # Testing
 mockall = "0.13"

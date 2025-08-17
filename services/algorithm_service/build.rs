@@ -2,12 +2,25 @@
 //!
 //! Compiles protobuf files for gRPC service definitions
 
+use std::path::PathBuf;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Algorithm Service のサーバー実装（common は shared_kernel から使用、ただし
-    // CorrectnessJudgment は追加）
-    let config = tonic_prost_build::configure()
+    compile_algorithm_service()?;
+    compile_learning_types()?;
+    compile_event_store_client()?;
+    compile_algorithm_events()?;
+    setup_rerun_triggers();
+
+    Ok(())
+}
+
+/// Algorithm Service のサーバー実装をコンパイル
+fn compile_algorithm_service() -> Result<(), Box<dyn std::error::Error>> {
+    let mut prost_config = ::prost_build::Config::new();
+    prost_config.protoc_executable(protobuf_src::protoc());
+    prost_config
         .file_descriptor_set_path(
-            std::path::PathBuf::from(std::env::var("OUT_DIR")?).join("algorithm_descriptor.bin"),
+            PathBuf::from(std::env::var("OUT_DIR")?).join("algorithm_descriptor.bin"),
         )
         .extern_path(
             ".effect.common.EventMetadata",
@@ -22,34 +35,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "crate::proto::effect::learning::CorrectnessJudgment",
         );
 
-    config
+    let builder = tonic_prost_build::configure()
         .build_server(true)
-        .build_client(false)
-        .compile_protos(
-            &["../../protos/services/algorithm_service.proto"],
-            &["../../protos"],
-        )?;
+        .build_client(false);
 
-    // Learning Types の定義（CorrectnessJudgment を含む）
-    let learning_config = tonic_prost_build::configure()
+    builder.compile_with_config(
+        prost_config,
+        &["../../protos/services/algorithm_service.proto"],
+        &["../../protos"],
+    )?;
+
+    Ok(())
+}
+
+/// Learning Types の定義（CorrectnessJudgment を含む）をコンパイル
+fn compile_learning_types() -> Result<(), Box<dyn std::error::Error>> {
+    let mut prost_config = ::prost_build::Config::new();
+    prost_config.protoc_executable(protobuf_src::protoc());
+    prost_config
         .file_descriptor_set_path(
-            std::path::PathBuf::from(std::env::var("OUT_DIR")?)
-                .join("learning_types_descriptor.bin"),
+            PathBuf::from(std::env::var("OUT_DIR")?).join("learning_types_descriptor.bin"),
         )
         .extern_path(".effect.common", "crate::proto::effect::common");
 
-    learning_config
+    let builder = tonic_prost_build::configure()
         .build_server(false)
-        .build_client(false)
-        .compile_protos(
-            &["../../protos/common/learning_types.proto"],
-            &["../../protos"],
-        )?;
+        .build_client(false);
 
-    // Event Store Service のクライアント実装
-    let event_config = tonic_prost_build::configure()
+    builder.compile_with_config(
+        prost_config,
+        &["../../protos/common/learning_types.proto"],
+        &["../../protos"],
+    )?;
+
+    Ok(())
+}
+
+/// Event Store Service のクライアント実装をコンパイル
+fn compile_event_store_client() -> Result<(), Box<dyn std::error::Error>> {
+    let mut prost_config = ::prost_build::Config::new();
+    prost_config.protoc_executable(protobuf_src::protoc());
+    prost_config
         .file_descriptor_set_path(
-            std::path::PathBuf::from(std::env::var("OUT_DIR")?).join("event_store_descriptor.bin"),
+            PathBuf::from(std::env::var("OUT_DIR")?).join("event_store_descriptor.bin"),
         )
         .extern_path(
             ".effect.common.EventMetadata",
@@ -60,19 +88,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "crate::proto::effect::common::TraceContext",
         );
 
-    event_config
+    let builder = tonic_prost_build::configure()
         .build_server(false)
-        .build_client(true)
-        .compile_protos(
-            &["../../protos/services/event_store_service.proto"],
-            &["../../protos"],
-        )?;
+        .build_client(true);
 
-    // Algorithm Events の定義
-    let event_proto_config = tonic_prost_build::configure()
+    builder.compile_with_config(
+        prost_config,
+        &["../../protos/services/event_store_service.proto"],
+        &["../../protos"],
+    )?;
+
+    Ok(())
+}
+
+/// Algorithm Events の定義をコンパイル
+fn compile_algorithm_events() -> Result<(), Box<dyn std::error::Error>> {
+    let mut prost_config = ::prost_build::Config::new();
+    prost_config.protoc_executable(protobuf_src::protoc());
+    prost_config
         .file_descriptor_set_path(
-            std::path::PathBuf::from(std::env::var("OUT_DIR")?)
-                .join("algorithm_events_descriptor.bin"),
+            PathBuf::from(std::env::var("OUT_DIR")?).join("algorithm_events_descriptor.bin"),
         )
         .extern_path(
             ".effect.common.EventMetadata",
@@ -87,21 +122,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "crate::proto::effect::learning::CorrectnessJudgment",
         );
 
-    event_proto_config
+    let builder = tonic_prost_build::configure()
         .build_server(false)
-        .build_client(false)
-        .compile_protos(
-            &["../../protos/events/algorithm_events.proto"],
-            &["../../protos"],
-        )?;
+        .build_client(false);
 
-    // ビルドが変更を検知できるようにする
+    builder.compile_with_config(
+        prost_config,
+        &["../../protos/events/algorithm_events.proto"],
+        &["../../protos"],
+    )?;
+
+    Ok(())
+}
+
+/// ビルドが変更を検知できるようにする
+fn setup_rerun_triggers() {
     println!("cargo:rerun-if-changed=../../protos/services/algorithm_service.proto");
     println!("cargo:rerun-if-changed=../../protos/services/event_store_service.proto");
     println!("cargo:rerun-if-changed=../../protos/common/learning_types.proto");
     println!("cargo:rerun-if-changed=../../protos/common/types.proto");
     println!("cargo:rerun-if-changed=../../protos/common/events.proto");
     println!("cargo:rerun-if-changed=../../protos/events/algorithm_events.proto");
-
-    Ok(())
 }

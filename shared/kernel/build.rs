@@ -5,18 +5,24 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let proto_root = "../../protos".to_string();
 
-    let mut config = tonic_prost_build::configure();
+    // prost_build::Config を作成して protoc のパスを設定
+    let mut prost_config = ::prost_build::Config::new();
+    prost_config.protoc_executable(protobuf_src::protoc());
 
     // 生成コードの clippy 警告を抑制
-    config = config
+    prost_config
         .type_attribute(".", "#[allow(clippy::all)]")
         .type_attribute(".", "#[allow(dead_code)]")
         .type_attribute(".", "#[allow(missing_docs)]");
 
-    // サービスビルドを無効化（共通型のみ使用）
-    config = config.build_server(false).build_client(false);
+    // tonic_prost_build の設定
+    let builder = tonic_prost_build::configure()
+        .build_server(false)
+        .build_client(false);
 
-    config.compile_protos(
+    // compile_with_config を使用
+    builder.compile_with_config(
+        prost_config,
         &[
             // 共通型定義
             &format!("{proto_root}/common/types.proto"),

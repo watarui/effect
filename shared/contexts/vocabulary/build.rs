@@ -5,21 +5,26 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let proto_root = "../../../protos".to_string();
 
-    let mut config = tonic_prost_build::configure();
+    // prost_build::Config を作成して protoc のパスを設定
+    let mut prost_config = ::prost_build::Config::new();
+    prost_config.protoc_executable(protobuf_src::protoc());
 
     // 生成コードの clippy 警告を抑制
-    config = config
+    prost_config
         .type_attribute(".", "#[allow(clippy::all)]")
         .type_attribute(".", "#[allow(dead_code)]")
-        .type_attribute(".", "#[allow(missing_docs)]");
+        .type_attribute(".", "#[allow(missing_docs)]")
+        // 外部クレートとして shared_kernel の型を使用
+        .extern_path(".effect.common", "::shared_kernel::proto::effect::common");
 
-    // 外部クレートとして shared_kernel の型を使用
-    config = config.extern_path(".effect.common", "::shared_kernel::proto::effect::common");
+    // tonic_prost_build の設定
+    let builder = tonic_prost_build::configure()
+        .build_server(false)
+        .build_client(false);
 
-    // サービスビルドを無効化（イベントのみ使用）
-    config = config.build_server(false).build_client(false);
-
-    config.compile_protos(
+    // compile_with_config を使用
+    builder.compile_with_config(
+        prost_config,
         &[
             // Vocabulary イベント定義
             &format!("{proto_root}/events/vocabulary_events.proto"),

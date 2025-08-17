@@ -1,22 +1,23 @@
-FROM rust:1.84-slim AS builder
+FROM rust:1.89 AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    protobuf-compiler \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Build dependencies
 COPY Cargo.toml Cargo.lock ./
-COPY services/progress_query_service/Cargo.toml services/progress_query_service/
+COPY shared shared
+COPY services services
+COPY protos protos
 
-# Create dummy source for dependency compilation
-RUN mkdir -p services/progress_query_service/src && \
-    echo "fn main() {}" > services/progress_query_service/src/main.rs
-
-# Build dependencies
+# Build the service
 RUN cargo build --release -p progress_query_service
-
-# Build application
-COPY services/progress_query_service/src services/progress_query_service/src
-RUN touch services/progress_query_service/src/main.rs && \
-    cargo build --release -p progress_query_service
 
 # Runtime stage
 FROM debian:bookworm-slim

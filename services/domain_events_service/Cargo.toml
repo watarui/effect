@@ -50,6 +50,8 @@ shared_database = { path = "../../shared/infrastructure/database" }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }
+prost-build = { workspace = true }
+protobuf-src = { workspace = true }
 
 [dev-dependencies]
 mockall = { workspace = true }

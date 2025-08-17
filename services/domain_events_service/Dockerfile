@@ -1,12 +1,20 @@
 # Build stage
-FROM rust:1.83 AS builder
+FROM rust:1.89 AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    protobuf-compiler \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
 # Copy workspace files
 COPY Cargo.toml Cargo.lock ./
 COPY shared ./shared
-COPY services/domain_events_service ./services/domain_events_service
+COPY services ./services
 COPY protos ./protos
 
 # Build the service

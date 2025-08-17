@@ -64,7 +64,9 @@ dependencies = [
  "chrono",
  "domain_events_service",
  "prost 0.14.1",
+ "prost-build",
  "prost-types 0.14.1",
+ "protobuf-src",
  "serde",
  "serde_json",
  "shared_kernel",
@@ -542,6 +544,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmake"
+version = "0.1.54"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7caa3f9de89ddbe2c607f4101924c5abec803763ae9534e4f4d7d8f84aa81f0"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "combine"
 version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -810,7 +821,9 @@ dependencies = [
  "config",
  "mockall",
  "prost 0.14.1",
+ "prost-build",
  "prost-types 0.14.1",
+ "protobuf-src",
  "serde",
  "serde_json",
  "shared_database",
@@ -928,7 +941,9 @@ dependencies = [
  "google-cloud-googleapis",
  "google-cloud-pubsub",
  "prost 0.14.1",
+ "prost-build",
  "prost-types 0.14.1",
+ "protobuf-src",
  "serde",
  "serde_json",
  "shared_config",
@@ -2703,6 +2718,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "protobuf-src"
+version = "2.1.1+27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6217c3504da19b85a3a4b2e9a5183d635822d83507ba0986624b5c05b83bfc40"
+dependencies = [
+ "cmake",
+]
+
+[[package]]
 name = "pulldown-cmark"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3374,7 +3398,9 @@ dependencies = [
  "async-trait",
  "chrono",
  "prost 0.14.1",
+ "prost-build",
  "prost-types 0.14.1",
+ "protobuf-src",
  "serde",
  "serde_json",
  "sqlx",
@@ -3453,7 +3479,9 @@ dependencies = [
  "async-trait",
  "chrono",
  "prost 0.14.1",
+ "prost-build",
  "prost-types 0.14.1",
+ "protobuf-src",
  "serde",
  "serde_json",
  "shared_kernel",
@@ -3469,7 +3497,9 @@ dependencies = [
  "async-trait",
  "chrono",
  "prost 0.14.1",
+ "prost-build",
  "prost-types 0.14.1",
+ "protobuf-src",
  "serde",
  "serde_json",
  "shared_kernel",
@@ -4642,7 +4672,9 @@ dependencies = [
  "config",
  "mockall",
  "prost 0.14.1",
+ "prost-build",
  "prost-types 0.14.1",
+ "protobuf-src",
  "serde",
  "serde_json",
  "shared_kernel",

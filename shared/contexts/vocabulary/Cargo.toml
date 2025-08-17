@@ -16,3 +16,5 @@ async-trait = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }
+prost-build = { workspace = true }
+protobuf-src = { workspace = true }
