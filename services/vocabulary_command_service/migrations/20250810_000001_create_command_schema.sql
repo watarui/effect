@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS vocabulary_items (
     disambiguation VARCHAR(255),  -- 意味の区別（例: "(fruit)", "(company)"）
     is_primary BOOLEAN DEFAULT FALSE,  -- 最も一般的な意味かどうか
     status VARCHAR(50) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending_ai', 'published')),
+    is_deleted BOOLEAN DEFAULT FALSE,  -- ソフトデリート用
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     version BIGINT NOT NULL DEFAULT 1,

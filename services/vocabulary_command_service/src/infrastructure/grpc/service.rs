@@ -13,7 +13,6 @@ use crate::{
         CreateVocabularyItem,
         DeleteVocabularyItem,
         Disambiguation,
-        EntryId,
         ItemId,
         UpdateVocabularyItem,
     },
@@ -95,11 +94,9 @@ where
     ) -> Result<Response<CreateVocabularyItemResponse>, Status> {
         let req = request.into_inner();
 
-        // 新しいエントリIDを生成
-        let entry_id = EntryId::new();
-
+        // コマンドを作成（entry_id は nil UUID にして、ハンドラーで自動生成してもらう）
         let command = CreateVocabularyItem {
-            entry_id:       *entry_id.as_uuid(),
+            entry_id:       Uuid::nil(), // nil の場合、ハンドラー内で自動的にエントリー作成
             spelling:       req.word.clone(),
             disambiguation: if req.definitions.is_empty() {
                 None

@@ -104,7 +104,10 @@ impl VocabularyEntryRepository for PostgresVocabularyEntryRepository {
         Ok(())
     }
 
-    async fn find_by_spelling(&self, spelling: &str) -> Result<Option<VocabularyEntry>> {
+    async fn find_by_spelling(
+        &self,
+        spelling: &crate::domain::Spelling,
+    ) -> Result<Option<VocabularyEntry>> {
         let row = sqlx::query(
             r#"
             SELECT 
@@ -118,7 +121,7 @@ impl VocabularyEntryRepository for PostgresVocabularyEntryRepository {
             LIMIT 1
             "#,
         )
-        .bind(spelling)
+        .bind(spelling.value())
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| Error::DatabaseString(e.to_string()))?;
@@ -193,7 +196,7 @@ mod tests {
 
         // スペリング検索テスト
         let found = repo
-            .find_by_spelling(entry.spelling.value())
+            .find_by_spelling(&entry.spelling)
             .await
             .expect("Failed to find by spelling");
         assert!(found.is_some());

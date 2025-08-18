@@ -22,7 +22,7 @@ pub mod mocks {
             async fn find_by_id(&self, entry_id: &EntryId) -> Result<Option<VocabularyEntry>>;
             async fn exists(&self, entry_id: &EntryId) -> Result<bool>;
             async fn save(&self, entry: &VocabularyEntry) -> Result<()>;
-            async fn find_by_spelling(&self, spelling: &str) -> Result<Option<VocabularyEntry>>;
+            async fn find_by_spelling(&self, spelling: &crate::domain::Spelling) -> Result<Option<VocabularyEntry>>;
         }
     }
 

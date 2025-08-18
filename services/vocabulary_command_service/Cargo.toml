@@ -3,6 +3,10 @@ name = "vocabulary_command_service"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "vocabulary_command_service"
+path = "src/main.rs"
+
 [dependencies]
 # Async runtime
 tokio = { workspace = true }

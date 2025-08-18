@@ -43,23 +43,45 @@ where
     }
 
     pub async fn handle(&self, command: CreateVocabularyItem) -> Result<VocabularyItem> {
-        // エントリの存在確認
-        let entry_id = EntryId::from_uuid(command.entry_id);
-        if !self.entry_repository.exists(&entry_id).await? {
-            return Err(crate::error::Error::NotFound(format!(
-                "Entry not found: {}",
-                command.entry_id
-            )));
-        }
-
         // 値オブジェクトの生成
         let spelling =
             Spelling::new(command.spelling.clone()).map_err(crate::error::Error::Validation)?;
         let disambiguation = Disambiguation::new(command.disambiguation.clone())
             .map_err(crate::error::Error::Validation)?;
 
+        // エントリの取得または作成
+        use crate::domain::VocabularyEntry;
+
+        let entry = if command.entry_id == uuid::Uuid::nil() {
+            // entry_id が nil の場合、spelling で検索または新規作成
+            if let Some(existing) = self.entry_repository.find_by_spelling(&spelling).await? {
+                existing
+            } else {
+                // 新規エントリーを作成
+                let new_entry = VocabularyEntry::create(spelling.clone());
+                self.entry_repository.save(&new_entry).await?;
+                new_entry
+            }
+        } else {
+            // entry_id が指定されている場合、存在確認
+            let entry_id = EntryId::from_uuid(command.entry_id);
+            if !self.entry_repository.exists(&entry_id).await? {
+                return Err(crate::error::Error::NotFound(format!(
+                    "Entry not found: {}",
+                    command.entry_id
+                )));
+            }
+            // エントリーを取得
+            self.entry_repository
+                .find_by_id(&entry_id)
+                .await?
+                .ok_or_else(|| {
+                    crate::error::Error::NotFound(format!("Entry not found: {}", command.entry_id))
+                })?
+        };
+
         // 集約の生成
-        let item = VocabularyItem::create(entry_id, spelling, disambiguation);
+        let item = VocabularyItem::create(entry.entry_id, spelling, disambiguation);
 
         // リポジトリに保存
         self.item_repository.save(&item).await?;
@@ -68,7 +90,7 @@ where
         let event = DomainEvent::VocabularyItemCreated(VocabularyItemCreated {
             metadata:       EventMetadata::new(*item.item_id.as_uuid(), item.version.value()),
             item_id:        *item.item_id.as_uuid(),
-            entry_id:       *item.entry_id.as_uuid(),
+            entry_id:       *entry.entry_id.as_uuid(),
             spelling:       command.spelling,
             disambiguation: command.disambiguation,
         });
@@ -90,7 +112,7 @@ mod tests {
             MockEventStore,
             MockItemRepository,
         },
-        domain::{DomainEvent, EntryId},
+        domain::{DomainEvent, EntryId, Spelling, VocabularyEntry},
     };
 
     #[tokio::test]
@@ -113,6 +135,15 @@ mod tests {
             .with(eq(EntryId::from_uuid(entry_id)))
             .times(1)
             .returning(|_| Ok(true));
+
+        let mut entry = VocabularyEntry::create(Spelling::new("apple".to_string()).unwrap());
+        entry.entry_id = EntryId::from_uuid(entry_id); // entry_idを正しく設定
+        let entry_for_mock = entry.clone();
+        mock_entry_repo
+            .expect_find_by_id()
+            .with(eq(EntryId::from_uuid(entry_id)))
+            .times(1)
+            .returning(move |_| Ok(Some(entry_for_mock.clone())));
 
         mock_item_repo.expect_save().times(1).returning(|_| Ok(()));
 
@@ -176,7 +207,7 @@ mod tests {
     #[tokio::test]
     async fn test_create_vocabulary_item_invalid_spelling() {
         // Arrange
-        let mut mock_entry_repo = MockEntryRepository::new();
+        let mock_entry_repo = MockEntryRepository::new();
         let mock_item_repo = MockItemRepository::new();
         let mock_event_store = MockEventStore::new();
 
@@ -187,12 +218,7 @@ mod tests {
             disambiguation: None,
         };
 
-        // exists は呼ばれるが、その後のvalidationでエラーになる
-        mock_entry_repo
-            .expect_exists()
-            .with(eq(EntryId::from_uuid(entry_id)))
-            .times(1)
-            .returning(|_| Ok(true));
+        // スペリングバリデーションで失敗するため、exists は呼ばれない
 
         let handler =
             CreateVocabularyItemHandler::new(mock_entry_repo, mock_item_repo, mock_event_store);
@@ -229,6 +255,15 @@ mod tests {
             .with(eq(EntryId::from_uuid(entry_id)))
             .times(1)
             .returning(|_| Ok(true));
+
+        let mut entry = VocabularyEntry::create(Spelling::new("run".to_string()).unwrap());
+        entry.entry_id = EntryId::from_uuid(entry_id);
+        let entry_for_mock = entry.clone();
+        mock_entry_repo
+            .expect_find_by_id()
+            .with(eq(EntryId::from_uuid(entry_id)))
+            .times(1)
+            .returning(move |_| Ok(Some(entry_for_mock.clone())));
 
         mock_item_repo.expect_save().times(1).returning(|item| {
             // 空白のみの disambiguation は None になることを確認

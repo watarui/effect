@@ -18,7 +18,10 @@ pub trait VocabularyEntryRepository: Send + Sync {
     async fn save(&self, entry: &VocabularyEntry) -> Result<()>;
 
     /// スペリングでエントリを検索
-    async fn find_by_spelling(&self, spelling: &str) -> Result<Option<VocabularyEntry>>;
+    async fn find_by_spelling(
+        &self,
+        spelling: &crate::domain::Spelling,
+    ) -> Result<Option<VocabularyEntry>>;
 }
 
 /// VocabularyItem のリポジトリトレイト
