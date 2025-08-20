@@ -1,8 +1,13 @@
-// Vocabulary Query Service Library
-//
-// CQRS + Event Sourcing の Read 側を担当
-//
-// 実装予定のモジュール：
-// - application: QueryHandler
-// - infrastructure: ReadRepository, CacheManager
-// - ports: GraphQL リゾルバー
+//! Vocabulary Query Service
+
+pub mod application;
+pub mod config;
+pub mod domain;
+pub mod error;
+pub mod infrastructure;
+pub mod ports;
+pub mod server;
+
+pub use config::Config;
+pub use error::{QueryError, Result};
+pub use server::run;

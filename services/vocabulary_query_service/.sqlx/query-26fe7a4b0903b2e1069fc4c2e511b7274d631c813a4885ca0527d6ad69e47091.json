@@ -1,0 +1,33 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                COUNT(DISTINCT e.entry_id) as total_entries,\n                COUNT(DISTINCT i.item_id) as total_items,\n                COUNT(DISTINCT ex.example_id) as total_examples,\n                COUNT(DISTINCT i.item_id) FILTER (WHERE i.is_published) as published_items\n            FROM vocabulary_entries_read e\n            LEFT JOIN vocabulary_items_read i ON e.entry_id = i.entry_id\n            LEFT JOIN vocabulary_examples_read ex ON i.item_id = ex.item_id\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "total_entries",
+				"type_info": "Int8"
+			},
+			{
+				"ordinal": 1,
+				"name": "total_items",
+				"type_info": "Int8"
+			},
+			{
+				"ordinal": 2,
+				"name": "total_examples",
+				"type_info": "Int8"
+			},
+			{
+				"ordinal": 3,
+				"name": "published_items",
+				"type_info": "Int8"
+			}
+		],
+		"parameters": {
+			"Left": []
+		},
+		"nullable": [null, null, null, null]
+	},
+	"hash": "26fe7a4b0903b2e1069fc4c2e511b7274d631c813a4885ca0527d6ad69e47091"
+}

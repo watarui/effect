@@ -1,0 +1,43 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                entry_id,\n                spelling,\n                primary_item_id,\n                item_count,\n                created_at,\n                updated_at\n            FROM vocabulary_entries_read\n            WHERE entry_id = $1\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "entry_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "spelling",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 2,
+				"name": "primary_item_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 3,
+				"name": "item_count",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 4,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 5,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": [false, false, true, false, false, false]
+	},
+	"hash": "be7ff3747ec7a1b7e86941bd522569987808576f57636422698efcd3b673fc91"
+}

@@ -24,6 +24,9 @@ target
 .env*
 !.env.example
 
+# SQLX cache (should be in each service directory)
+/.sqlx
+
 # エディタ設定
 .vscode/
 .idea/

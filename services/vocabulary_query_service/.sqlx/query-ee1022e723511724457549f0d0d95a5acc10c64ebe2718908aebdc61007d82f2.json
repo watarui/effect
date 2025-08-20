@@ -1,0 +1,43 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                example_id,\n                item_id,\n                example,\n                translation,\n                added_by,\n                created_at\n            FROM vocabulary_examples_read\n            WHERE item_id = $1\n            ORDER BY created_at\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "example_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "item_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 2,
+				"name": "example",
+				"type_info": "Text"
+			},
+			{
+				"ordinal": 3,
+				"name": "translation",
+				"type_info": "Text"
+			},
+			{
+				"ordinal": 4,
+				"name": "added_by",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 5,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": [false, false, false, true, true, false]
+	},
+	"hash": "ee1022e723511724457549f0d0d95a5acc10c64ebe2718908aebdc61007d82f2"
+}
