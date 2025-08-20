@@ -1,0 +1,92 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                item_id,\n                entry_id,\n                spelling,\n                disambiguation,\n                part_of_speech,\n                definition,\n                ipa_pronunciation,\n                cefr_level,\n                frequency_rank,\n                example_count,\n                0.0::float4 as \"score!: f32\",\n                created_at,\n                updated_at\n            FROM vocabulary_items_read\n            WHERE updated_at > $1\n                AND NOT is_deleted\n                AND is_published\n            ORDER BY updated_at\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "item_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "entry_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 2,
+				"name": "spelling",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 3,
+				"name": "disambiguation",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 4,
+				"name": "part_of_speech",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 5,
+				"name": "definition",
+				"type_info": "Text"
+			},
+			{
+				"ordinal": 6,
+				"name": "ipa_pronunciation",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 7,
+				"name": "cefr_level",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 8,
+				"name": "frequency_rank",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 9,
+				"name": "example_count",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 10,
+				"name": "score!: f32",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 11,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 12,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Timestamptz"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			true,
+			true,
+			true,
+			true,
+			true,
+			true,
+			false,
+			null,
+			false,
+			false
+		]
+	},
+	"hash": "5c82d97cb2c0c783fa630be21962ceb827a852dea2b7da7ebb516b9bcbfad8f3"
+}

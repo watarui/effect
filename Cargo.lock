@@ -4738,16 +4738,20 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum 0.8.4",
+ "chrono",
  "config",
  "meilisearch-sdk",
+ "redis",
  "serde",
  "serde_json",
  "shared_kernel",
  "shared_vocabulary_context",
+ "sqlx",
  "thiserror 2.0.12",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

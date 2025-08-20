@@ -18,6 +18,16 @@ serde_json = { workspace = true }
 # Search engine
 meilisearch-sdk = { workspace = true }
 
+# Database
+sqlx = { workspace = true }
+
+# Cache
+redis = { workspace = true }
+
+# UUID and DateTime
+uuid = { workspace = true }
+chrono = { workspace = true }
+
 # Logging
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
