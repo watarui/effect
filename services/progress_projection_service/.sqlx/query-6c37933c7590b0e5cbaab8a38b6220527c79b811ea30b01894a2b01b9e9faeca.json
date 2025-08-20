@@ -1,0 +1,25 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO weekly_progress (\n                user_id, week_start_date, week_end_date, items_learned, items_reviewed,\n                items_mastered, study_minutes, study_days, goals_completed,\n                average_accuracy, created_at, updated_at\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n            ON CONFLICT (user_id, week_start_date)\n            DO UPDATE SET\n                week_end_date = EXCLUDED.week_end_date,\n                items_learned = EXCLUDED.items_learned,\n                items_reviewed = EXCLUDED.items_reviewed,\n                items_mastered = EXCLUDED.items_mastered,\n                study_minutes = EXCLUDED.study_minutes,\n                study_days = EXCLUDED.study_days,\n                goals_completed = EXCLUDED.goals_completed,\n                average_accuracy = EXCLUDED.average_accuracy,\n                updated_at = EXCLUDED.updated_at\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Date",
+				"Date",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Int4",
+				"Float4",
+				"Timestamptz",
+				"Timestamptz"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "6c37933c7590b0e5cbaab8a38b6220527c79b811ea30b01894a2b01b9e9faeca"
+}

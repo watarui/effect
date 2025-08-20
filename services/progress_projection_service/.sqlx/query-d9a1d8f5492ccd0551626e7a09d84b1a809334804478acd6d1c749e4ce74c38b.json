@@ -1,0 +1,43 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT \n                event_id, \n                stream_id, \n                event_type, \n                event_data, \n                event_version,\n                occurred_at\n            FROM events\n            WHERE event_version > $1\n            ORDER BY event_version\n            LIMIT $2\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "event_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "stream_id",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 2,
+				"name": "event_type",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 3,
+				"name": "event_data",
+				"type_info": "Jsonb"
+			},
+			{
+				"ordinal": 4,
+				"name": "event_version",
+				"type_info": "Int8"
+			},
+			{
+				"ordinal": 5,
+				"name": "occurred_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Int8", "Int8"]
+		},
+		"nullable": [false, false, false, false, false, false]
+	},
+	"hash": "d9a1d8f5492ccd0551626e7a09d84b1a809334804478acd6d1c749e4ce74c38b"
+}

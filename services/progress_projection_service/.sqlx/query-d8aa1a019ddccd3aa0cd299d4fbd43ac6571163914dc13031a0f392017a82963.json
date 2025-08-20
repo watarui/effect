@@ -1,0 +1,86 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT * FROM daily_progress WHERE user_id = $1 AND date = $2\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "date",
+				"type_info": "Date"
+			},
+			{
+				"ordinal": 2,
+				"name": "items_learned",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 3,
+				"name": "items_reviewed",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 4,
+				"name": "items_mastered",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 5,
+				"name": "correct_answers",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 6,
+				"name": "total_answers",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 7,
+				"name": "study_minutes",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 8,
+				"name": "sessions_count",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 9,
+				"name": "goal_completed",
+				"type_info": "Bool"
+			},
+			{
+				"ordinal": 10,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 11,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid", "Date"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false
+		]
+	},
+	"hash": "d8aa1a019ddccd3aa0cd299d4fbd43ac6571163914dc13031a0f392017a82963"
+}

@@ -1,0 +1,86 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT * FROM weekly_progress WHERE user_id = $1 AND week_start_date = $2\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "week_start_date",
+				"type_info": "Date"
+			},
+			{
+				"ordinal": 2,
+				"name": "week_end_date",
+				"type_info": "Date"
+			},
+			{
+				"ordinal": 3,
+				"name": "items_learned",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 4,
+				"name": "items_reviewed",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 5,
+				"name": "items_mastered",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 6,
+				"name": "study_minutes",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 7,
+				"name": "study_days",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 8,
+				"name": "goals_completed",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 9,
+				"name": "average_accuracy",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 10,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 11,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid", "Date"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false
+		]
+	},
+	"hash": "71e21f6cc99f3431dae9c9eeb430fbafb71ae27c3e02b0f7f103249862036c14"
+}

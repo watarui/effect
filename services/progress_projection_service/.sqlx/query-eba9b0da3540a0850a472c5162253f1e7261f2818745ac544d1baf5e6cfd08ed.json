@@ -1,0 +1,74 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT * FROM user_progress WHERE user_id = $1\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "total_items_learned",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 2,
+				"name": "total_items_mastered",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 3,
+				"name": "total_study_minutes",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 4,
+				"name": "current_streak_days",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 5,
+				"name": "longest_streak_days",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 6,
+				"name": "last_study_date",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 7,
+				"name": "achievements_unlocked",
+				"type_info": "TextArray"
+			},
+			{
+				"ordinal": 8,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 9,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			false,
+			false,
+			false
+		]
+	},
+	"hash": "eba9b0da3540a0850a472c5162253f1e7261f2818745ac544d1baf5e6cfd08ed"
+}

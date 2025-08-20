@@ -1,0 +1,80 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT * FROM vocabulary_item_progress \n            WHERE user_id = $1 AND vocabulary_item_id = $2\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "user_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 1,
+				"name": "vocabulary_item_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 2,
+				"name": "attempts_count",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 3,
+				"name": "correct_count",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 4,
+				"name": "last_attempt_date",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 5,
+				"name": "last_accuracy",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 6,
+				"name": "average_accuracy",
+				"type_info": "Float4"
+			},
+			{
+				"ordinal": 7,
+				"name": "mastery_level",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 8,
+				"name": "time_spent_seconds",
+				"type_info": "Int4"
+			},
+			{
+				"ordinal": 9,
+				"name": "created_at",
+				"type_info": "Timestamptz"
+			},
+			{
+				"ordinal": 10,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid", "Uuid"]
+		},
+		"nullable": [
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false
+		]
+	},
+	"hash": "a4801fe94a3dd1fbfaefd52346fe6d2821428f8b2105034b54b3372f447e95eb"
+}

@@ -1,10 +1,5 @@
+use progress_projection_service::{config, error::Result, processor};
 use tracing::info;
-
-mod config;
-mod error;
-mod processor;
-
-use error::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {

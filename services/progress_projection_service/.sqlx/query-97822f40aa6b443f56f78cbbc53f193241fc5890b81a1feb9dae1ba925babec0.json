@@ -1,0 +1,21 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO achievements (\n                user_id, achievement_id, name, description, category,\n                unlocked_at, progress, target\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            ON CONFLICT (user_id, achievement_id)\n            DO UPDATE SET\n                unlocked_at = EXCLUDED.unlocked_at,\n                progress = EXCLUDED.progress\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Varchar",
+				"Varchar",
+				"Text",
+				"Varchar",
+				"Timestamptz",
+				"Int4",
+				"Int4"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "97822f40aa6b443f56f78cbbc53f193241fc5890b81a1feb9dae1ba925babec0"
+}

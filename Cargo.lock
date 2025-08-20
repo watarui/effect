@@ -2590,6 +2590,7 @@ dependencies = [
 name = "progress_projection_service"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
  "config",
  "dotenvy",

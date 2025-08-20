@@ -1,0 +1,33 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT projection_name, last_position, last_event_id, updated_at\n            FROM projection_states\n            ORDER BY projection_name\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "projection_name",
+				"type_info": "Varchar"
+			},
+			{
+				"ordinal": 1,
+				"name": "last_position",
+				"type_info": "Int8"
+			},
+			{
+				"ordinal": 2,
+				"name": "last_event_id",
+				"type_info": "Uuid"
+			},
+			{
+				"ordinal": 3,
+				"name": "updated_at",
+				"type_info": "Timestamptz"
+			}
+		],
+		"parameters": {
+			"Left": []
+		},
+		"nullable": [false, false, true, false]
+	},
+	"hash": "b0a0ff8c43c17968e433ee9f6ed3537c16e1bdad2161cc3370bdf4a633d7a471"
+}
