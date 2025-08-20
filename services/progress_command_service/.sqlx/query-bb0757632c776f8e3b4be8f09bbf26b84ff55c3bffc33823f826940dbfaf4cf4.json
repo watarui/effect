@@ -1,0 +1,18 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO events (event_id, stream_id, event_type, event_data, event_version, occurred_at)\n            VALUES ($1, $2, $3, $4, \n                (SELECT COALESCE(MAX(event_version), 0) + 1 FROM events WHERE stream_id = $5),\n                $6)\n            RETURNING event_version\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "event_version",
+				"type_info": "Int8"
+			}
+		],
+		"parameters": {
+			"Left": ["Uuid", "Varchar", "Varchar", "Jsonb", "Text", "Timestamptz"]
+		},
+		"nullable": [false]
+	},
+	"hash": "bb0757632c776f8e3b4be8f09bbf26b84ff55c3bffc33823f826940dbfaf4cf4"
+}

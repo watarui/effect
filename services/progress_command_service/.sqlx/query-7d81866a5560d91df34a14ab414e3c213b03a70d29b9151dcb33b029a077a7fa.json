@@ -1,0 +1,18 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            SELECT event_data\n            FROM events\n            WHERE stream_id = $1\n            ORDER BY event_version\n            ",
+	"describe": {
+		"columns": [
+			{
+				"ordinal": 0,
+				"name": "event_data",
+				"type_info": "Jsonb"
+			}
+		],
+		"parameters": {
+			"Left": ["Text"]
+		},
+		"nullable": [false]
+	},
+	"hash": "7d81866a5560d91df34a14ab414e3c213b03a70d29b9151dcb33b029a077a7fa"
+}

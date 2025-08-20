@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub server:   ServerConfig,
     pub database: DatabaseConfig,
-    pub pubsub:   PubSubConfig,
+    pub redis:    RedisConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,9 +19,8 @@ pub struct DatabaseConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PubSubConfig {
-    pub project_id: String,
-    pub topic:      String,
+pub struct RedisConfig {
+    pub url: String,
 }
 
 impl Config {
@@ -39,11 +38,9 @@ impl Config {
                         .to_string()
                 }),
             },
-            pubsub:   PubSubConfig {
-                project_id: std::env::var("GCP_PROJECT_ID")
-                    .unwrap_or_else(|_| "effect-project".to_string()),
-                topic:      std::env::var("PUBSUB_TOPIC")
-                    .unwrap_or_else(|_| "progress-events".to_string()),
+            redis:    RedisConfig {
+                url: std::env::var("REDIS_URL")
+                    .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
             },
         })
     }

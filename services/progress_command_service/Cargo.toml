@@ -36,6 +36,13 @@ config = { workspace = true }
 tonic = { workspace = true }
 prost = { workspace = true }
 
+# UUID and DateTime
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+# Cache
+redis = { workspace = true }
+
 # Shared
 shared_kernel = { path = "../../shared/kernel" }
 shared_progress_context = { path = "../../shared/contexts/progress" }

@@ -1,8 +1,11 @@
-// Progress Command Service Library
-//
-// 純粋な Event Sourcing の Write 側
-//
-// 実装予定のモジュール：
-// - application: EventReceiver, EventPersister
-// - infrastructure: EventStoreRepository, PubSubPublisher
-// - ports: gRPC エンドポイント（イベント受信用）
+//! Progress Command Service Library
+//!
+//! ヘキサゴナルアーキテクチャによる Progress コンテキストのコマンド側実装
+
+pub mod application;
+pub mod config;
+pub mod domain;
+pub mod error;
+pub mod infrastructure;
+pub mod ports;
+pub mod server;

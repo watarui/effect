@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO snapshots (aggregate_id, aggregate_type, snapshot_data, version, created_at)\n            VALUES ($1, 'Progress', $2, $3, $4)\n            ON CONFLICT (aggregate_id, aggregate_type)\n            DO UPDATE SET \n                snapshot_data = EXCLUDED.snapshot_data,\n                version = EXCLUDED.version,\n                created_at = EXCLUDED.created_at\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid", "Jsonb", "Int8", "Timestamptz"]
+		},
+		"nullable": []
+	},
+	"hash": "b02441e693b9c11cc3168268f32f0d2fd836d14a39cc520f39f11773e43b1078"
+}

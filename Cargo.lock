@@ -2568,9 +2568,11 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum 0.8.4",
+ "chrono",
  "config",
  "google-cloud-pubsub",
  "prost 0.14.1",
+ "redis",
  "serde",
  "serde_json",
  "shared_kernel",
@@ -2581,6 +2583,7 @@ dependencies = [
  "tonic 0.14.1",
  "tracing",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
