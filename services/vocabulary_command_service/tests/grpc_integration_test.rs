@@ -26,6 +26,7 @@ use proto::{
 };
 
 #[tokio::test]
+#[ignore] // 統合テスト: サーバー起動が必要
 async fn test_vocabulary_item_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
     // gRPC クライアントを作成
     let mut client = VocabularyCommandServiceClient::connect("http://localhost:50052").await?;
@@ -90,6 +91,7 @@ async fn test_vocabulary_item_lifecycle() -> Result<(), Box<dyn std::error::Erro
 }
 
 #[tokio::test]
+#[ignore] // 統合テスト: サーバー起動が必要
 async fn test_duplicate_word_handling() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = VocabularyCommandServiceClient::connect("http://localhost:50052").await?;
 
@@ -142,6 +144,7 @@ async fn test_duplicate_word_handling() -> Result<(), Box<dyn std::error::Error>
 }
 
 #[tokio::test]
+#[ignore] // 統合テスト: サーバー起動が必要
 async fn test_optimistic_locking() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = VocabularyCommandServiceClient::connect("http://localhost:50052").await?;
 
