@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE vocabulary_items_read\n            SET example_count = example_count + 1,\n                updated_at = NOW()\n            WHERE item_id = $1\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": []
+	},
+	"hash": "4cd71461f46fab9f2dc9cddf907acde8d59999f762f6ff55979033898035e919"
+}

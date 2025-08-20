@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE vocabulary_items_read\n            SET part_of_speech = COALESCE($2, part_of_speech),\n                definition = COALESCE($3, definition),\n                ipa_pronunciation = COALESCE($4, ipa_pronunciation),\n                cefr_level = COALESCE($5, cefr_level),\n                frequency_rank = COALESCE($6, frequency_rank),\n                updated_at = NOW(),\n                last_event_version = $7\n            WHERE item_id = $1 AND last_event_version < $7\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid", "Varchar", "Text", "Varchar", "Varchar", "Int4", "Int8"]
+		},
+		"nullable": []
+	},
+	"hash": "cbbb55271c2aa21b2c4ebc41223a6d9af10f116c158a947486046518492979fc"
+}

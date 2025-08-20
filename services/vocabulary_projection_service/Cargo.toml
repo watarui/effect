@@ -13,10 +13,13 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 # Database
-sqlx = { workspace = true }
-
-# Event Bus
-google-cloud-pubsub = { workspace = true }
+sqlx = { workspace = true, features = [
+  "runtime-tokio-rustls",
+  "postgres",
+  "uuid",
+  "chrono",
+  "migrate",
+] }
 
 # Logging
 tracing = { workspace = true }
@@ -29,6 +32,9 @@ anyhow = { workspace = true }
 # Configuration
 config = { workspace = true }
 
+# Utilities
+uuid = { workspace = true }
+chrono = { workspace = true }
+
 # Shared
 shared_kernel = { path = "../../shared/kernel" }
-shared_vocabulary_context = { path = "../../shared/contexts/vocabulary" }

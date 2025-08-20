@@ -1,0 +1,20 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO projection_state (\n                projection_name, \n                last_processed_position, \n                last_processed_event_id,\n                last_processed_at,\n                error_count,\n                last_error,\n                last_error_at,\n                created_at,\n                updated_at\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())\n            ON CONFLICT (projection_name) DO UPDATE SET\n                last_processed_position = EXCLUDED.last_processed_position,\n                last_processed_event_id = EXCLUDED.last_processed_event_id,\n                last_processed_at = EXCLUDED.last_processed_at,\n                error_count = EXCLUDED.error_count,\n                last_error = EXCLUDED.last_error,\n                last_error_at = EXCLUDED.last_error_at,\n                updated_at = NOW()\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Varchar",
+				"Int8",
+				"Uuid",
+				"Timestamptz",
+				"Int4",
+				"Text",
+				"Timestamptz"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "667d23aa7c2a559b2be937f834d4725af65d66d985cebf4fa4f54a57cf1b56ae"
+}

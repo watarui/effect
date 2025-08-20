@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE vocabulary_entries_read\n            SET item_count = (\n                SELECT COUNT(*)\n                FROM vocabulary_items_read\n                WHERE entry_id = $1 AND NOT is_deleted\n            ),\n            updated_at = NOW()\n            WHERE entry_id = $1\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid"]
+		},
+		"nullable": []
+	},
+	"hash": "d12119ec82bfae3097d08fee19b3d56bdde5fcbaa150f9af021ac9ba780c7c4b"
+}

@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE projection_state\n            SET error_count = error_count + 1,\n                last_error = $2,\n                last_error_at = NOW(),\n                updated_at = NOW()\n            WHERE projection_name = $1\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Text", "Text"]
+		},
+		"nullable": []
+	},
+	"hash": "716e6a7112ad37f042662e9e808bbded97632a4854a4c43fa4a41c755c80ff27"
+}

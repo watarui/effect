@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO projection_checkpoints (\n                projection_name, position, event_id, events_processed, created_at\n            )\n            VALUES ($1, $2, $3, $4, $5)\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Varchar", "Int8", "Uuid", "Int4", "Timestamptz"]
+		},
+		"nullable": []
+	},
+	"hash": "58a46c404e54789db35be181bdc44f305a15da48f4dce02a0fe09eca1a80bdf6"
+}

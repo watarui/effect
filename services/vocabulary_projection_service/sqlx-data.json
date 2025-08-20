@@ -1,0 +1,4 @@
+{
+	"db": "PostgreSQL",
+	"note": "This is a placeholder. Run 'cargo sqlx prepare' when database is available"
+}

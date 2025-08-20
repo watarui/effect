@@ -1,0 +1,20 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO vocabulary_entries_read (\n                entry_id, spelling, primary_item_id, item_count,\n                created_at, updated_at, last_event_version\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7)\n            ON CONFLICT (entry_id) DO UPDATE SET\n                spelling = EXCLUDED.spelling,\n                primary_item_id = EXCLUDED.primary_item_id,\n                item_count = EXCLUDED.item_count,\n                updated_at = EXCLUDED.updated_at,\n                last_event_version = EXCLUDED.last_event_version\n            WHERE vocabulary_entries_read.last_event_version < EXCLUDED.last_event_version\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Varchar",
+				"Uuid",
+				"Int4",
+				"Timestamptz",
+				"Timestamptz",
+				"Int8"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "dc60bcaf878d4d9221f0b8fd3265e9032efa41f686d6418ca4c3d5950c945c43"
+}

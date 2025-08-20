@@ -1,0 +1,12 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            UPDATE vocabulary_items_read\n            SET is_published = $2,\n                updated_at = NOW(),\n                last_event_version = $3\n            WHERE item_id = $1 AND last_event_version < $3\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": ["Uuid", "Bool", "Int8"]
+		},
+		"nullable": []
+	},
+	"hash": "5805f42c4347e83331b9461a72e8e36ef705de03ea20be44935ff31cbb002878"
+}

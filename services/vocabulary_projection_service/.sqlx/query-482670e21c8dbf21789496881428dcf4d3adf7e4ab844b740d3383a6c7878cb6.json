@@ -1,0 +1,28 @@
+{
+	"db_name": "PostgreSQL",
+	"query": "\n            INSERT INTO vocabulary_items_read (\n                item_id, entry_id, spelling, disambiguation,\n                part_of_speech, definition, ipa_pronunciation,\n                cefr_level, frequency_rank, is_published, is_deleted,\n                example_count, created_at, updated_at, last_event_version\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)\n            ON CONFLICT (item_id) DO UPDATE SET\n                entry_id = EXCLUDED.entry_id,\n                spelling = EXCLUDED.spelling,\n                disambiguation = EXCLUDED.disambiguation,\n                part_of_speech = EXCLUDED.part_of_speech,\n                definition = EXCLUDED.definition,\n                ipa_pronunciation = EXCLUDED.ipa_pronunciation,\n                cefr_level = EXCLUDED.cefr_level,\n                frequency_rank = EXCLUDED.frequency_rank,\n                is_published = EXCLUDED.is_published,\n                is_deleted = EXCLUDED.is_deleted,\n                example_count = EXCLUDED.example_count,\n                updated_at = EXCLUDED.updated_at,\n                last_event_version = EXCLUDED.last_event_version\n            WHERE vocabulary_items_read.last_event_version < EXCLUDED.last_event_version\n            ",
+	"describe": {
+		"columns": [],
+		"parameters": {
+			"Left": [
+				"Uuid",
+				"Uuid",
+				"Varchar",
+				"Varchar",
+				"Varchar",
+				"Text",
+				"Varchar",
+				"Varchar",
+				"Int4",
+				"Bool",
+				"Bool",
+				"Int4",
+				"Timestamptz",
+				"Timestamptz",
+				"Int8"
+			]
+		},
+		"nullable": []
+	},
+	"hash": "482670e21c8dbf21789496881428dcf4d3adf7e4ab844b740d3383a6c7878cb6"
+}
