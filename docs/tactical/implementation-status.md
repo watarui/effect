@@ -1,15 +1,15 @@
 # Effect プロジェクト実装状況
 
-最終更新: 2025-08-18
+最終更新: 2025-08-20
 
 ## 📊 全体概要
 
 ### プロジェクト構成
 
 - **総サービス数**: 16 マイクロサービス
-- **実装済みサービス**: 4/16 (25%)
+- **実装済みサービス**: 8/16 (50%)
 - **部分実装サービス**: 3/16 (19%)
-- **スケルトンのみ**: 8/16 (50%)
+- **スケルトンのみ**: 4/16 (25%)
 - **未実装**: 1/16 (6%)
 
 ### 技術スタック
@@ -72,9 +72,49 @@ Vocabulary Context の Command 側が最も進んでいる状態。
   - 基本的な CRUD 操作
 - **TODO**: 認証・認可機能の実装
 
+#### 5. Vocabulary Query Service (1,397 行)
+
+- **状態**: ✅ 実装済み (ヘキサゴナルアーキテクチャ)
+- **主要機能**:
+  - ヘキサゴナルアーキテクチャ実装
+  - Read Model からのクエリ処理
+  - gRPC サーバー実装
+  - SQLX クエリキャッシュ対応
+- **TODO**: なし
+
+#### 6. Vocabulary Search Service (1,581 行)
+
+- **状態**: ✅ 実装済み (ヘキサゴナルアーキテクチャ)
+- **主要機能**:
+  - ヘキサゴナルアーキテクチャ実装
+  - 全文検索機能
+  - フィルタリング機能
+  - gRPC サーバー実装
+- **TODO**: なし
+
+#### 7. Progress Command Service (1,016 行)
+
+- **状態**: ✅ 実装済み (ヘキサゴナルアーキテクチャ)
+- **主要機能**:
+  - ヘキサゴナルアーキテクチャ実装
+  - 学習進捗コマンド処理
+  - イベント発行
+  - gRPC サーバー実装
+- **TODO**: なし
+
+#### 8. Progress Projection Service (1,468 行)
+
+- **状態**: ✅ 実装済み (ヘキサゴナルアーキテクチャ)
+- **主要機能**:
+  - ヘキサゴナルアーキテクチャ実装
+  - イベントから Read Model への投影
+  - プロジェクション状態管理
+  - 複数の Read Model 管理
+- **TODO**: なし
+
 ### 🟡 部分実装サービス（基本構造 + 一部機能）
 
-#### 5. Algorithm Service (310 行)
+#### 9. Algorithm Service (310 行)
 
 - **状態**: ⚠️ 部分実装
 - **実装済み**:
@@ -87,7 +127,7 @@ Vocabulary Context の Command 側が最も進んでいる状態。
   - マスタリーレベル計算
   - データベース接続
 
-#### 6. AI Service (238 行)
+#### 10. AI Service (238 行)
 
 - **状態**: ⚠️ 基本構造のみ
 
@@ -99,7 +139,7 @@ Vocabulary Context の Command 側が最も進んでいる状態。
   - AI プロバイダー統合
   - プロンプト管理
 
-#### 7. Learning Service (215 行)
+#### 11. Learning Service (215 行)
 
 - **状態**: ⚠️ 基本構造のみ
 - **実装済み**:
@@ -114,12 +154,7 @@ Vocabulary Context の Command 側が最も進んでいる状態。
 | サービス名                    | コード行数 | 状態                   |
 | ----------------------------- | ---------- | ---------------------- |
 | Progress Query Service        | 191        | 設定とサーバー構造のみ |
-| Progress Projection Service   | 169        | 基本構造のみ           |
-
-| Progress Command Service      | 168        | 基本構造のみ           |
 | Saga Orchestrator             | 167        | 基本構造のみ           |
-| Vocabulary Search Service     | 122        | 基本構造のみ           |
-| Vocabulary Query Service      | 121        | 基本構造のみ           |
 | Vocabulary Projection Service | 79         | 基本構造のみ           |
 | Event Processor               | 26         | ほぼ未実装             |
 
@@ -140,20 +175,21 @@ Vocabulary Context の Command 側が最も進んでいる状態。
 
 ## 📈 実装状況マトリックス
 
-| サービス                   | gRPC/API | DB 接続 | イベント処理 | テスト | 状態            |
-| -------------------------- | -------- | ------- | ------------ | ------ | --------------- |
-| Domain Events Service      | ✅       | ✅      | ✅           | ❌     | 🟢 実装済み     |
-| Event Store Service        | ✅       | ✅      | ✅           | ❌     | 🟢 実装済み     |
-
-| Vocabulary Command Service | ✅       | ✅      | ✅           | ✅     | 🟢 実装済み     |
-
-| User Service               | ✅       | ✅      | ⚠️           | ❌     | 🟢 基本実装済み |
-| Algorithm Service          | ⚠️       | ❌      | ❌           | ❌     | 🟡 部分実装     |
-| AI Service                 | ❌       | ❌      | ❌           | ❌     | 🟡 基本構造     |
-| Learning Service           | ❌       | ❌      | ❌           | ❌     | 🟡 基本構造     |
-| API Gateway                | ⚠️       | ❌      | ❌           | ❌     | 🚧 実装開始     |
-
-| その他 8 サービス          | ❌       | ❌      | ❌           | ❌     | 🔴 スケルトン   |
+| サービス                      | gRPC/API | DB 接続 | イベント処理 | テスト | 状態            |
+| ----------------------------- | -------- | ------- | ------------ | ------ | --------------- |
+| Domain Events Service         | ✅       | ✅      | ✅           | ❌     | 🟢 実装済み     |
+| Event Store Service           | ✅       | ✅      | ✅           | ❌     | 🟢 実装済み     |
+| Vocabulary Command Service    | ✅       | ✅      | ✅           | ✅     | 🟢 実装済み     |
+| Vocabulary Query Service      | ✅       | ✅      | ❌           | ❌     | 🟢 実装済み     |
+| Vocabulary Search Service     | ✅       | ✅      | ❌           | ❌     | 🟢 実装済み     |
+| Progress Command Service      | ✅       | ✅      | ✅           | ❌     | 🟢 実装済み     |
+| Progress Projection Service   | ✅       | ✅      | ✅           | ❌     | 🟢 実装済み     |
+| User Service                  | ✅       | ✅      | ⚠️           | ❌     | 🟢 基本実装済み |
+| Algorithm Service             | ⚠️       | ❌      | ❌           | ❌     | 🟡 部分実装     |
+| AI Service                    | ❌       | ❌      | ❌           | ❌     | 🟡 基本構造     |
+| Learning Service              | ❌       | ❌      | ❌           | ❌     | 🟡 基本構造     |
+| API Gateway                   | ⚠️       | ❌      | ❌           | ❌     | 🚧 実装開始     |
+| その他 4 サービス             | ❌       | ❌      | ❌           | ❌     | 🔴 スケルトン   |
 
 ## 🔧 技術的負債と主要 TODO
 
@@ -177,15 +213,12 @@ Vocabulary Context の Command 側が最も進んでいる状態。
 ### 優先度: 中 🟡
 
 4. **Projection Services の実装**
-   - Vocabulary Projection Service
-   - Progress Projection Service
-
+   - Vocabulary Projection Service（残り）
    - Read Model の構築
 
 5. **Query Services の実装**
-   - Vocabulary Query Service
-   - Progress Query Service
-   - 検索機能の実装
+   - Progress Query Service（残り）
+   - 検索機能の最適化
 
 6. **テスト追加**
    - 各サービスのユニットテスト
@@ -239,7 +272,8 @@ Vocabulary Context の Command 側が最も進んでいる状態。
 
 ## 📝 備考
 
-- 現在最も進んでいるのは Vocabulary Context の Command 側
+- ヘキサゴナルアーキテクチャへの移行が順調に進行中
+- Vocabulary Context と Progress Context の主要サービスが実装完了
 - イベント駆動アーキテクチャの基盤は整備済み
 - フロントエンドとの接続には API Gateway の完成が必須
 - テストカバレッジが低いため、品質保証の強化が必要
@@ -248,3 +282,4 @@ Vocabulary Context の Command 側が最も進んでいる状態。
 
 - 2025-08-18: 初版作成
 - 2025-08-18: API Gateway の実装開始を反映
+- 2025-08-20: ヘキサゴナルアーキテクチャ移行完了（Vocabulary Query/Search Service, Progress Command/Projection Service）
